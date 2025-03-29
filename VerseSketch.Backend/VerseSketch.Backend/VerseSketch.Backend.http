@@ -1,0 +1,6 @@
+@VerseSketchBackend_HostAddress = http://localhost:5151
+
+GET {{VerseSketchBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

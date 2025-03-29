@@ -1,0 +1,31 @@
+.button-text{
+    color:white;
+    font-size: 24px;
+    text-align: center;
+    text-wrap-mode: wrap;
+    line-height: 24px;
+    width: 135px;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+.ant-btn-primary{
+    width:195px;
+    height:63px;
+    padding: 10px;
+}
+.primary-button{
+    .ant-btn-primary{
+        background-color: #9000FF;
+    }
+    .ant-btn-primary:hover{
+        background-color: #ac40ff !important;
+    }
+}
+.secondary-button{
+    .ant-btn-primary{
+        background-color: #7C009B;
+    }
+    .ant-btn-primary:hover{
+        background-color: #7b2a8f !important;
+    }
+}
