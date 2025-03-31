@@ -1,9 +1,0 @@
-.container-small{
-    margin-top:250px;
-    /* justifyContent:"center", */
-    align-items:center;
-    display:flex;
-    padding:"400 0";
-    flex-direction:column;
-    /* // alignContent:"center" */
-}

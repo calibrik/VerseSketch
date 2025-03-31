@@ -28,4 +28,12 @@
     .ant-btn-primary:hover{
         background-color: #7b2a8f !important;
     }
+    .ant-btn-primary:disabled {
+        background-color: #F8DCFF !important;
+        cursor: not-allowed;
+        border: 2px solid #7C009B !important;
+    }
+    .ant-btn-primary:disabled .button-text{
+        color: #7C009B !important;
+    }
 }

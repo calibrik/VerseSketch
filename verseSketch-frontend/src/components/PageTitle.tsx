@@ -1,12 +1,13 @@
 import { FC } from "react";
 import Title from "antd/es/typography/Title";
-import './PageTitle.css'
+import '../css/PageTitle.css'
 interface IPageTitleProps {
     children:string
+    style?:React.CSSProperties
 };
 
 export const PageTitle: FC<IPageTitleProps> = (props) => {
     return (
-        <Title className="page-title" level={1}>{props.children}</Title>
+        <Title style={props.style} className="page-title" level={1}>{props.children}</Title>
     );
 }

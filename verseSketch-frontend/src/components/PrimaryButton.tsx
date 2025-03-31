@@ -1,5 +1,5 @@
 import { FC, ReactNode } from "react";
-import './Button.css';
+import '../css/Button.css';
 import { BaseButton } from "./BaseButton";
 
 interface IPrimaryButtonProps {
