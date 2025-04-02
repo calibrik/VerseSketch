@@ -8,10 +8,6 @@ import { Outlet } from "react-router";
 const { Title } = Typography;
 interface IMainLayoutProps {};
 
-const containerBig:React.CSSProperties={
-    background: Color.Background,
-    // justifyContent:"center" 
-}
 
 export const MainLayout: FC<IMainLayoutProps> = () => {
     return (
@@ -19,7 +15,7 @@ export const MainLayout: FC<IMainLayoutProps> = () => {
             <Header color="primary" style={{ display: 'flex',justifyContent:"center", background: Color.Primary, alignItems: 'center',height:64}}>
                 <Title style={{color:"white",margin:0}} level={2}>VerseSketch</Title>
             </Header>
-            <Content style={containerBig}>
+            <Content className="container-layout">
                 <Outlet/>
             </Content>
         </Layout>

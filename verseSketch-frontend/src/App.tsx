@@ -3,6 +3,7 @@ import { WelcomePage } from './pages/WelcomePage';
 import { MainLayout } from './components/MainLayout';
 import { JoinRoomPage } from './pages/JoinRoomPage';
 import { CreateRoomPage } from './pages/CreateRoomPage';
+import { RoomPage } from './pages/RoomPage';
 
 const router=createBrowserRouter([
   {
@@ -20,6 +21,10 @@ const router=createBrowserRouter([
       {
         path: '/create-room',
         Component: CreateRoomPage
+      },
+      {
+        path: '/room',
+        Component: RoomPage
       }
     ]
   }

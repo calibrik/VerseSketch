@@ -1,5 +1,4 @@
 import { FC, useEffect, useRef, useState } from "react";
-import '../css/JoinRoomPage.css'
 import { PageTitle } from "../components/PageTitle";
 import { Input, List } from "antd";
 import { Color } from "../misc/colors";
@@ -79,7 +78,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
             setData(newData);
             setLoading(false);
             debounceTimeoutRef.current = null;
-        }, 500);
+        }, 800);
         console.log(debounceTimeoutRef.current);
     }
 
@@ -90,12 +89,13 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
             <div onScrollEnd={loadMoreDefaultData} className="scrollable-list">
                     <List
                     style={{width:'100%', color:Color.Secondary}}
-                    locale={{emptyText:"No rooms found"}}
+                    locale={{emptyText:<span className="placeholder-text">No rooms found</span>}}
                     // loading={{
                     //     spinning: loading,
                     //     indicator: <Spinner />,
                     // }}
                     dataSource={data}
+                    loadMore={loading ? <Spinner style={{ margin: '15px' }} /> : ""}
                     renderItem={(room) => (
                         <List.Item style={{color:Color.Secondary}}>
                             <List.Item.Meta title={<span style={{color:Color.Secondary}}>{room.title}</span>}/>
@@ -103,8 +103,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
                             <JoinRoomButton style={{marginLeft:100}}/>
                         </List.Item>
                     )}
-                    />
-                    {loading ? <Spinner style={{ margin: '15px' }} /> : ""}
+                    />     
             </div>
             <div style={{display:'flex', justifyContent:'flex-end', alignItems:'center', width: '100%'}}>
                 <CreateRoomNavigateButton style={{marginTop:28}}/>

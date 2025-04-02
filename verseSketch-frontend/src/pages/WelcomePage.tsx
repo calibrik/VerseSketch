@@ -1,6 +1,5 @@
 import { FC, useEffect } from "react";
 import { Col, Row } from "antd";
-import '../css/WelcomePage.css';
 import { PageTitle } from "../components/PageTitle";
 import { CreateRoomNavigateButton } from "../components/CreateRoomNavigateButton";
 import { JoinRoomNavigateButton } from "../components/JoinRoomNavigateButton";

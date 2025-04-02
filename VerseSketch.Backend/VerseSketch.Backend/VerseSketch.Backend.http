@@ -1,6 +1,10 @@
 @VerseSketchBackend_HostAddress = http://localhost:5151
 
-GET {{VerseSketchBackend_HostAddress}}/weatherforecast/
+GET {{VerseSketchBackend_HostAddress}}/api/room/getRooms
 Accept: application/json
-
 ###
+GET {{VerseSketchBackend_HostAddress}}/api/room/getRoom
+Accept: application/json
+###
+GET {{VerseSketchBackend_HostAddress}}/api/room/getRoom?id=123hsudfh
+Accept: application/json

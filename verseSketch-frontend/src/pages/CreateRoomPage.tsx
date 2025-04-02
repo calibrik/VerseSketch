@@ -78,12 +78,12 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = (props) => {
                     </Form.Item>
                     </Col>
                     <Col md={10} offset={14}>
-                    <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"end"}}>
-                        <label ref={switchLabelRef} style={{color:Color.Secondary,fontSize:20}}>Public room</label>
-                        <Form.Item 
-                            name="isPublic" style={{marginBottom:0,marginLeft:10}} valuePropName="checked">
-                                <Switch onChange={onSwitchChange} defaultChecked={true} />
-                        </Form.Item>
+                        <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"end"}}>
+                            <label ref={switchLabelRef} style={{color:Color.Secondary,fontSize:20}}>Public room</label>
+                            <Form.Item 
+                                name="isPublic" style={{marginBottom:0,marginLeft:10}} valuePropName="checked">
+                                    <Switch onChange={onSwitchChange} defaultChecked={true} />
+                            </Form.Item>
                         </div>
                     </Col>
                 </Row>
