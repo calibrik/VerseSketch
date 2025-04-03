@@ -69,9 +69,9 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = (props) => {
                     <Col md={8}>
                     <Form.Item
                         name="maxPlayers"
-                        label={<label style={{color:Color.Secondary}}>Max. Players</label>}
-                        rules={[{required:true,message:"Please choose max players"}]}>
+                        label={<label style={{color:Color.Secondary}}>Max. Players</label>}>
                         <Select
+                        defaultValue={selectionItems[0].value}
                         className="input-field"
                         options={selectionItems}
                         />

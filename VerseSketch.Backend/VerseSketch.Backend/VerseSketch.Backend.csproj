@@ -4,6 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>baaecd1f-5c23-46b5-a771-ce36be4cf247</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,10 +20,7 @@
         </PackageReference>
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Repositories\" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="8.1.0" />
     </ItemGroup>
 
 </Project>

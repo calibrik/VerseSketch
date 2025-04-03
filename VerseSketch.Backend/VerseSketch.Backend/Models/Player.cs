@@ -3,8 +3,8 @@
 public class Player
 {
     public required string Id { get; set; }
-    public required string Nickname { get; set; }
-    public required string RoomId { get; set; }
+    public string? Nickname { get; set; }
+    public string? RoomId { get; set; }
     
     public Room? Room { get; set; }
 }

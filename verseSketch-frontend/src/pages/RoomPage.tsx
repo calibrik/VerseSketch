@@ -66,10 +66,12 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             while (players.length < value) {
                 players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
             }
+            let playerCount=model?.playerCount ?? 0;
             if (players.length > value) {
                 players = players.slice(0, value);
+                playerCount = value;
             }
-            setModel((prevModel) => prevModel ? ({ ...prevModel, players: players ?? [], maxPlayersCount: value }) : null);
+            setModel((prevModel) => prevModel ? ({ ...prevModel,playerCount:playerCount,players: players ?? [], maxPlayersCount: value }) : null);
         }
     }
     function onSwitchChange(checked:boolean)
@@ -93,9 +95,19 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 <List
                     className="player-list"
                     header={
-                        <span>
-                            Players {model?.playerCount ?? 0}/{model?.maxPlayersCount ?? 0}
-                        </span>
+                        <div style={{width:"100%",display:"flex"}}>
+                            <div style={{ width: "50%" }}>
+                                <span style={{ width: "100%", wordBreak: "break-word", whiteSpace: "normal", fontSize:20 }}>
+                                    Creative Solutions Meeting Space
+                                </span>
+                            </div>
+
+                            <div style={{width:"50%",display:"flex",justifyContent:"flex-end"}}>
+                                <span className="placeholder-text">
+                                    Players {model?.playerCount ?? 0}/{model?.maxPlayersCount ?? 0}
+                                </span>
+                            </div>
+                        </div>
                     }
                     loadMore={loading ? <Spinner style={{ margin: '15px' }} /> : ""}
                     locale={{ emptyText: <span className="placeholder-text">Loading...</span>}}

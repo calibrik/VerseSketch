@@ -6,5 +6,9 @@ Accept: application/json
 GET {{VerseSketchBackend_HostAddress}}/api/room/getRoom
 Accept: application/json
 ###
-GET {{VerseSketchBackend_HostAddress}}/api/room/getRoom?id=123hsudfh
+GET {{VerseSketchBackend_HostAddress}}/api/room/getRoom?id=123
 Accept: application/json
+###
+POST http://localhost:5151/api/Room/CreateRoom
+###
+GET http://localhost:5151/openapi/v1.json
