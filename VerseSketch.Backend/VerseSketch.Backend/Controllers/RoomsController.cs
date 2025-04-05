@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 using VerseSketch.Backend.ViewModels;
@@ -6,12 +7,14 @@ using VerseSketch.Backend.ViewModels;
 namespace VerseSketch.Backend.Controllers;
 [ApiController]
 [Route("/api/[controller]/[action]")]
-public class RoomController:ControllerBase
+public class RoomsController:ControllerBase
 {
     private readonly RoomsRepository _roomsRepository;
-    public RoomController(RoomsRepository roomsRepository)
+    private readonly PlayerRepository _playerRepository;
+    public RoomsController(RoomsRepository roomsRepository, PlayerRepository playerRepository)
     {
         _roomsRepository = roomsRepository;
+        _playerRepository = playerRepository;
     }
     [HttpGet("")]
     public async Task<IActionResult> GetRooms()
@@ -58,7 +61,8 @@ public class RoomController:ControllerBase
             isPublic = model.IsPublic,
             TimeToDraw = 10
         };
-        admin.RoomId = room.Id;
+        // admin.RoomId = room.Id;
+        await _playerRepository.CreatePlayer(admin);
         await _roomsRepository.CreateRoomAsync(room);
         bool res=await _roomsRepository.SaveChangesAsync();
         if (!res)

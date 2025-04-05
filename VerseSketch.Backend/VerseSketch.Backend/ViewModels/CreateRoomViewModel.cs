@@ -5,7 +5,7 @@ namespace VerseSketch.Backend.ViewModels;
 public class CreateRoomViewModel
 {   
     [Required(ErrorMessage = "Room name is required")]
-    [StringLength(40, ErrorMessage = "Room Name must be between 5 and 50 characters long")]
+    [StringLength(40, ErrorMessage = "Room Name must be less than 40 characters long")]
     public string Title { get; set; }
     [Required(ErrorMessage = "Max players count is required")]
     [Range(2,10,ErrorMessage = "Max players count must be between 2 and 10")]
