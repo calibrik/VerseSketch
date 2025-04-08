@@ -9,7 +9,5 @@ public class CreatePlayerViewModel
     public string Nickname { get; set; }
     [Required(ErrorMessage = "RoomId is required")]
     public string RoomId { get; set; }
-
-    public string? PlayerId { get; set; }
     
 }

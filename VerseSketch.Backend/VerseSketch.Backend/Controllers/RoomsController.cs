@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VerseSketch.Backend.Misc;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 using VerseSketch.Backend.ViewModels;
@@ -11,10 +12,12 @@ public class RoomsController:ControllerBase
 {
     private readonly RoomsRepository _roomsRepository;
     private readonly PlayerRepository _playerRepository;
-    public RoomsController(RoomsRepository roomsRepository, PlayerRepository playerRepository)
+    private readonly IConfiguration _configuration;
+    public RoomsController(RoomsRepository roomsRepository, PlayerRepository playerRepository, IConfiguration configuration)
     {
         _roomsRepository = roomsRepository;
         _playerRepository = playerRepository;
+        _configuration = configuration;
     }
     [HttpGet("")]
     public async Task<IActionResult> GetRooms()
@@ -39,7 +42,12 @@ public class RoomsController:ControllerBase
             return NotFound(new {message = $"Room called {title} is not found"});
         return Ok(new {room});
     }
-    
+
+    [HttpPost("")]
+    public async Task<IActionResult> ValidateRoomTitle([FromBody] ValidateRoomTitleViewModel model)
+    {
+        return Ok( new {isExist = await _roomsRepository.GetRoomByTitleAsyncRO(model.Title) != null});
+    }
     [HttpPost("")]
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomViewModel model)
     {
@@ -67,7 +75,7 @@ public class RoomsController:ControllerBase
         bool res=await _roomsRepository.SaveChangesAsync();
         if (!res)
             return StatusCode(500, new {message = "Something went wrong, please try again later."});
-        return Ok(new {id=room.Id});
+        return Ok(new {id=room.Id,accessToken=JWTHandler.CreateToken(admin.Id,_configuration)});
     }
 }
 //TODO player&room logic: when user creates game, server creates a player instance for him and user enters his name on the join page

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using VerseSketch.Backend.Misc;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 using VerseSketch.Backend.ViewModels;
@@ -26,17 +27,30 @@ public class AuthController:ControllerBase
     [HttpPost("")]
     public async Task<IActionResult> JoinRoom([FromBody] CreatePlayerViewModel model)
     {
-        Player? player = await _playerRepository.GetPlayerAsync(model.PlayerId);
-        if (model.PlayerId != null&& player == null)
-            ModelState.AddModelError("PlayerId", $"Player instance {model.PlayerId} is not found");
-        if (await _roomsRepository.GetRoomAsync(model.RoomId) == null)
+        Player? player=null;
+        Room? room = await _roomsRepository.GetRoomAsync(model.RoomId);
+        if (room == null)
             ModelState.AddModelError("RoomId", "Room you trying to join doesn't exist");
-        else if (await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname,model.RoomId) != null)
+        if (User.Identity.IsAuthenticated)
+        {
+            string? playerId=User.FindFirst("PlayerId")?.Value;
+            if (playerId == null)
+                ModelState.AddModelError("PlayerId", "Invalid access token");
+            else
+            {
+                player = await _playerRepository.GetPlayerAsync(playerId);
+                if (player == null)
+                    ModelState.AddModelError("PlayerId", $"Player instance {playerId} is not found");
+            }
+        }
+        else if (room!=null&&await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname, model.RoomId) != null)
             ModelState.AddModelError("Nickname", "Nickname already exists in this room.");
+        if (room!=null&&player!=null&&room.AdminId!=player.Id)
+            ModelState.AddModelError("PlayerId", "Only creator of the room is allowed to join.");
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (model.PlayerId == null)
+        if (player == null) 
         {
             player = new Player()
             {
@@ -44,22 +58,8 @@ public class AuthController:ControllerBase
             };
             await _playerRepository.CreatePlayer(player);
         }
-        string? issuer=_configuration["JwtConfig:Issuer"];
-        string? audience=_configuration["JwtConfig:Audience"];
-        string? key=_configuration["JwtConfig:Key"];
-        SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor()
-        {
-            Subject = new ClaimsIdentity([
-                new Claim(JwtRegisteredClaimNames.Name, model.Nickname)
-            ]),
-            Issuer = issuer,
-            Audience = audience,
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
-                SecurityAlgorithms.HmacSha256Signature)
-        };
-        JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-        SecurityToken securityToken=tokenHandler.CreateToken(tokenDescriptor);
-        string accessToken=tokenHandler.WriteToken(securityToken);
+
+        string accessToken=JWTHandler.CreateToken(player.Id,_configuration);
 
         player.Nickname = model.Nickname;
         player.RoomId = model.RoomId;

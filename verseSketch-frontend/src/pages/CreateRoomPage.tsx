@@ -5,16 +5,16 @@ import { Color } from "../misc/colors";
 import { CreateRoomButton } from "../components/CreateRoomButton";
 import { useState } from "react";
 import { RuleObject } from "antd/es/form";
+import { ConnectionConfig } from "../misc/ConnectionConfig";
 interface ICreateRoomPageProps {};
 
 interface ICreateRoomModel{
     title:string,
-    maxPlayers:number,
+    maxPlayersCount:number,
     isPublic:boolean,
 }
 
-export const CreateRoomPage: FC<ICreateRoomPageProps> = (props) => {
-    const debounceTimeoutRef = useRef<number | null>(null);
+export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
 
@@ -30,15 +30,51 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = (props) => {
 
     async function onSuccessfulSubmit(values:ICreateRoomModel) {
         setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        console.log("Room created with values:", values);
+        values.title=values.title.trim();
+        console.log("Form values:", JSON.stringify(values));
+        fetch(ConnectionConfig.Api+"/api/rooms/createRoom",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify(values)
+            })
+            .then(async (response)=>{
+                let data=await response.json();
+                if (!response.ok) {
+                    console.error("Error:", data);
+                    return;
+                }
+                console.log("Success:", data);
+            })
+            .catch((error)=>{
+                console.error("There was a problem with the fetch operation:", error);
+            });
         setLoading(false);
     }
 
     async function validateTitle(rule:RuleObject,value:string) {
         value=value.trim();
-        let busyNicknames=["busy1","busy2","busy3"];
-        if (busyNicknames.includes(value)) {
+        if (value.length===0) {
+            return;
+        }
+        console.log("Validating title:", JSON.stringify({title:value}));
+        let response=await fetch(ConnectionConfig.Api+"/api/rooms/validateRoomTitle",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({title:value})
+            })
+            .catch((error)=>{
+                console.error("There was a problem with the fetch operation:", error);
+            });
+        if (!response) {
+            return Promise.resolve();
+        }
+        let data=await response.json();
+        console.log("Validation response:",data);
+        if (data.isExist) {
             return Promise.reject();
         }
         return Promise.resolve();
@@ -54,8 +90,8 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = (props) => {
                 onFinish={onSuccessfulSubmit}
                 initialValues={{
                     title:"",
-                    maxPlayers:2,
-                    isPublic:true,}}>
+                    maxPlayersCount:selectionItems[0].value,
+                    isPublic:true,} as ICreateRoomModel}>
                 <Row gutter={20} style={{ width: "100%" }}>
                     <Col md={16}>
                     <Form.Item
@@ -68,10 +104,9 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = (props) => {
                     </Col>
                     <Col md={8}>
                     <Form.Item
-                        name="maxPlayers"
+                        name="maxPlayersCount"
                         label={<label style={{color:Color.Secondary}}>Max. Players</label>}>
                         <Select
-                        defaultValue={selectionItems[0].value}
                         className="input-field"
                         options={selectionItems}
                         />
