@@ -3,9 +3,10 @@ import { PageTitle } from "../components/PageTitle";
 import { Input, List } from "antd";
 import { Color } from "../misc/colors";
 import { Spinner } from "../components/Spinner";
-import { JoinRoomButton } from "../components/JoinRoomButton";
+import { JoinToRoomVavigationButton } from "../components/JoinToRoomVavigationButton";
 import { CreateRoomNavigateButton } from "../components/CreateRoomNavigateButton";
-interface IJoinRoomPageProps {};
+interface IJoinRoomPageProps {
+};
 
 interface ICreateRoomModel{
     title:string;
@@ -20,6 +21,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const abortLoadRef = useRef<boolean>(false);
     const debounceTimeoutRef = useRef<number | null>(null);
+
 
     useEffect(() => {
         document.title = "Create room";
@@ -100,7 +102,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
                         <List.Item style={{color:Color.Secondary}}>
                             <List.Item.Meta title={<span style={{color:Color.Secondary}}>{room.title}</span>}/>
                             <div>{room.memberCount}/{room.maxMemberCount}</div>
-                            <JoinRoomButton style={{marginLeft:100}}/>
+                            <JoinToRoomVavigationButton roomName={room.title} style={{marginLeft:100}}/>
                         </List.Item>
                     )}
                     />     

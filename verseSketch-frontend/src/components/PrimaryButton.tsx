@@ -7,12 +7,13 @@ interface IPrimaryButtonProps {
     children:string,
     icon?:ReactNode
     onClick?: ()=>void
+    htmlType?:"button" | "submit" | "reset" | undefined,
 };
 
 export const PrimaryButton: FC<IPrimaryButtonProps> = (props) => {
     return (
         <div className="primary-button">
-            <BaseButton style={props.style} onClick={props.onClick} icon={props.icon}>{props.children}</BaseButton>
+            <BaseButton htmlType={props.htmlType} style={props.style} onClick={props.onClick} icon={props.icon}>{props.children}</BaseButton>
         </div>
     );
 }

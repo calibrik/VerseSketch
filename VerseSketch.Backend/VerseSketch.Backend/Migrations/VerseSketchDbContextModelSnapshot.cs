@@ -30,12 +30,12 @@ namespace VerseSketch.Backend.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<string>("RoomId")
+                    b.Property<string>("RoomName")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoomId");
+                    b.HasIndex("RoomName");
 
                     b.ToTable("Players");
                 });
@@ -80,7 +80,7 @@ namespace VerseSketch.Backend.Migrations
                 {
                     b.HasOne("VerseSketch.Backend.Models.Room", "Room")
                         .WithMany("Players")
-                        .HasForeignKey("RoomId");
+                        .HasForeignKey("RoomName");
 
                     b.Navigation("Room");
                 });

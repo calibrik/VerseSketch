@@ -48,6 +48,7 @@ public class RoomsController:ControllerBase
     {
         return Ok( new {isExist = await _roomsRepository.GetRoomByTitleAsyncRO(model.Title) != null});
     }
+    
     [HttpPost("")]
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomViewModel model)
     {
@@ -69,13 +70,22 @@ public class RoomsController:ControllerBase
             isPublic = model.IsPublic,
             TimeToDraw = 10
         };
-        // admin.RoomId = room.Id;
+        // admin.RoomName = room.Id;
         await _playerRepository.CreatePlayer(admin);
         await _roomsRepository.CreateRoomAsync(room);
         bool res=await _roomsRepository.SaveChangesAsync();
         if (!res)
             return StatusCode(500, new {message = "Something went wrong, please try again later."});
-        return Ok(new {id=room.Id,accessToken=JWTHandler.CreateToken(admin.Id,_configuration)});
+        return Ok(new {roomId=room.Id,accessToken=JWTHandler.CreateToken(admin.Id,_configuration)});
+    }
+    
+    [HttpPost("")]
+    public async Task<IActionResult> ValidatePlayerNickname([FromBody] CreatePlayerViewModel model)
+    {
+        Room? room = await _roomsRepository.GetRoomByTitleAsyncRO(model.RoomName);
+        if (room == null)
+            return NotFound(new {message = $"Room called {model.RoomName} is not found"});
+        return Ok( new {isExist = await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname,room.Id) != null});
     }
 }
 //TODO player&room logic: when user creates game, server creates a player instance for him and user enters his name on the join page

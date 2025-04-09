@@ -49,7 +49,7 @@ namespace VerseSketch.Backend.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Players_RoomId",
                 table: "Players",
-                column: "RoomId");
+                column: "RoomName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rooms_AdminId",
@@ -59,7 +59,7 @@ namespace VerseSketch.Backend.Migrations
             migrationBuilder.AddForeignKey(
                 name: "FK_Players_Rooms_RoomId",
                 table: "Players",
-                column: "RoomId",
+                column: "RoomName",
                 principalTable: "Rooms",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);

@@ -6,6 +6,7 @@ import { CreateRoomButton } from "../components/CreateRoomButton";
 import { useState } from "react";
 import { RuleObject } from "antd/es/form";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
+import { useNavigate } from "react-router";
 interface ICreateRoomPageProps {};
 
 interface ICreateRoomModel{
@@ -17,6 +18,7 @@ interface ICreateRoomModel{
 export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const navigate=useNavigate();
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -32,25 +34,24 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         setLoading(true);
         values.title=values.title.trim();
         console.log("Form values:", JSON.stringify(values));
-        fetch(ConnectionConfig.Api+"/api/rooms/createRoom",{
+        let response=await fetch(ConnectionConfig.Api+"/api/rooms/createRoom",{
             method:"POST",
             headers:{
                 "Content-Type":"application/json"
             },
             body:JSON.stringify(values)
             })
-            .then(async (response)=>{
-                let data=await response.json();
-                if (!response.ok) {
-                    console.error("Error:", data);
-                    return;
-                }
-                console.log("Success:", data);
-            })
             .catch((error)=>{
                 console.error("There was a problem with the fetch operation:", error);
             });
         setLoading(false);
+        let data=await response?.json();
+        if (!response?.ok) {
+            console.error("Error:", data);
+            return;
+        }
+        console.log("Success:", data);
+        navigate(`/join-room/${data.roomId}`);
     }
 
     async function validateTitle(rule:RuleObject,value:string) {

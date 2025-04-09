@@ -13,7 +13,7 @@ export const WelcomePage: FC<IWelcomePageProps> = () => {
 
     return (
         <div className="container-small">
-            <PageTitle style={{marginTop:250}}>Welcome to the VerseSketch!</PageTitle>
+            <PageTitle style={{marginTop:250,width:"80%"}}>Welcome to the VerseSketch!</PageTitle>
             <Row style={{marginTop:87}} gutter={46}>
                 <Col span={12}>
                     <JoinRoomNavigateButton/>

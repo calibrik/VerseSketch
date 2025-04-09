@@ -4,6 +4,7 @@ import { MainLayout } from './components/MainLayout';
 import { JoinRoomPage } from './pages/JoinRoomPage';
 import { CreateRoomPage } from './pages/CreateRoomPage';
 import { RoomPage } from './pages/RoomPage';
+import { CreatePlayerPage } from './pages/CreatePlayerPage';
 
 const router=createBrowserRouter([
   {
@@ -25,7 +26,11 @@ const router=createBrowserRouter([
       {
         path: '/room',
         Component: RoomPage
-      }
+      },
+      {
+        path: '/join-room/:roomName',
+        Component: CreatePlayerPage
+      },
     ]
   }
 ]);

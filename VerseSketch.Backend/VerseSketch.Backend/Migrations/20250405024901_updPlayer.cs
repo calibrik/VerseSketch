@@ -24,7 +24,7 @@ namespace VerseSketch.Backend.Migrations
                 oldType: "text");
 
             migrationBuilder.AlterColumn<string>(
-                name: "RoomId",
+                name: "RoomName",
                 table: "Players",
                 type: "text",
                 nullable: true,
@@ -49,7 +49,7 @@ namespace VerseSketch.Backend.Migrations
             migrationBuilder.AddForeignKey(
                 name: "FK_Players_Rooms_RoomId",
                 table: "Players",
-                column: "RoomId",
+                column: "RoomName",
                 principalTable: "Rooms",
                 principalColumn: "Id");
         }
@@ -75,7 +75,7 @@ namespace VerseSketch.Backend.Migrations
                 oldMaxLength: 40);
 
             migrationBuilder.AlterColumn<string>(
-                name: "RoomId",
+                name: "RoomName",
                 table: "Players",
                 type: "text",
                 nullable: false,
@@ -98,7 +98,7 @@ namespace VerseSketch.Backend.Migrations
             migrationBuilder.AddForeignKey(
                 name: "FK_Players_Rooms_RoomId",
                 table: "Players",
-                column: "RoomId",
+                column: "RoomName",
                 principalTable: "Rooms",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);

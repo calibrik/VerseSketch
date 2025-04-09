@@ -28,9 +28,9 @@ public class AuthController:ControllerBase
     public async Task<IActionResult> JoinRoom([FromBody] CreatePlayerViewModel model)
     {
         Player? player=null;
-        Room? room = await _roomsRepository.GetRoomAsync(model.RoomId);
+        Room? room = await _roomsRepository.GetRoomAsync(model.RoomName);
         if (room == null)
-            ModelState.AddModelError("RoomId", "Room you trying to join doesn't exist");
+            ModelState.AddModelError("RoomName", "Room you trying to join doesn't exist");
         if (User.Identity.IsAuthenticated)
         {
             string? playerId=User.FindFirst("PlayerId")?.Value;
@@ -43,7 +43,7 @@ public class AuthController:ControllerBase
                     ModelState.AddModelError("PlayerId", $"Player instance {playerId} is not found");
             }
         }
-        else if (room!=null&&await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname, model.RoomId) != null)
+        else if (room!=null&&await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname, model.RoomName) != null)
             ModelState.AddModelError("Nickname", "Nickname already exists in this room.");
         if (room!=null&&player!=null&&room.AdminId!=player.Id)
             ModelState.AddModelError("PlayerId", "Only creator of the room is allowed to join.");
@@ -62,7 +62,7 @@ public class AuthController:ControllerBase
         string accessToken=JWTHandler.CreateToken(player.Id,_configuration);
 
         player.Nickname = model.Nickname;
-        player.RoomId = model.RoomId;
+        player.RoomId = model.RoomName;
         await _playerRepository.SaveChangesAsync();
         return Ok(new { access_token = accessToken });
     }
