@@ -3,7 +3,7 @@ import { PageTitle } from "../components/PageTitle";
 import { Input, List } from "antd";
 import { Color } from "../misc/colors";
 import { Spinner } from "../components/Spinner";
-import { JoinToRoomVavigationButton } from "../components/JoinToRoomVavigationButton";
+import { JoinToRoomNavigationButton } from "../components/JoinToRoomNavigationButton";
 import { CreateRoomNavigateButton } from "../components/CreateRoomNavigateButton";
 interface IJoinRoomPageProps {
 };
@@ -102,7 +102,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
                         <List.Item style={{color:Color.Secondary}}>
                             <List.Item.Meta title={<span style={{color:Color.Secondary}}>{room.title}</span>}/>
                             <div>{room.memberCount}/{room.maxMemberCount}</div>
-                            <JoinToRoomVavigationButton roomName={room.title} style={{marginLeft:100}}/>
+                            <JoinToRoomNavigationButton roomName={room.title} style={{marginLeft:100}}/>
                         </List.Item>
                     )}
                     />     

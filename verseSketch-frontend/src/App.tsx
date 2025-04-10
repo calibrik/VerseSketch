@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router';
+import { CookiesProvider } from 'react-cookie'; // Adjust the import path if necessary
 import { WelcomePage } from './pages/WelcomePage';
 import { MainLayout } from './components/MainLayout';
 import { JoinRoomPage } from './pages/JoinRoomPage';
@@ -24,11 +25,11 @@ const router=createBrowserRouter([
         Component: CreateRoomPage
       },
       {
-        path: '/room',
+        path: '/room/:roomTitle',
         Component: RoomPage
       },
       {
-        path: '/join-room/:roomName',
+        path: '/join-room/:roomTitle',
         Component: CreatePlayerPage
       },
     ]
@@ -38,7 +39,9 @@ const router=createBrowserRouter([
 
 function App() {
   return (
-    <RouterProvider router={router}/>
+    <CookiesProvider>
+      <RouterProvider router={router}/>
+    </CookiesProvider>
   )
 }
 

@@ -11,8 +11,8 @@ using VerseSketch.Backend.Models;
 namespace VerseSketch.Backend.Migrations
 {
     [DbContext(typeof(VerseSketchDbContext))]
-    [Migration("20250405024901_updPlayer")]
-    partial class updPlayer
+    [Migration("20250410062522_index on nickname")]
+    partial class indexonnickname
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,26 +33,29 @@ namespace VerseSketch.Backend.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<string>("RoomId")
-                        .HasColumnType("text");
+                    b.Property<string>("RoomTitle")
+                        .HasColumnType("character varying(40)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoomId");
+                    b.HasIndex("Nickname");
+
+                    b.HasIndex("RoomTitle");
 
                     b.ToTable("Players");
                 });
 
             modelBuilder.Entity("VerseSketch.Backend.Models.Room", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<string>("Title")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
 
                     b.Property<string>("AdminId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("MaxPlayerCount")
+                    b.Property<int>("MaxPlayersCount")
                         .HasColumnType("integer");
 
                     b.Property<int>("PlayersCount")
@@ -61,20 +64,12 @@ namespace VerseSketch.Backend.Migrations
                     b.Property<int>("TimeToDraw")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
-
                     b.Property<bool>("isPublic")
                         .HasColumnType("boolean");
 
-                    b.HasKey("Id");
+                    b.HasKey("Title");
 
                     b.HasIndex("AdminId");
-
-                    b.HasIndex("Title")
-                        .IsUnique();
 
                     b.ToTable("Rooms");
                 });
@@ -83,7 +78,7 @@ namespace VerseSketch.Backend.Migrations
                 {
                     b.HasOne("VerseSketch.Backend.Models.Room", "Room")
                         .WithMany("Players")
-                        .HasForeignKey("RoomId");
+                        .HasForeignKey("RoomTitle");
 
                     b.Navigation("Room");
                 });

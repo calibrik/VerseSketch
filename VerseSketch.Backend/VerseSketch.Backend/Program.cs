@@ -9,8 +9,10 @@ using VerseSketch.Backend.Repositories;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddScoped<RoomsRepository>();
 builder.Services.AddScoped<PlayerRepository>();
+#if DEBUG
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
@@ -21,6 +23,7 @@ builder.Services.AddCors(options =>
                 .AllowAnyMethod();
         });
 });
+#endif
 builder.Services.AddDbContext<VerseSketchDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection"));
@@ -77,24 +80,27 @@ var app = builder.Build();
 
 app.MapOpenApi();
 app.UseRouting();
-if (app.Environment.IsDevelopment())
+
+#if DEBUG
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.RoutePrefix = string.Empty;
-        options.SwaggerEndpoint("swagger/v1/swagger.json", "v1");
-    });
-}
+    options.RoutePrefix = string.Empty;
+    options.SwaggerEndpoint("swagger/v1/swagger.json", "v1");
+});
+#endif
 
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+#if DEBUG
 app.UseCors("AllowReactApp");
+#endif
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHub<RoomHub>("/api/roomHub");
 app.MapControllers();
 app.Run();

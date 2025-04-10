@@ -16,18 +16,13 @@ public class RoomsRepository
         await _dbContext.Rooms.AddAsync(room);
     }
 
-    public async Task<Room?> GetRoomAsync(string roomId)
+    public async Task<Room?> GetRoomAsync(string roomTitle)
     {
-        return await _dbContext.Rooms.FindAsync(roomId);
+        return await _dbContext.Rooms.FindAsync(roomTitle);
     }
-    public async Task<Room?> GetRoomAsyncRO(string roomId)
+    public async Task<Room?> GetRoomAsyncRO(string roomTitle)
     {
-        return await _dbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(r=>r.Id==roomId);
-    }
-
-    public async Task<Room?> GetRoomByTitleAsyncRO(string title)
-    {
-        return await _dbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Title == title);
+        return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players).FirstOrDefaultAsync(r=>r.Title==roomTitle);
     }
     
     public async Task<bool> SaveChangesAsync()

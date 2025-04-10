@@ -3,12 +3,12 @@ import { Button } from "antd";
 import { FC } from "react";
 import { useNavigate } from "react-router";
 import '../css/JoinRoomButton.css'
-interface IJoinToRoomVavigationButtonProps {
+interface IJoinToRoomNavigationButtonProps {
     style?:React.CSSProperties
     roomName:string
 };
 
-export const JoinToRoomVavigationButton: FC<IJoinToRoomVavigationButtonProps> = (props) => {
+export const JoinToRoomNavigationButton: FC<IJoinToRoomNavigationButtonProps> = (props) => {
     const navigate=useNavigate();
     return (
         <Button

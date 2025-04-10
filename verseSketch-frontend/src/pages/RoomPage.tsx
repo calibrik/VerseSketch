@@ -4,6 +4,9 @@ import { Color } from "../misc/colors";
 import { Spinner } from "../components/Spinner";
 import { StartGameButton } from "../components/StartGameButton";
 import Title from "antd/es/typography/Title";
+import { useNavigate, useParams } from "react-router";
+import { ConnectionConfig } from "../misc/ConnectionConfig";
+import { useCookies } from "react-cookie";
 
 interface IRoomPageProps {};
 interface IPlayerModel{
@@ -13,17 +16,25 @@ interface IPlayerModel{
 }
 interface IRoomModel{
     title:string;
-    id:string;
-    playerCount:number;
+    playersCount:number;
     maxPlayersCount:number;
     players:IPlayerModel[];
+    timeToDraw:number;
+    isPublic:boolean;
+    isPlayerAdmin:boolean;
+}
+interface ISetParamsModel{
+    maxPlayersCount?:number;
     timeToDraw?:number;
     isPublic?:boolean;
 }
 export const RoomPage: FC<IRoomPageProps> = () => {
     const [model, setModel] = useState<IRoomModel|null>(null);
+    const navigate=useNavigate();
+    const [cookies, setCookie, removeCookie] = useCookies(['player']);
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
+    const {roomTitle} = useParams();
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -33,58 +44,89 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     async function loadData() {
         if (loading) return;
         setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        let newData: IRoomModel = {
-            title: `room name`,
-            id: `1`,
-            playerCount: 6,
-            maxPlayersCount: 10,
-            players:[{nickname:"Admin",id:"1",isAdmin:true}]
-        };
-        for (let i=0;i<newData.playerCount-1;i++) {
-            const newPlayer: IPlayerModel = {
-                nickname: `player ${i}`,
-                id: `${i}`,
-                isAdmin: false
-            };
-            newData.players.push(newPlayer);
-        }   
-        for (let i=0;i<newData.maxPlayersCount-newData.playerCount;i++) {
-            newData.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
+        let response;
+        try{
+            response=await fetch(ConnectionConfig.Api+`/api/rooms&title=${roomTitle}`,{
+                method:"GET",
+                headers:{
+                    "Content-Type":"application/json",
+                    "Authorization":`Bearer ${cookies.player}`
+                },
+            })
+        }
+        catch (error: any) {
+            console.error("There was a problem with the fetch operation:", error);
+        }
+        if (response?.status===404||response?.status===401) {
+            navigate("/");
+            return;
+        }
+        let data:IRoomModel=await response?.json();
+        console.log(data);
+        for (let i=0;i<data.maxPlayersCount-data.playersCount;i++) {
+            data.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
         }   
         setLoading(false);
-        setModel(newData);
-        document.title = newData.title;
+        setModel(data);
+    }
+
+    async function onChangeParams(params:ISetParamsModel) {
+        let response;
+        console.log("onChangeParams",JSON.stringify({...params,roomTitle:roomTitle}));
+        try{
+            response=await fetch(ConnectionConfig.Api+`/api/rooms/setParams`,{
+                method:"PUT",
+                headers:{
+                    "Content-Type":"application/json",
+                    "Authorization":`Bearer ${cookies.player}`
+                },
+                body:JSON.stringify({...params,roomTitle:roomTitle})
+            });
+        }
+        catch (error: any) {
+            console.error("There was a problem with the fetch operation:", error);
+        }
+
+        let data=await response?.json();
+        if (!response?.ok)
+        {
+            console.error("Error:", data);
+            return;
+        }
+        console.log("Success:", data);
     }
     
     function onTimeToDrawChange(value:number) {
         setModel((prevModel) => prevModel?({...prevModel,timeToDraw:value}):null);
+        onChangeParams({timeToDraw:value});
     }
     function onMaxPlayersChange(value:number) {
+        if (model?.playersCount&&model?.playersCount>value)
+        {
+            console.error("Cannot set max players count lower than current players count!"); 
+            return;
+        }
         let players=model?.players;
         if (players) {
             while (players.length < value) {
                 players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
             }
-            let playerCount=model?.playerCount ?? 0;
-            if (players.length > value) {
-                players = players.slice(0, value);
-                playerCount = value;
-            }
-            setModel((prevModel) => prevModel ? ({ ...prevModel,playerCount:playerCount,players: players ?? [], maxPlayersCount: value }) : null);
+            setModel((prevModel) => prevModel ? ({ ...prevModel,players: players ?? [], maxPlayersCount: value }) : null);
+            onChangeParams({maxPlayersCount:value});
         }
     }
     function onSwitchChange(checked:boolean)
     {
         switchLabelRef.current!.innerText=checked?"Public room":"Private room";
         setModel((prevModel) => prevModel ? ({ ...prevModel, isPublic: checked }) : null);
+        onChangeParams({isPublic:checked});
     }
 
     useEffect(() => {
         console.log("rerender",model);
     });
     useEffect(() => {
-        document.title = "Room";
+        document.title = roomTitle ?? "Room";
         loadData();
     }, []);
 
@@ -98,13 +140,13 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                         <div style={{width:"100%",display:"flex"}}>
                             <div style={{ width: "50%" }}>
                                 <span style={{ width: "100%", wordBreak: "break-word", whiteSpace: "normal", fontSize:20 }}>
-                                    Creative Solutions Meeting Space
+                                    {roomTitle}
                                 </span>
                             </div>
 
                             <div style={{width:"50%",display:"flex",justifyContent:"flex-end"}}>
                                 <span className="placeholder-text">
-                                    Players {model?.playerCount ?? 0}/{model?.maxPlayersCount ?? 0}
+                                    Players {model?.playersCount ?? 0}/{model?.maxPlayersCount ?? 0}
                                 </span>
                             </div>
                         </div>
@@ -113,7 +155,6 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     locale={{ emptyText: <span className="placeholder-text">Loading...</span>}}
                     dataSource={model?.players ?? []}
                     renderItem={(player) => {
-                        console.log(player);
                         if (player.id === "")
                             return(
                                 <List.Item>
@@ -153,7 +194,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                     className="input-field"
                                     options={selectionItems}
                                     value={model?.maxPlayersCount ?? 2}
-                                    disabled={loading}
+                                    disabled={loading||!model?.isPlayerAdmin}
                                     onChange={onMaxPlayersChange}/>
                                 </div>
                                 <div style={{display:"flex",flexDirection:"column"}}>
@@ -162,12 +203,12 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                     className="input-field"
                                     options={[{label:"10s",value:10},{label:"15s",value:15},{label:"30s",value:30},{label:"1m",value:60}]}
                                     value={model?.timeToDraw ?? 10}
-                                    disabled={loading}
+                                    disabled={loading||!model?.isPlayerAdmin}
                                     onChange={onTimeToDrawChange}/>
                                 </div>
                                 <div style={{display:"flex",flexDirection:"row",alignItems:"center",alignContent:"center"}}>
                                     <label ref={switchLabelRef} style={{color:Color.Secondary,fontSize:20,marginRight:10}}>Public room</label>
-                                    <Switch disabled={loading} onChange={onSwitchChange} defaultChecked={true} />
+                                    <Switch disabled={loading||!model?.isPlayerAdmin} onChange={onSwitchChange} value={model?.isPublic??true} />
                                 </div>
                             </Flex>
                         </div>

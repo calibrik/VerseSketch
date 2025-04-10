@@ -7,6 +7,7 @@ import { useState } from "react";
 import { RuleObject } from "antd/es/form";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useNavigate } from "react-router";
+import { useCookies } from "react-cookie";
 interface ICreateRoomPageProps {};
 
 interface ICreateRoomModel{
@@ -19,6 +20,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const navigate=useNavigate();
+    const [cookies, setCookie, removeCookie] = useCookies();
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -34,7 +36,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         setLoading(true);
         values.title=values.title.trim();
         console.log("Form values:", JSON.stringify(values));
-        let response=await fetch(ConnectionConfig.Api+"/api/rooms/createRoom",{
+        let response=await fetch(ConnectionConfig.Api+"/api/rooms/create",{
             method:"POST",
             headers:{
                 "Content-Type":"application/json"
@@ -51,7 +53,8 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             return;
         }
         console.log("Success:", data);
-        navigate(`/join-room/${data.roomId}`);
+        setCookie('player',data.accessToken,{path:"/",sameSite:"strict",secure:true,httpOnly:true});
+        navigate(`/join-room/${data.roomTitle}`);
     }
 
     async function validateTitle(rule:RuleObject,value:string) {
@@ -60,13 +63,11 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             return;
         }
         console.log("Validating title:", JSON.stringify({title:value}));
-        let response=await fetch(ConnectionConfig.Api+"/api/rooms/validateRoomTitle",{
-            method:"POST",
+        let response=await fetch(ConnectionConfig.Api+`/api/rooms/validateRoomTitle&title=${value}`,{
+            method:"GET",
             headers:{
                 "Content-Type":"application/json"
-            },
-            body:JSON.stringify({title:value})
-            })
+            }})
             .catch((error)=>{
                 console.error("There was a problem with the fetch operation:", error);
             });

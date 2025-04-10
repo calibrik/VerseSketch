@@ -11,7 +11,7 @@ using VerseSketch.Backend.Models;
 namespace VerseSketch.Backend.Migrations
 {
     [DbContext(typeof(VerseSketchDbContext))]
-    [Migration("20250403033049_Initial")]
+    [Migration("20250410024643_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -30,24 +30,24 @@ namespace VerseSketch.Backend.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Nickname")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
-                    b.Property<string>("RoomId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<string>("RoomTitle")
+                        .HasColumnType("character varying(40)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoomId");
+                    b.HasIndex("RoomTitle");
 
                     b.ToTable("Players");
                 });
 
             modelBuilder.Entity("VerseSketch.Backend.Models.Room", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<string>("Title")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
 
                     b.Property<string>("AdminId")
                         .IsRequired()
@@ -62,14 +62,10 @@ namespace VerseSketch.Backend.Migrations
                     b.Property<int>("TimeToDraw")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("isPublic")
                         .HasColumnType("boolean");
 
-                    b.HasKey("Id");
+                    b.HasKey("Title");
 
                     b.HasIndex("AdminId");
 
@@ -80,9 +76,7 @@ namespace VerseSketch.Backend.Migrations
                 {
                     b.HasOne("VerseSketch.Backend.Models.Room", "Room")
                         .WithMany("Players")
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RoomTitle");
 
                     b.Navigation("Room");
                 });

@@ -1,21 +1,51 @@
 import { FC } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Form, Input } from "antd";
 import { Color } from "../misc/colors";
 import { PageTitle } from "../components/PageTitle";
 import { RuleObject } from "antd/es/form";
 import { JoinRoomButton } from "../components/JoinRoomButton";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
+import { useCookies } from "react-cookie";
 interface ICreatePlayerPageProps {};
 interface ICreatePlayerModel{
     nickname:string,
-    roomName:string,
+    roomTitle:string,
 }
 
 export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
-    const { roomName } = useParams();
+    const { roomTitle } = useParams();
+    const [cookies, setCookie, removeCookie] = useCookies(['player']);
+    const navigate=useNavigate();
     
     async function onSuccessfulSubmit(values:ICreatePlayerModel) {
+        values.nickname=values.nickname.trim();
+        console.log("Form values:", JSON.stringify({
+            nickname:values.nickname,
+            roomTitle:roomTitle}),"Token:",cookies.player);
+
+        let response=await fetch(ConnectionConfig.Api+"/api/rooms/join",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":`Bearer ${cookies.player}`
+            },
+            body:JSON.stringify({
+                nickname:values.nickname,
+                roomTitle:roomTitle})
+            })
+            .catch((error)=>{
+                console.error("There was a problem with the fetch operation:", error);
+            });
+
+        let data=await response?.json();
+        if (!response?.ok) {
+            console.error("Error:", data);
+            return;
+        }
+        console.log("Success:", data);
+        setCookie('player',data.accessToken,{path:"/",sameSite:"strict",secure:true,httpOnly:true});
+        navigate("/room/"+roomTitle);
     }
 
     async function validateNickname(rule:RuleObject, value:string) {
@@ -28,17 +58,13 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         }
         console.log("Validating nickname:", JSON.stringify({
             nickname:value,
-            roomName:roomName,
+            roomTitle:roomTitle,
         }));
-        let response=await fetch(ConnectionConfig.Api+"/api/rooms/validatePlayerNickname",{
-            method:"POST",
+        let response=await fetch(ConnectionConfig.Api+`/api/rooms/validatePlayerNickname&nickname=${value}&roomTitle=${roomTitle}`,{
+            method:"GET",
             headers:{
                 "Content-Type":"application/json"
             },
-            body:JSON.stringify({
-                nickname:value,
-                roomName:roomName,
-            })
         })
         .catch((error)=>{
             console.error("There was a problem with the fetch operation:", error);
@@ -48,6 +74,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             console.error("Error:", data);
             return Promise.resolve();
         }
+        console.log("Validation response:",data);
         if (data.isExist){
             return Promise.reject("Nickname already exists in the room!");
         }

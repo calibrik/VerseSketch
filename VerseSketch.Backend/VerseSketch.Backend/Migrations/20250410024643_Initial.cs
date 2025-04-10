@@ -15,8 +15,8 @@ namespace VerseSketch.Backend.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
-                    Nickname = table.Column<string>(type: "text", nullable: false),
-                    RoomId = table.Column<string>(type: "text", nullable: false)
+                    Nickname = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    RoomTitle = table.Column<string>(type: "character varying(40)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -27,17 +27,16 @@ namespace VerseSketch.Backend.Migrations
                 name: "Rooms",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    Title = table.Column<string>(type: "text", nullable: false),
+                    Title = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     PlayersCount = table.Column<int>(type: "integer", nullable: false),
-                    MaxPlayerCount = table.Column<int>(type: "integer", nullable: false),
+                    MaxPlayersCount = table.Column<int>(type: "integer", nullable: false),
                     TimeToDraw = table.Column<int>(type: "integer", nullable: false),
                     isPublic = table.Column<bool>(type: "boolean", nullable: false),
                     AdminId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Rooms", x => x.Id);
+                    table.PrimaryKey("PK_Rooms", x => x.Title);
                     table.ForeignKey(
                         name: "FK_Rooms_Players_AdminId",
                         column: x => x.AdminId,
@@ -47,9 +46,9 @@ namespace VerseSketch.Backend.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Players_RoomId",
+                name: "IX_Players_RoomTitle",
                 table: "Players",
-                column: "RoomName");
+                column: "RoomTitle");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rooms_AdminId",
@@ -57,19 +56,18 @@ namespace VerseSketch.Backend.Migrations
                 column: "AdminId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Players_Rooms_RoomId",
+                name: "FK_Players_Rooms_RoomTitle",
                 table: "Players",
-                column: "RoomName",
+                column: "RoomTitle",
                 principalTable: "Rooms",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                principalColumn: "Title");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_Players_Rooms_RoomId",
+                name: "FK_Players_Rooms_RoomTitle",
                 table: "Players");
 
             migrationBuilder.DropTable(
