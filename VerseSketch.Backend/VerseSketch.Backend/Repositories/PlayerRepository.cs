@@ -18,7 +18,7 @@ public class PlayerRepository
 
     public async Task<Player?> GetPlayerByNicknameInRoomAsyncRO(string nickname,string roomTitle)
     {
-        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle).FirstOrDefaultAsync(p => p.Nickname == nickname);
+        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle&p.Nickname == nickname).FirstOrDefaultAsync();
     }
 
     public async Task<Player?> GetPlayerAsyncRO(string? playerId)
@@ -32,6 +32,10 @@ public class PlayerRepository
         if (playerId == null)
             return null;
         return await _dbContext.Players.FirstOrDefaultAsync(p => p.Id == playerId);
+    }
+    public async Task<bool> IsPlayerInRoomAsyncRO(string playerId, string roomTitle)
+    {
+        return await _dbContext.Players.AsNoTracking().Where(p => p.RoomTitle == roomTitle&p.Id==playerId).FirstOrDefaultAsync() != null;
     }
     
     public async Task<bool> SaveChangesAsync()

@@ -18,6 +18,6 @@ public class VerseSketchDbContext:DbContext
         modelBuilder.Entity<Room>().HasKey(r => r.Title);
         modelBuilder.Entity<Room>().Property(r => r.Title).HasMaxLength(40);
         modelBuilder.Entity<Player>().Property(p => p.Nickname).HasMaxLength(30);
-        modelBuilder.Entity<Player>().HasIndex(p => p.Nickname);
+        modelBuilder.Entity<Player>().HasIndex(p => new {p.Nickname,p.RoomTitle});
     }
 }

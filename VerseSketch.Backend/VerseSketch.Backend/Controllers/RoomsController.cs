@@ -36,8 +36,8 @@ public class RoomsController:ControllerBase
         return Ok(player);
     }
 
-    [HttpGet("/api/rooms&title={title}")]
-    public async Task<IActionResult> Get(string title)
+    [HttpGet("/api/rooms&roomTitle={roomTitle}")]
+    public async Task<IActionResult> Get(string roomTitle)
     {
         if (!User.Identity.IsAuthenticated)
             return Unauthorized(new {message = "You are not authenticated"});
@@ -45,17 +45,17 @@ public class RoomsController:ControllerBase
         Player? currPlayer = await _playerRepository.GetPlayerAsyncRO(playerId);
         if (currPlayer == null)
             return StatusCode(500,new {message = $"Player {playerId} not found"});
-        if (currPlayer.RoomTitle!=title)
-            return BadRequest(new {message = $"You should be in room {title} to get it"});
-        Room? room = await _roomsRepository.GetRoomAsyncRO(title);
+        if (currPlayer.RoomTitle!=roomTitle)
+            return Unauthorized(new {message = $"You should be in room {roomTitle} to get it"});
+        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle);
         if (room == null)
-            return NotFound(new {message = $"Room called {title} is not found"});
+            return NotFound(new {message = $"Room called {roomTitle} is not found"});
         RoomViewModel model = new RoomViewModel()
         {
             Title = room.Title,
             isPublic = room.isPublic,
             MaxPlayersCount = room.MaxPlayersCount,
-            PlayersCount = room.Players.Count,
+            PlayersCount = room.PlayersCount,
             TimeToDraw = room.TimeToDraw,
             isPlayerAdmin = playerId==room.AdminId
         };
@@ -104,7 +104,6 @@ public class RoomsController:ControllerBase
             return StatusCode(500, new {message = "Something went wrong, please try again later."});
         return Ok(new {roomTitle=room.Title,accessToken=JWTHandler.CreateToken(admin.Id,_configuration)});
     }
-    
     [HttpGet("/api/rooms/validatePlayerNickname&nickname={nickname}&roomTitle={roomTitle}")]
     public async Task<IActionResult> ValidatePlayerNickname(string nickname, string roomTitle)
     {
@@ -119,7 +118,7 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message="Room you trying to join doesn't exist"});
         if (User.Identity.IsAuthenticated)
         {
-            string playerId=User.FindFirst("PlayerId")?.Value;
+            string playerId=User.FindFirst("PlayerId").Value;
             player = await _playerRepository.GetPlayerAsync(playerId);
             if (player == null)
                 return BadRequest(new {message=$"Player instance {playerId} is not found"});

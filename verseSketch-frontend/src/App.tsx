@@ -47,3 +47,5 @@ function App() {
 
 export default App;
 
+//TODO: dynamic feedback on errors
+//TODO: joining room page functionality

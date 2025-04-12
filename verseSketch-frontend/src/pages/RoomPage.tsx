@@ -7,6 +7,7 @@ import Title from "antd/es/typography/Title";
 import { useNavigate, useParams } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useCookies } from "react-cookie";
+import * as signalR from "@microsoft/signalr";
 
 interface IRoomPageProps {};
 interface IPlayerModel{
@@ -35,39 +36,39 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
+    const connection = useRef<signalR.HubConnection | null>(null);
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
         selectionItems.push({label:`${i} Players`,value:i});
     }
 
-    async function loadData() {
-        if (loading) return;
+    async function onRoomReceive(data:IRoomModel) {
+        console.log(data);
+        for (let i=0;i<data.maxPlayersCount-data.playersCount;i++) {
+            data.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
+        }
+        setModel(data);
+    }
+
+    async function initLoad()
+    {
         setLoading(true);
-        let response;
-        try{
-            response=await fetch(ConnectionConfig.Api+`/api/rooms&title=${roomTitle}`,{
-                method:"GET",
-                headers:{
-                    "Content-Type":"application/json",
-                    "Authorization":`Bearer ${cookies.player}`
-                },
-            })
-        }
-        catch (error: any) {
-            console.error("There was a problem with the fetch operation:", error);
-        }
-        if (response?.status===404||response?.status===401) {
+        let response=await fetch(`${ConnectionConfig.Api}/api/rooms&roomTitle=${roomTitle}`,{
+            method:"GET",
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":`Bearer ${cookies.player}`
+            }
+        });
+        if (response.status===401||response.status===404) {
+            console.error("Error:", response);
             navigate("/");
             return;
         }
         let data:IRoomModel=await response?.json();
-        console.log(data);
-        for (let i=0;i<data.maxPlayersCount-data.playersCount;i++) {
-            data.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
-        }   
+        await onRoomReceive(data);
         setLoading(false);
-        setModel(data);
     }
 
     async function onChangeParams(params:ISetParamsModel) {
@@ -100,6 +101,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         setModel((prevModel) => prevModel?({...prevModel,timeToDraw:value}):null);
         onChangeParams({timeToDraw:value});
     }
+
     function onMaxPlayersChange(value:number) {
         if (model?.playersCount&&model?.playersCount>value)
         {
@@ -110,6 +112,9 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         if (players) {
             while (players.length < value) {
                 players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
+            }
+            if (players.length > value) {
+                players.splice(value, players.length - value);
             }
             setModel((prevModel) => prevModel ? ({ ...prevModel,players: players ?? [], maxPlayersCount: value }) : null);
             onChangeParams({maxPlayersCount:value});
@@ -125,9 +130,26 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     useEffect(() => {
         console.log("rerender",model);
     });
+
     useEffect(() => {
         document.title = roomTitle ?? "Room";
-        loadData();
+
+        initLoad();
+
+        connection.current = new signalR.HubConnectionBuilder()
+            .withUrl(`${ConnectionConfig.Api}/api/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
+            .build();
+        
+        connection.current.on("ReceiveRoom", onRoomReceive);
+
+        connection.current.start()
+            .then(() => {
+                console.log("Connected to SignalR hub");
+            })
+            .catch((error) => {
+                console.error("Error connecting to SignalR hub:", error);
+            });
+        return () => {connection.current?.state!="Connected"?null:connection.current?.stop();}
     }, []);
 
     return (
@@ -137,9 +159,9 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 <List
                     className="player-list"
                     header={
-                        <div style={{width:"100%",display:"flex"}}>
+                        <div style={{width:"100%",display:"flex",marginBottom:10}}>
                             <div style={{ width: "50%" }}>
-                                <span style={{ width: "100%", wordBreak: "break-word", whiteSpace: "normal", fontSize:20 }}>
+                                <span style={{ width: "100%", wordBreak: "break-word", whiteSpace: "normal", fontSize:25 }}>
                                     {roomTitle}
                                 </span>
                             </div>

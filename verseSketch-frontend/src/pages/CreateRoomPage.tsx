@@ -46,7 +46,6 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             .catch((error)=>{
                 console.error("There was a problem with the fetch operation:", error);
             });
-        setLoading(false);
         let data=await response?.json();
         if (!response?.ok) {
             console.error("Error:", data);
@@ -54,10 +53,12 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         }
         console.log("Success:", data);
         setCookie('player',data.accessToken,{path:"/",sameSite:"strict",secure:true,httpOnly:true});
+        setLoading(false);
         navigate(`/join-room/${data.roomTitle}`);
     }
 
     async function validateTitle(rule:RuleObject,value:string) {
+        setLoading(true);
         value=value.trim();
         if (value.length===0) {
             return;
@@ -76,6 +77,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         }
         let data=await response.json();
         console.log("Validation response:",data);
+        setLoading(false);
         if (data.isExist) {
             return Promise.reject();
         }

@@ -24,6 +24,14 @@ public class RoomsRepository
     {
         return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players).FirstOrDefaultAsync(r=>r.Title==roomTitle);
     }
+
+    public async Task<Room?> GetPlayersRoomAsyncRO(string playerId)
+    {
+        Player? player=await _dbContext.Players.AsNoTracking().FirstOrDefaultAsync(p=>p.Id==playerId);
+        if (player == null)
+            return null;
+        return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players).FirstOrDefaultAsync(r=>r.Title==player.RoomTitle);
+    }
     
     public async Task<bool> SaveChangesAsync()
     {
