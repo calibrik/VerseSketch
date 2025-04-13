@@ -20,9 +20,11 @@ public class RoomsRepository
     {
         return await _dbContext.Rooms.FindAsync(roomTitle);
     }
-    public async Task<Room?> GetRoomAsyncRO(string roomTitle)
+    public async Task<Room?> GetRoomAsyncRO(string roomTitle,bool withPlayers)
     {
-        return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players).FirstOrDefaultAsync(r=>r.Title==roomTitle);
+        if (withPlayers)
+            return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players).FirstOrDefaultAsync(r=>r.Title==roomTitle);
+        return await _dbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(r=>r.Title==roomTitle);
     }
 
     public async Task<Room?> GetPlayersRoomAsyncRO(string playerId)
@@ -31,6 +33,11 @@ public class RoomsRepository
         if (player == null)
             return null;
         return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players).FirstOrDefaultAsync(r=>r.Title==player.RoomTitle);
+    }
+
+    public async Task<List<Player>> GetPlayersInRoomAsyncRO(string roomTitle)
+    {
+        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle).ToListAsync();
     }
     
     public async Task<bool> SaveChangesAsync()

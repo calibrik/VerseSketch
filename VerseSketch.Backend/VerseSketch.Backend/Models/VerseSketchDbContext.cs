@@ -13,8 +13,8 @@ public class VerseSketchDbContext:DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Room>().HasMany(r => r.Players).WithOne(p => p.Room).HasForeignKey(p => p.RoomTitle);
-        modelBuilder.Entity<Room>().HasOne(p => p.Admin).WithMany().HasForeignKey(r => r.AdminId);
+        modelBuilder.Entity<Room>().HasMany(r => r.Players).WithOne(p => p.Room).HasForeignKey(p => p.RoomTitle).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Room>().HasOne(p => p.Admin).WithMany().HasForeignKey(r => r.AdminId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<Room>().HasKey(r => r.Title);
         modelBuilder.Entity<Room>().Property(r => r.Title).HasMaxLength(40);
         modelBuilder.Entity<Player>().Property(p => p.Nickname).HasMaxLength(30);

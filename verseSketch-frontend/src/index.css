@@ -117,7 +117,7 @@
   color: #7C009B;
   border-radius: 6px;
   width: 100%;
-  height: auto;
+  height: 100%;
 }
 .player-list .ant-list-item{
   height: 70px;

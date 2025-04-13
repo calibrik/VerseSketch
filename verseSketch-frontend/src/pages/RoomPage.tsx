@@ -1,4 +1,4 @@
-import { Card, Col, Divider, Flex, List, Row, Select, Switch } from "antd";
+import { App, Card, Col, Divider, Flex, List, Row, Select, Switch } from "antd";
 import { FC, useEffect, useRef, useState } from "react";
 import { Color } from "../misc/colors";
 import { Spinner } from "../components/Spinner";
@@ -28,9 +28,11 @@ interface ISetParamsModel{
     maxPlayersCount?:number;
     timeToDraw?:number;
     isPublic?:boolean;
+    roomTitle?:string;
 }
 export const RoomPage: FC<IRoomPageProps> = () => {
     const [model, setModel] = useState<IRoomModel|null>(null);
+    const modelRef=useRef<IRoomModel|null>(null);
     const navigate=useNavigate();
     const [cookies, setCookie, removeCookie] = useCookies(['player']);
     const [loading, setLoading] = useState<boolean>(false);
@@ -43,12 +45,15 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         selectionItems.push({label:`${i} Players`,value:i});
     }
 
-    async function onRoomReceive(data:IRoomModel) {
-        console.log(data);
+    function onRoomReceive(data:IRoomModel) {
         for (let i=0;i<data.maxPlayersCount-data.playersCount;i++) {
             data.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
         }
         setModel(data);
+    }
+    function onReceivePlayerList(data:IPlayerModel[]) {
+        if (!modelRef.current) return;
+        onRoomReceive({...modelRef.current, players:data,playersCount:data.length});
     }
 
     async function initLoad()
@@ -62,68 +67,73 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             }
         });
         if (response.status===401||response.status===404) {
-            console.error("Error:", response);
-            navigate("/");
-            return;
+            throw (response);
         }
         let data:IRoomModel=await response?.json();
-        await onRoomReceive(data);
+        onRoomReceive(data);
         setLoading(false);
     }
 
-    async function onChangeParams(params:ISetParamsModel) {
-        let response;
-        console.log("onChangeParams",JSON.stringify({...params,roomTitle:roomTitle}));
-        try{
-            response=await fetch(ConnectionConfig.Api+`/api/rooms/setParams`,{
-                method:"PUT",
-                headers:{
-                    "Content-Type":"application/json",
-                    "Authorization":`Bearer ${cookies.player}`
-                },
-                body:JSON.stringify({...params,roomTitle:roomTitle})
-            });
-        }
-        catch (error: any) {
-            console.error("There was a problem with the fetch operation:", error);
+    function applyParams(data:ISetParamsModel) {
+        if (!modelRef.current) return;
+
+        if (data.maxPlayersCount && data.maxPlayersCount!=modelRef.current.maxPlayersCount) {
+            if (modelRef.current.playersCount>data.maxPlayersCount) {
+                throw ("Cannot set max players count lower than current players count!"); 
+            }
+            let players=modelRef.current.players;
+            while (players.length < data.maxPlayersCount) {
+                players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
+            }
+            if (players.length > data.maxPlayersCount) {
+                players.splice(data.maxPlayersCount, players.length - data.maxPlayersCount);
+            }
         }
 
-        let data=await response?.json();
-        if (!response?.ok)
-        {
-            console.error("Error:", data);
+        let newModel:IRoomModel={...modelRef.current};
+        newModel.maxPlayersCount=data.maxPlayersCount??modelRef.current.maxPlayersCount;
+        newModel.isPublic=data.isPublic??modelRef.current.isPublic;
+        newModel.timeToDraw=data.timeToDraw??modelRef.current.timeToDraw;
+        setModel(newModel);
+    }
+
+    function onReceiveParams(data:ISetParamsModel) {
+        try{
+            applyParams(data);
+        }
+        catch (e) {
+            console.error(e);
             return;
         }
-        console.log("Success:", data);
+    }
+
+    function onChangeParams(params:ISetParamsModel) {
+        if (!model) return;
+
+        params.roomTitle=roomTitle;
+        let oldModel:IRoomModel=model;
+        try{
+            applyParams(params);
+        }
+        catch (e) {
+            console.error(e);
+            return;
+        }
+        if (connection.current?.state!="Connected") return;
+        connection.current?.invoke("SendParams", params)
+            .catch((error) => {
+                console.error("Error sending params:", error);
+                setModel(oldModel);
+            });
     }
     
     function onTimeToDrawChange(value:number) {
-        setModel((prevModel) => prevModel?({...prevModel,timeToDraw:value}):null);
         onChangeParams({timeToDraw:value});
     }
-
     function onMaxPlayersChange(value:number) {
-        if (model?.playersCount&&model?.playersCount>value)
-        {
-            console.error("Cannot set max players count lower than current players count!"); 
-            return;
-        }
-        let players=model?.players;
-        if (players) {
-            while (players.length < value) {
-                players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
-            }
-            if (players.length > value) {
-                players.splice(value, players.length - value);
-            }
-            setModel((prevModel) => prevModel ? ({ ...prevModel,players: players ?? [], maxPlayersCount: value }) : null);
-            onChangeParams({maxPlayersCount:value});
-        }
+        onChangeParams({maxPlayersCount:value});
     }
-    function onSwitchChange(checked:boolean)
-    {
-        switchLabelRef.current!.innerText=checked?"Public room":"Private room";
-        setModel((prevModel) => prevModel ? ({ ...prevModel, isPublic: checked }) : null);
+    function onSwitchChange(checked:boolean) {
         onChangeParams({isPublic:checked});
     }
 
@@ -132,22 +142,34 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     });
 
     useEffect(() => {
+        modelRef.current=model;
+    }, [model]);
+
+
+    useEffect(() => {
         document.title = roomTitle ?? "Room";
 
-        initLoad();
-
-        connection.current = new signalR.HubConnectionBuilder()
-            .withUrl(`${ConnectionConfig.Api}/api/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
-            .build();
-        
-        connection.current.on("ReceiveRoom", onRoomReceive);
-
-        connection.current.start()
+        initLoad()
             .then(() => {
-                console.log("Connected to SignalR hub");
+                connection.current = new signalR.HubConnectionBuilder()
+                    .withUrl(`${ConnectionConfig.Api}/api/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
+                    .build();
+                
+                connection.current.on("ReceiveRoom", onRoomReceive);
+                connection.current.on("ReceiveParams", onReceiveParams);
+                connection.current.on("ReceivePlayerList", onReceivePlayerList);
+
+                connection.current.start()
+                    .then(() => {
+                        console.log("Connected to SignalR hub");
+                    })
+                    .catch((error) => {
+                        console.error("Error connecting to SignalR hub:", error);
+                    });
             })
             .catch((error) => {
-                console.error("Error connecting to SignalR hub:", error);
+                console.error("Error loading room:", error);
+                navigate("/");
             });
         return () => {connection.current?.state!="Connected"?null:connection.current?.stop();}
     }, []);

@@ -47,7 +47,7 @@ public class RoomsController:ControllerBase
             return StatusCode(500,new {message = $"Player {playerId} not found"});
         if (currPlayer.RoomTitle!=roomTitle)
             return Unauthorized(new {message = $"You should be in room {roomTitle} to get it"});
-        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle);
+        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,true);
         if (room == null)
             return NotFound(new {message = $"Room called {roomTitle} is not found"});
         RoomViewModel model = new RoomViewModel()
@@ -74,13 +74,13 @@ public class RoomsController:ControllerBase
     [HttpGet("/api/rooms/validateRoomTitle&title={title}")]
     public async Task<IActionResult> ValidateRoomTitle(string title)
     {
-        return Ok( new {isExist = await _roomsRepository.GetRoomAsyncRO(title) != null});
+        return Ok( new {isExist = await _roomsRepository.GetRoomAsyncRO(title,false) != null});
     }
     
     [HttpPost("/api/rooms/create")]
     public async Task<IActionResult> Create([FromBody] CreateRoomViewModel model)
     {
-        if (await _roomsRepository.GetRoomAsyncRO(model.Title) != null)
+        if (await _roomsRepository.GetRoomAsyncRO(model.Title,false) != null)
             ModelState.AddModelError("Title", "Title already exists");
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -182,3 +182,4 @@ public class RoomsController:ControllerBase
 //TODO join link
 //TODO SignalR for nickname and title validation?
 //TODO SiganlR for room page
+//TODO Leave room
