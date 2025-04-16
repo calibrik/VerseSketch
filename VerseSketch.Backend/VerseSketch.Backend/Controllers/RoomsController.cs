@@ -36,7 +36,7 @@ public class RoomsController:ControllerBase
         return Ok(player);
     }
 
-    [HttpGet("/api/rooms&roomTitle={roomTitle}")]
+    [HttpGet("/api/rooms/{roomTitle}")]
     public async Task<IActionResult> Get(string roomTitle)
     {
         if (!User.Identity.IsAuthenticated)
@@ -71,8 +71,8 @@ public class RoomsController:ControllerBase
         return Ok(model);
     }
 
-    [HttpGet("/api/rooms/validateRoomTitle&title={title}")]
-    public async Task<IActionResult> ValidateRoomTitle(string title)
+    [HttpGet("/api/rooms/validateRoomTitle")]
+    public async Task<IActionResult> ValidateRoomTitle([FromQuery] string title)
     {
         return Ok( new {isExist = await _roomsRepository.GetRoomAsyncRO(title,false) != null});
     }
@@ -104,8 +104,8 @@ public class RoomsController:ControllerBase
             return StatusCode(500, new {message = "Something went wrong, please try again later."});
         return Ok(new {roomTitle=room.Title,accessToken=JWTHandler.CreateToken(admin.Id,_configuration)});
     }
-    [HttpGet("/api/rooms/validatePlayerNickname&nickname={nickname}&roomTitle={roomTitle}")]
-    public async Task<IActionResult> ValidatePlayerNickname(string nickname, string roomTitle)
+    [HttpGet("/api/rooms/validatePlayerNickname")]
+    public async Task<IActionResult> ValidatePlayerNickname([FromQuery] string nickname,[FromQuery] string roomTitle)
     {
         return Ok( new {isExist = await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(nickname,roomTitle) != null});
     }
@@ -173,13 +173,28 @@ public class RoomsController:ControllerBase
             return StatusCode(500,new {message="Something went wrong, please try again later."});
         return Ok(new {message=$"Successfully changed parameters of the room {model.RoomTitle}."});
     }
-}
-//TODO SignalR for live updating the room page (new player joined/left, change of parameters) 
-//TODO search functionality with cancellation tokens, so we can eliminate redundant requests to db
-//TODO partial return for search (return 8 entries, then 8 more on scroll for default and search)
-//TODO SignalR for search for fast data exchange
-//TODO player nickname validation
+
+    [HttpGet("/api/rooms/search")]
+    public async Task<IActionResult> Search([FromQuery] int page,[FromQuery] int pageSize,[FromQuery] string? roomTitle,CancellationToken ct)
+    {
+        List<Room> rooms=await _roomsRepository.SearchRoomsAsync(page, pageSize, roomTitle??"",ct);
+        List<RoomViewModel> roomsVM = new List<RoomViewModel>();
+        foreach (Room room in rooms)
+        {
+            RoomViewModel roomVM = new RoomViewModel
+            {
+                Title = room.Title,
+                MaxPlayersCount = room.MaxPlayersCount,
+                PlayersCount = room.PlayersCount,
+            };
+            roomsVM.Add(roomVM);
+        }
+        return Ok(roomsVM);
+    }
+} 
+//TODO player nickname validation (cancellation token)
 //TODO join link
-//TODO SignalR for nickname and title validation?
-//TODO SiganlR for room page
-//TODO Leave room
+//TODO Leave and destroy player functionality
+//TODO Somehow destroy empty rooms (either bg service or destroy on admin leave?)
+//TODO kick player
+//TODO player order in list

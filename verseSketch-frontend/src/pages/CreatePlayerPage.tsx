@@ -15,16 +15,13 @@ interface ICreatePlayerModel{
 
 export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     const { roomTitle } = useParams();
-    const [cookies, setCookie, removeCookie] = useCookies(['player']);
+    const [cookies, setCookie] = useCookies(['player']);
     const navigate=useNavigate();
     
     async function onSuccessfulSubmit(values:ICreatePlayerModel) {
         values.nickname=values.nickname.trim();
-        console.log("Form values:", JSON.stringify({
-            nickname:values.nickname,
-            roomTitle:roomTitle}),"Token:",cookies.player);
 
-        let response=await fetch(ConnectionConfig.Api+"/api/rooms/join",{
+        let response=await fetch(`${ConnectionConfig.Api}/rooms/join`,{
             method:"POST",
             headers:{
                 "Content-Type":"application/json",
@@ -48,7 +45,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         navigate("/room/"+roomTitle);
     }
 
-    async function validateNickname(rule:RuleObject, value:string) {
+    async function validateNickname(_:RuleObject, value:string) {
         value=value.trim();
         if (value.length===0) {
             return Promise.reject("Nickname is required");
@@ -60,7 +57,10 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             nickname:value,
             roomTitle:roomTitle,
         }));
-        let response=await fetch(ConnectionConfig.Api+`/api/rooms/validatePlayerNickname&nickname=${value}&roomTitle=${roomTitle}`,{
+        let response=await fetch(`${ConnectionConfig.Api}/rooms/validatePlayerNickname?${new URLSearchParams({
+            nickname: value,
+            roomTitle: roomTitle??"",
+        })}`,{
             method:"GET",
             headers:{
                 "Content-Type":"application/json"

@@ -1,7 +1,7 @@
 import { FC } from "react";
 import Icon from '@ant-design/icons';
 import { CustomIconComponentProps } from "@ant-design/icons/lib/components/Icon";
-interface IPlayFillIconProps {};
+
 
 const PlayFillSvg=()=>(
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-play-fill" viewBox="0 0 16 16">

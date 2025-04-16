@@ -49,3 +49,5 @@ export default App;
 
 //TODO: dynamic feedback on errors
 //TODO: joining room page functionality
+//TODO: leave and back buttons
+//TODO: refresh button in search page

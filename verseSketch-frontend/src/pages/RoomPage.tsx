@@ -1,4 +1,4 @@
-import { App, Card, Col, Divider, Flex, List, Row, Select, Switch } from "antd";
+import { Card, Col, Divider, Flex, List, Row, Select, Switch } from "antd";
 import { FC, useEffect, useRef, useState } from "react";
 import { Color } from "../misc/colors";
 import { Spinner } from "../components/Spinner";
@@ -34,7 +34,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     const [model, setModel] = useState<IRoomModel|null>(null);
     const modelRef=useRef<IRoomModel|null>(null);
     const navigate=useNavigate();
-    const [cookies, setCookie, removeCookie] = useCookies(['player']);
+    const [cookies] = useCookies(['player']);
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
@@ -59,7 +59,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     async function initLoad()
     {
         setLoading(true);
-        let response=await fetch(`${ConnectionConfig.Api}/api/rooms&roomTitle=${roomTitle}`,{
+        let response=await fetch(`${ConnectionConfig.Api}/rooms/${roomTitle}`,{
             method:"GET",
             headers:{
                 "Content-Type":"application/json",
@@ -152,7 +152,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         initLoad()
             .then(() => {
                 connection.current = new signalR.HubConnectionBuilder()
-                    .withUrl(`${ConnectionConfig.Api}/api/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
+                    .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
                     .build();
                 
                 connection.current.on("ReceiveRoom", onRoomReceive);

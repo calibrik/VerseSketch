@@ -20,7 +20,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const navigate=useNavigate();
-    const [cookies, setCookie, removeCookie] = useCookies();
+    const [, setCookie, ] = useCookies();
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -36,7 +36,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         setLoading(true);
         values.title=values.title.trim();
         console.log("Form values:", JSON.stringify(values));
-        let response=await fetch(ConnectionConfig.Api+"/api/rooms/create",{
+        let response=await fetch(`${ConnectionConfig.Api}/rooms/create`,{
             method:"POST",
             headers:{
                 "Content-Type":"application/json"
@@ -57,14 +57,16 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         navigate(`/join-room/${data.roomTitle}`);
     }
 
-    async function validateTitle(rule:RuleObject,value:string) {
+    async function validateTitle(_:RuleObject,value:string) {
         setLoading(true);
         value=value.trim();
         if (value.length===0) {
             return;
         }
         console.log("Validating title:", JSON.stringify({title:value}));
-        let response=await fetch(ConnectionConfig.Api+`/api/rooms/validateRoomTitle&title=${value}`,{
+        let response=await fetch(`${ConnectionConfig.Api}/rooms/validateRoomTitle?${new URLSearchParams({
+            roomTitle:value,
+            })}`,{
             method:"GET",
             headers:{
                 "Content-Type":"application/json"

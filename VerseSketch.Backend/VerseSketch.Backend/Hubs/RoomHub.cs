@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.SignalR;
 using VerseSketch.Backend.Models;
+using VerseSketch.Backend.Repositories;
 using VerseSketch.Backend.ViewModels;
 
-namespace VerseSketch.Backend.Repositories;
+namespace VerseSketch.Backend.Hubs;
 
 public interface IRoomHub
 {

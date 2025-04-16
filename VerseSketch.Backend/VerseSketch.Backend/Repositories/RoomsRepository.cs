@@ -39,6 +39,12 @@ public class RoomsRepository
     {
         return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle).ToListAsync();
     }
+
+    public async Task<List<Room>> SearchRoomsAsync(int page, int pageSize,string roomTitle="",CancellationToken cancelToken=default)
+    {
+        // await Task.Delay(5000,cancelToken);
+        return await _dbContext.Rooms.AsNoTracking().Where(r => r.isPublic && r.Title.Contains(roomTitle)).Skip(page * pageSize).Take(pageSize).ToListAsync(cancelToken);
+    }
     
     public async Task<bool> SaveChangesAsync()
     {

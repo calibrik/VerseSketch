@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using VerseSketch.Backend.Hubs;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 
@@ -117,5 +118,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<RoomHub>("/api/rooms/roomHub");
+// app.MapHub<SearchHub>("/api/rooms/searchHub");
 app.MapControllers();
 app.Run();
