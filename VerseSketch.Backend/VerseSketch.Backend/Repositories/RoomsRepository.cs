@@ -20,11 +20,16 @@ public class RoomsRepository
     {
         return await _dbContext.Rooms.FindAsync(roomTitle);
     }
-    public async Task<Room?> GetRoomAsyncRO(string roomTitle,bool withPlayers)
+
+    public async Task<bool> IsTokenValid(string token, string title)
+    {
+        return await _dbContext.Rooms.AsNoTracking().Where(room => room.Title == title&&room.CurrentJoinToken==token).FirstOrDefaultAsync() != null;
+    }
+    public async Task<Room?> GetRoomAsyncRO(string roomTitle,bool withPlayers,CancellationToken ct=default)
     {
         if (withPlayers)
-            return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players).FirstOrDefaultAsync(r=>r.Title==roomTitle);
-        return await _dbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(r=>r.Title==roomTitle);
+            return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players.OrderBy(p=>p.CreatedTime)).FirstOrDefaultAsync(r=>r.Title==roomTitle,ct);
+        return await _dbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(r=>r.Title==roomTitle,ct);
     }
 
     public async Task<Room?> GetPlayersRoomAsyncRO(string playerId)
@@ -37,7 +42,7 @@ public class RoomsRepository
 
     public async Task<List<Player>> GetPlayersInRoomAsyncRO(string roomTitle)
     {
-        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle).ToListAsync();
+        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle).OrderBy(p=>p.CreatedTime).ToListAsync();
     }
 
     public async Task<List<Room>> SearchRoomsAsync(int page, int pageSize,string roomTitle="",CancellationToken cancelToken=default)

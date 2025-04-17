@@ -1,2 +1,2 @@
-delete from public."Rooms";
-select * from public."Players";
+delete from public."Players";
+select * from public."Rooms";

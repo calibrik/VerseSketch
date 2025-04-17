@@ -21,6 +21,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const navigate=useNavigate();
     const [, setCookie, ] = useCookies();
+    const validateAbort=useRef<AbortController|null>(null);
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -58,39 +59,47 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     }
 
     async function validateTitle(_:RuleObject,value:string) {
-        setLoading(true);
+        validateAbort.current?.abort();
+        validateAbort.current=new AbortController();
         value=value.trim();
         if (value.length===0) {
-            return;
+            return Promise.reject("Room name is required!");
         }
-        console.log("Validating title:", JSON.stringify({title:value}));
-        let response=await fetch(`${ConnectionConfig.Api}/rooms/validateRoomTitle?${new URLSearchParams({
-            roomTitle:value,
-            })}`,{
-            method:"GET",
-            headers:{
-                "Content-Type":"application/json"
-            }})
-            .catch((error)=>{
+        setLoading(true);
+        let response:Response|null=null;
+        try{
+            response=await fetch(`${ConnectionConfig.Api}/rooms/validateRoomTitle?${new URLSearchParams({
+                roomTitle:value,
+                })}`,{
+                method:"GET",
+                signal:validateAbort.current.signal,
+                headers:{
+                    "Content-Type":"application/json"
+                }});
+        }
+        catch(error:any) {
+            if (error.name!=="AbortError"){
                 console.error("There was a problem with the fetch operation:", error);
-            });
+                setLoading(false);
+            }
+            return Promise.resolve();
+        }
+        let data=await response?.json();
+        setLoading(false);
         if (!response) {
             return Promise.resolve();
         }
-        let data=await response.json();
-        console.log("Validation response:",data);
-        setLoading(false);
         if (data.isExist) {
-            return Promise.reject();
+            return Promise.reject("This room name is already taken!");
         }
         return Promise.resolve();
     }
     
     return (
         <div className="container-small">
-            <PageTitle style={{marginTop:90}}>Create your room!</PageTitle>
+            <PageTitle style={{marginTop:'20%'}}>Create your room!</PageTitle>
             <Form 
-                style={{marginTop:118,width:'100%',display:"flex", flexDirection: "column", alignItems: "center"}}
+                style={{marginTop:'30%',width:'100%',display:"flex", flexDirection: "column", alignItems: "center"}}
                 name="create-room"
                 layout="vertical"
                 onFinish={onSuccessfulSubmit}
@@ -102,9 +111,9 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
                     <Col md={16}>
                     <Form.Item
                         name="title"
-                        validateDebounce={500}
+                        validateDebounce={300}
                         label={<label style={{color:Color.Secondary}}>Room Name</label>}
-                        rules={[{required:true,message:"Please enter room name"},{validator:validateTitle,message:"This room name is already taken"}]}>
+                        rules={[{validator:validateTitle}]}>
                         <Input className="input-field" placeholder="Enter room name"/>
                     </Form.Item>
                     </Col>

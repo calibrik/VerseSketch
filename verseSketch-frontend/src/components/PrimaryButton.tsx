@@ -8,12 +8,19 @@ interface IPrimaryButtonProps {
     icon?:ReactNode
     onClick?: ()=>void
     htmlType?:"button" | "submit" | "reset" | undefined,
+    disabled?:boolean,
 };
 
 export const PrimaryButton: FC<IPrimaryButtonProps> = (props) => {
     return (
-        <div className="primary-button">
-            <BaseButton htmlType={props.htmlType} style={props.style} onClick={props.onClick} icon={props.icon}>{props.children}</BaseButton>
-        </div>
+        <BaseButton
+            className="primary-button" 
+            htmlType={props.htmlType} 
+            style={props.style} 
+            onClick={props.onClick} 
+            icon={props.icon}
+            disabled={props.disabled}>
+            {props.children}
+        </BaseButton>
     );
 }

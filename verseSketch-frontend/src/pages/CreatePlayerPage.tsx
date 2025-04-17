@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Form, Input } from "antd";
 import { Color } from "../misc/colors";
@@ -17,9 +17,12 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     const { roomTitle } = useParams();
     const [cookies, setCookie] = useCookies(['player']);
     const navigate=useNavigate();
+    const validateAbort=useRef<AbortController|null>(null);
+    const [loading,setLoading]=useState<boolean>(false);
     
     async function onSuccessfulSubmit(values:ICreatePlayerModel) {
         values.nickname=values.nickname.trim();
+        setLoading(true);
 
         let response=await fetch(`${ConnectionConfig.Api}/rooms/join`,{
             method:"POST",
@@ -33,9 +36,11 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             })
             .catch((error)=>{
                 console.error("There was a problem with the fetch operation:", error);
+                setLoading(false);
             });
 
         let data=await response?.json();
+        setLoading(false);
         if (!response?.ok) {
             console.error("Error:", data);
             return;
@@ -46,6 +51,8 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     }
 
     async function validateNickname(_:RuleObject, value:string) {
+        validateAbort.current?.abort();
+        validateAbort.current=new AbortController();
         value=value.trim();
         if (value.length===0) {
             return Promise.reject("Nickname is required");
@@ -53,28 +60,34 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         if (value.length>30) {
             return Promise.reject("Nickname cannot be longer than 30 characters!");
         }
-        console.log("Validating nickname:", JSON.stringify({
-            nickname:value,
-            roomTitle:roomTitle,
-        }));
-        let response=await fetch(`${ConnectionConfig.Api}/rooms/validatePlayerNickname?${new URLSearchParams({
-            nickname: value,
-            roomTitle: roomTitle??"",
-        })}`,{
-            method:"GET",
-            headers:{
-                "Content-Type":"application/json"
-            },
-        })
-        .catch((error)=>{
-            console.error("There was a problem with the fetch operation:", error);
-        });
+        setLoading(true);
+
+        let response:Response|null=null;
+        try{
+            response=await fetch(`${ConnectionConfig.Api}/rooms/validatePlayerNickname?${new URLSearchParams({
+                nickname: value,
+                roomTitle: roomTitle??"",
+            })}`,{
+                method:"GET",
+                signal:validateAbort.current.signal,
+                headers:{
+                    "Content-Type":"application/json"
+                },
+            });
+        }
+        catch(error:any) {
+            if (error.name!=="AbortError"){
+                console.error("There was a problem with the fetch operation:", error);
+                setLoading(false);
+            }
+            return Promise.resolve();
+        }
         let data=await response?.json();
+        setLoading(false);
         if (!response?.ok) {
             console.error("Error:", data);
             return Promise.resolve();
         }
-        console.log("Validation response:",data);
         if (data.isExist){
             return Promise.reject("Nickname already exists in the room!");
         }
@@ -100,7 +113,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
                         <Input style={{width:"100%"}} className="input-field" placeholder="Enter your nickname"/>
                     </Form.Item>
                     <Form.Item style={{display:"flex",justifyContent:"center",marginTop:80}}>
-                        <JoinRoomButton/>
+                        <JoinRoomButton loading={loading}/>
                     </Form.Item>
             </Form>
         </div>

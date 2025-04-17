@@ -45,7 +45,7 @@
   opacity: 0.5;
 }
 .container-mid{
-  /* justifyContent:"center", */
+  /* justify-content:"center"; */
   align-items:center;
   display:flex;
   padding:0 32px;
@@ -188,4 +188,28 @@
   flex-direction:row;
   align-items:center;
   width:100%
+}
+
+.refresh-button{
+  background-color: #9000FF !important;
+  color: white !important;
+  width: 60px !important;
+  height:60px !important;
+}
+
+.refresh-button:hover{
+  background-color: #ac40ff !important;
+}
+
+.refresh-button:disabled{
+  background-color: #F8DCFF !important;
+  cursor: not-allowed;
+  border: 2px solid #7C009B !important;
+  color: #7C009B !important;
+}
+
+.refresh-button:active{
+  background-color: #F8DCFF !important;
+  border: 2px solid #7C009B !important;
+  color: #7C009B !important;
 }

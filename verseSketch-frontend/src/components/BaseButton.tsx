@@ -7,6 +7,7 @@ interface IBaseButtonProps {
     style?:React.CSSProperties,
     htmlType?:"button" | "submit" | "reset" | undefined,
     disabled?:boolean,
+    className?:string,
 };
 
 export const BaseButton: FC<IBaseButtonProps> = (props) => {
@@ -18,8 +19,9 @@ export const BaseButton: FC<IBaseButtonProps> = (props) => {
             style={props.style}
             icon={props.icon}
             onClick={props.onClick}
+            className={props.className}
             iconPosition="end">
             <span className="button-text">{props.children}</span>   
-            </Button>
+        </Button>
     );
 }

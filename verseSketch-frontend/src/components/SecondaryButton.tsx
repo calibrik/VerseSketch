@@ -12,8 +12,14 @@ interface ISecondaryButtonProps {
 
 export const SecondaryButton: FC<ISecondaryButtonProps> = (props) => {
     return (
-        <div className="secondary-button">
-            <BaseButton disabled={props.disabled} htmlType={props.htmlType} style={props.style} onClick={props.onClick} icon={props.icon}>{props.children}</BaseButton>
-        </div>
+        <BaseButton 
+            className="secondary-button" 
+            disabled={props.disabled} 
+            htmlType={props.htmlType} 
+            style={props.style} 
+            onClick={props.onClick} 
+            icon={props.icon}>
+            {props.children}
+        </BaseButton>
     );
 }

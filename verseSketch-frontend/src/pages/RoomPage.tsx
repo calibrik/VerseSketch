@@ -235,20 +235,20 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                 <div style={{display:"flex",flexDirection:"column"}}>
                                     <label style={{color:Color.Secondary}}>Max. Players</label>
                                     <Select
-                                    className="input-field"
-                                    options={selectionItems}
-                                    value={model?.maxPlayersCount ?? 2}
-                                    disabled={loading||!model?.isPlayerAdmin}
-                                    onChange={onMaxPlayersChange}/>
+                                        className="input-field"
+                                        options={selectionItems}
+                                        value={model?.maxPlayersCount ?? 2}
+                                        disabled={loading||!model?.isPlayerAdmin}
+                                        onChange={onMaxPlayersChange}/>
                                 </div>
                                 <div style={{display:"flex",flexDirection:"column"}}>
                                     <label style={{color:Color.Secondary}}>Time to draw</label>
                                     <Select
-                                    className="input-field"
-                                    options={[{label:"10s",value:10},{label:"15s",value:15},{label:"30s",value:30},{label:"1m",value:60}]}
-                                    value={model?.timeToDraw ?? 10}
-                                    disabled={loading||!model?.isPlayerAdmin}
-                                    onChange={onTimeToDrawChange}/>
+                                        className="input-field"
+                                        options={[{label:"10s",value:10},{label:"15s",value:15},{label:"30s",value:30},{label:"1m",value:60}]}
+                                        value={model?.timeToDraw ?? 10}
+                                        disabled={loading||!model?.isPlayerAdmin}
+                                        onChange={onTimeToDrawChange}/>
                                 </div>
                                 <div style={{display:"flex",flexDirection:"row",alignItems:"center",alignContent:"center"}}>
                                     <label ref={switchLabelRef} style={{color:Color.Secondary,fontSize:20,marginRight:10}}>Public room</label>
@@ -259,7 +259,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     </Card>
                 </Col>
             </Row>
-            <StartGameButton style={{marginTop:"100%"}}/>
+            <StartGameButton style={{marginTop:50}}/>
         </div>
     );
 }

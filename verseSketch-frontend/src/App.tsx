@@ -48,6 +48,6 @@ function App() {
 export default App;
 
 //TODO: dynamic feedback on errors
-//TODO: joining room page functionality
 //TODO: leave and back buttons
-//TODO: refresh button in search page
+//TODO: move from hardcoding margins and inline css
+//TODO: is admin indicator in room page

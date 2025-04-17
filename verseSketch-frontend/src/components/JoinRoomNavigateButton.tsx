@@ -9,6 +9,10 @@ export const JoinRoomNavigateButton: FC<IJoinRoomNavigateButtonProps> = () => {
     let navigate=useNavigate()
 
     return (
-        <PrimaryButton onClick={()=>navigate('/join-room')} icon={<PlaySquareFilled style={{ fontSize: 33 }} />}>JOIN ROOM</PrimaryButton>
+        <PrimaryButton 
+            onClick={()=>navigate('/join-room')} 
+            icon={<PlaySquareFilled style={{ fontSize: 33 }} />}>
+            JOIN ROOM
+        </PrimaryButton>
     );
 }

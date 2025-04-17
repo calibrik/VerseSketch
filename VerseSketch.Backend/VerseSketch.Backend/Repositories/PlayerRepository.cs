@@ -16,9 +16,9 @@ public class PlayerRepository
         await _dbContext.Players.AddAsync(player);
     }
 
-    public async Task<Player?> GetPlayerByNicknameInRoomAsyncRO(string nickname,string roomTitle)
+    public async Task<Player?> GetPlayerByNicknameInRoomAsyncRO(string nickname,string roomTitle,CancellationToken ct=default)
     {
-        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle&p.Nickname == nickname).FirstOrDefaultAsync();
+        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle&p.Nickname == nickname).FirstOrDefaultAsync(ct);
     }
 
     public async Task<Player?> GetPlayerAsyncRO(string? playerId)

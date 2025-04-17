@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VerseSketch.Backend.Models;
@@ -11,9 +12,11 @@ using VerseSketch.Backend.Models;
 namespace VerseSketch.Backend.Migrations
 {
     [DbContext(typeof(VerseSketchDbContext))]
-    partial class VerseSketchDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250417053509_createdTime on player")]
+    partial class createdTimeonplayer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

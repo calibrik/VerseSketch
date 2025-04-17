@@ -1,18 +1,49 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using VerseSketch.Backend.Misc;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 using VerseSketch.Backend.ViewModels;
 
+
 namespace VerseSketch.Backend.Controllers;
 [ApiController]
-// [Route("/api")]
 public class RoomsController:ControllerBase
 {
     private readonly RoomsRepository _roomsRepository;
     private readonly PlayerRepository _playerRepository;
     private readonly IConfiguration _configuration;
+
+    record JoinTokenData
+    {
+        public string CurrentJoinToken { get; set; }
+        public string RoomTitle { get; set; }
+    }
+    string CreateJoinLinkToken(Room room)
+    {
+        room.CurrentJoinToken = Guid.NewGuid().ToString();
+        JoinTokenData data = new JoinTokenData{ CurrentJoinToken = room.CurrentJoinToken, RoomTitle = room.Title };
+        string json = JsonSerializer.Serialize(data);
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+    }
+
+    async Task<string?> ValidateJoinToken(string token)
+    {
+        try
+        {
+            byte[] bytes = Convert.FromBase64String(token);
+            JoinTokenData? data = JsonSerializer.Deserialize<JoinTokenData>(Encoding.UTF8.GetString(bytes));
+            if (data==null)
+                return null;
+            return await _roomsRepository.IsTokenValid(data.CurrentJoinToken,data.RoomTitle)?data.RoomTitle:null;
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+    
     public RoomsController(RoomsRepository roomsRepository, PlayerRepository playerRepository, IConfiguration configuration)
     {
         _roomsRepository = roomsRepository;
@@ -72,9 +103,9 @@ public class RoomsController:ControllerBase
     }
 
     [HttpGet("/api/rooms/validateRoomTitle")]
-    public async Task<IActionResult> ValidateRoomTitle([FromQuery] string title)
+    public async Task<IActionResult> ValidateRoomTitle([FromQuery] string roomTitle,CancellationToken ct)
     {
-        return Ok( new {isExist = await _roomsRepository.GetRoomAsyncRO(title,false) != null});
+        return Ok( new {isExist = await _roomsRepository.GetRoomAsyncRO(roomTitle,false,ct) != null});
     }
     
     [HttpPost("/api/rooms/create")]
@@ -87,6 +118,7 @@ public class RoomsController:ControllerBase
         Player admin = new Player()
         {
             Id = Guid.NewGuid().ToString(),
+            CreatedTime = DateTime.UtcNow,
         };
         Room room = new Room()
         {
@@ -95,7 +127,8 @@ public class RoomsController:ControllerBase
             MaxPlayersCount = model.MaxPlayersCount,
             AdminId = admin.Id,
             isPublic = model.IsPublic,
-            TimeToDraw = 10
+            TimeToDraw = 10,
+            CurrentJoinToken = "",
         };
         await _playerRepository.CreatePlayer(admin);
         await _roomsRepository.CreateRoomAsync(room);
@@ -105,17 +138,29 @@ public class RoomsController:ControllerBase
         return Ok(new {roomTitle=room.Title,accessToken=JWTHandler.CreateToken(admin.Id,_configuration)});
     }
     [HttpGet("/api/rooms/validatePlayerNickname")]
-    public async Task<IActionResult> ValidatePlayerNickname([FromQuery] string nickname,[FromQuery] string roomTitle)
+    public async Task<IActionResult> ValidatePlayerNickname([FromQuery] string nickname,[FromQuery] string roomTitle,CancellationToken ct)
     {
-        return Ok( new {isExist = await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(nickname,roomTitle) != null});
+        return Ok( new {isExist = await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(nickname,roomTitle,ct) != null});
     }
     [HttpPost("/api/rooms/join")]
     public async Task<IActionResult> Join([FromBody] CreatePlayerViewModel model)
     {
         Player? player=null;
-        Room? room = await _roomsRepository.GetRoomAsync(model.RoomTitle);
+        string? roomTitle=null;
+        if (model.RoomTitle != null)
+            roomTitle=model.RoomTitle;
+        else if (model.JoinToken != null)
+            roomTitle=await ValidateJoinToken(model.JoinToken);
+        
+        if (model.RoomTitle == null&&model.JoinToken==null)
+            return BadRequest(new {message="Room Title is required"});//check if user passed at least smth
+        if (roomTitle==null)
+            return BadRequest(new {message="Join link is not valid"});//check if join link is valid if present
+        Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
-            return BadRequest(new {message="Room you trying to join doesn't exist"});
+            return BadRequest(new {message="Room you trying to join doesn't exist"});//check if room exists
+        if ((room.PlayersCount==0||!room.isPublic)&&model.JoinToken==null)
+            return BadRequest(new {message="You can't join private room"});//check user provides join token for rooms with 0 players or private
         if (User.Identity.IsAuthenticated)
         {
             string playerId=User.FindFirst("PlayerId").Value;
@@ -123,14 +168,14 @@ public class RoomsController:ControllerBase
             if (player == null)
                 return BadRequest(new {message=$"Player instance {playerId} is not found"});
         }
-        if (await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname, model.RoomTitle) != null)
-            return BadRequest(new {message="Nickname already exists in this room."});
-        if (player!=null&&room.AdminId!=player.Id)
-            return BadRequest(new {message="Only creator of the room is allowed to join."});
+        if (await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname, roomTitle) != null)
+            return BadRequest(new {message="Nickname already exists in this room."});//check if username exists
+        if (room.PlayersCount==0&&(player==null||player.Id!=room.AdminId))
+            return BadRequest(new {message="Only creator of the room is allowed to join."});//check if only admin can join room with 0 players
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+            return BadRequest(ModelState);//any invalidations on model
         if (room.PlayersCount>=room.MaxPlayersCount)
-            return BadRequest(new {message="Room is full."});
+            return BadRequest(new {message="Room is full."});//check if room is full
         
         
         if (player == null) 
@@ -138,6 +183,7 @@ public class RoomsController:ControllerBase
             player = new Player()
             {
                 Id = Guid.NewGuid().ToString(),
+                CreatedTime = DateTime.UtcNow,
             };
             await _playerRepository.CreatePlayer(player);
         }
@@ -192,9 +238,9 @@ public class RoomsController:ControllerBase
         return Ok(roomsVM);
     }
 } 
-//TODO player nickname validation (cancellation token)
-//TODO join link
+//TODO join link with some join code?
 //TODO Leave and destroy player functionality
-//TODO Somehow destroy empty rooms (either bg service or destroy on admin leave?)
+//TODO Somehow destroy empty rooms (either bg service or destroy on admin leave (db trigger?)?)
 //TODO kick player
 //TODO player order in list
+//TODO Caching where appropriate
