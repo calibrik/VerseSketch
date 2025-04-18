@@ -21,9 +21,9 @@ public class RoomsRepository
         return await _dbContext.Rooms.FindAsync(roomTitle);
     }
 
-    public async Task<bool> IsTokenValid(string token, string title)
+    public async Task<bool> IsTokenValid(string token, string title, CancellationToken ct)
     {
-        return await _dbContext.Rooms.AsNoTracking().Where(room => room.Title == title&&room.CurrentJoinToken==token).FirstOrDefaultAsync() != null;
+        return await _dbContext.Rooms.AsNoTracking().Where(room => room.Title == title&&room.CurrentJoinToken==token).FirstOrDefaultAsync(ct) != null;
     }
     public async Task<Room?> GetRoomAsyncRO(string roomTitle,bool withPlayers,CancellationToken ct=default)
     {
@@ -48,7 +48,7 @@ public class RoomsRepository
     public async Task<List<Room>> SearchRoomsAsync(int page, int pageSize,string roomTitle="",CancellationToken cancelToken=default)
     {
         // await Task.Delay(5000,cancelToken);
-        return await _dbContext.Rooms.AsNoTracking().Where(r => r.isPublic && r.Title.Contains(roomTitle)).Skip(page * pageSize).Take(pageSize).ToListAsync(cancelToken);
+        return await _dbContext.Rooms.AsNoTracking().Where(r => r.isPublic && r.Title.Contains(roomTitle) && r.PlayersCount>0).Skip(page * pageSize).Take(pageSize).ToListAsync(cancelToken);
     }
     
     public async Task<bool> SaveChangesAsync()

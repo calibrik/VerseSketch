@@ -213,3 +213,9 @@
   border: 2px solid #7C009B !important;
   color: #7C009B !important;
 }
+
+.error-placeholder-text{
+  color: #B70058;
+  /* opacity: 0.5; */
+  font-size: 30px;
+}

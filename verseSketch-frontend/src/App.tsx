@@ -32,6 +32,10 @@ const router=createBrowserRouter([
         path: '/join-room/:roomTitle',
         Component: CreatePlayerPage
       },
+      {
+        path: '/join-room/by-link/:joinToken',
+        Component: CreatePlayerPage
+      },
     ]
   }
 ]);

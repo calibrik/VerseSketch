@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useCookies } from "react-cookie";
 import * as signalR from "@microsoft/signalr";
+import { InviteButton } from "../components/InviteButton";
 
 interface IRoomPageProps {};
 interface IPlayerModel{
@@ -125,6 +126,28 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 console.error("Error sending params:", error);
                 setModel(oldModel);
             });
+    }
+    async function onInvite()
+    {
+        let response: Response | null;
+        try{
+            response=await fetch(`${ConnectionConfig.Api}/rooms/generateJoinToken?${new URLSearchParams({
+                roomTitle: roomTitle??"",
+            })}`,{
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization":`Bearer ${cookies.player}`
+                },
+            });
+        }
+        catch (error:any)
+        {
+            console.error("Error",error);
+            return;
+        }
+        let data=await response?.json();
+        navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data.joinToken}`)
     }
     
     function onTimeToDrawChange(value:number) {
@@ -254,6 +277,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                     <label ref={switchLabelRef} style={{color:Color.Secondary,fontSize:20,marginRight:10}}>Public room</label>
                                     <Switch disabled={loading||!model?.isPlayerAdmin} onChange={onSwitchChange} value={model?.isPublic??true} />
                                 </div>
+                                <InviteButton onClick={onInvite} disabled={loading||!model?.isPlayerAdmin}/>
                             </Flex>
                         </div>
                     </Card>

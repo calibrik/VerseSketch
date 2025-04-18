@@ -11,7 +11,7 @@ public class Room
     public required bool isPublic { get; set; }
     public required string AdminId { get; set; }
     
-    public required string CurrentJoinToken { get; set; }
+    public string? CurrentJoinToken { get; set; }
 
     public Player? Admin { get; set; }
     public List<Player> Players { get; set; } = new();

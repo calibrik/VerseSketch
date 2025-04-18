@@ -55,7 +55,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         console.log("Success:", data);
         setCookie('player',data.accessToken,{path:"/",sameSite:"strict",secure:true,httpOnly:true});
         setLoading(false);
-        navigate(`/join-room/${data.roomTitle}`);
+        navigate(`/join-room/by-link/${data.joinToken}`);
     }
 
     async function validateTitle(_:RuleObject,value:string) {
