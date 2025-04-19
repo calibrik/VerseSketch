@@ -270,7 +270,7 @@ public class RoomsController:ControllerBase
             return StatusCode(500,new {message="Something went wrong, please try again later."});
         return Ok(new {message=$"Successfully changed parameters of the room {model.RoomTitle}."});
     }
-
+    
     [HttpGet("/api/rooms/search")]
     public async Task<IActionResult> Search([FromQuery] int page,[FromQuery] int pageSize,[FromQuery] string? roomTitle,CancellationToken ct)
     {
@@ -287,6 +287,19 @@ public class RoomsController:ControllerBase
             roomsVM.Add(roomVM);
         }
         return Ok(roomsVM);
+    }
+
+    [HttpDelete("/api/rooms/leave")]
+    public async Task<IActionResult> Leave()
+    {
+        if (!User.Identity.IsAuthenticated)
+            return Ok();
+        Player? player = await _playerRepository.GetPlayerAsync(User.FindFirst("PlayerId").Value);
+        if (player == null)
+            return Ok();
+        _playerRepository.DeletePlayer(player);
+        await _playerRepository.SaveChangesAsync();
+        return Ok();
     }
 } 
 //TODO Leave and destroy player functionality

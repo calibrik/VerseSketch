@@ -35,7 +35,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     const [model, setModel] = useState<IRoomModel|null>(null);
     const modelRef=useRef<IRoomModel|null>(null);
     const navigate=useNavigate();
-    const [cookies] = useCookies(['player']);
+    const [cookies,,removeCookie] = useCookies(['player']);
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
@@ -159,6 +159,17 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     function onSwitchChange(checked:boolean) {
         onChangeParams({isPublic:checked});
     }
+    function onRoomDeleted()
+    {
+        connection.current?.state!="Connected"?null:connection.current?.stop();
+        removeCookie('player',{path:"/non-existent-cookie-path"});
+        navigate("/");
+    }
+
+    function onGoBack()
+    {
+        connection.current?.state!="Connected"?null:connection.current?.stop();
+    }
 
     useEffect(() => {
         console.log("rerender",model);
@@ -168,19 +179,18 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         modelRef.current=model;
     }, [model]);
 
-
     useEffect(() => {
         document.title = roomTitle ?? "Room";
-
         initLoad()
             .then(() => {
                 connection.current = new signalR.HubConnectionBuilder()
                     .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
                     .build();
                 
-                connection.current.on("ReceiveRoom", onRoomReceive);
+                // connection.current.on("ReceiveRoom", onRoomReceive);
                 connection.current.on("ReceiveParams", onReceiveParams);
                 connection.current.on("ReceivePlayerList", onReceivePlayerList);
+                connection.current.on("RoomDeleted",onRoomDeleted);
 
                 connection.current.start()
                     .then(() => {
@@ -194,7 +204,9 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 console.error("Error loading room:", error);
                 navigate("/");
             });
-        return () => {connection.current?.state!="Connected"?null:connection.current?.stop();}
+        return () => {
+            // connection.current?.state!="Connected"?null:connection.current?.stop();//this is gonna be removed
+        }
     }, []);
 
     return (

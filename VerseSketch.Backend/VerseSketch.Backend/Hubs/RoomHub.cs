@@ -8,10 +8,10 @@ namespace VerseSketch.Backend.Hubs;
 
 public interface IRoomHub
 {
-    Task ReceiveRoom(RoomViewModel model);
+    // Task ReceiveRoom(RoomViewModel model);
     Task ReceiveParams(SetParamsViewModel model);
     Task ReceivePlayerList(List<PlayerViewModel> players);
-    Task ReceiveError(int code, string message);
+    Task RoomDeleted();
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -93,5 +93,30 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("Something went wrong, please try again later.");
         }
         await Clients.Groups(model.RoomTitle).ReceiveParams(model);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        Player? player = await _playerRepository.GetPlayerAsync(Context.User.FindFirst("PlayerId").Value);
+        if (player == null)
+            return;
+        Room? room = await _roomsRepository.GetRoomAsyncRO(player.RoomTitle,true);
+        if (room == null)
+        {
+            await Clients.Groups(player.RoomTitle).RoomDeleted();
+            return;
+        }
+        List<PlayerViewModel> model = new List<PlayerViewModel>();
+        foreach (Player p in room.Players)
+        {
+            if (p.Id == player.Id)
+                continue;
+            model.Add(new PlayerViewModel()
+            {
+                isAdmin = room.AdminId == player.Id,
+                Nickname = p.Nickname??""
+            });
+        }
+        await Clients.Groups(player.RoomTitle).ReceivePlayerList(model);
     }
 }

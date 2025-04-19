@@ -45,7 +45,7 @@ namespace VerseSketch.Backend.Migrations
 
                     b.HasIndex("Nickname", "RoomTitle");
 
-                    b.ToTable("Players");
+                    b.ToTable("Players", (string)null);
                 });
 
             modelBuilder.Entity("VerseSketch.Backend.Models.Room", b =>
@@ -77,7 +77,7 @@ namespace VerseSketch.Backend.Migrations
 
                     b.HasIndex("AdminId");
 
-                    b.ToTable("Rooms");
+                    b.ToTable("Rooms", (string)null);
                 });
 
             modelBuilder.Entity("VerseSketch.Backend.Models.Player", b =>

@@ -53,7 +53,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             return;
         }
         console.log("Success:", data);
-        setCookie('player',data.accessToken,{path:"/",sameSite:"strict",secure:true,httpOnly:true});
+        setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
         setLoading(false);
         navigate(`/join-room/by-link/${data.joinToken}`);
     }

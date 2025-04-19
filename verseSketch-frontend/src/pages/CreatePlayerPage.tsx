@@ -87,7 +87,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         }
         console.log("Success:", data);
         console.log(`/room/${data.roomTitle}`);
-        setCookie('player',data.accessToken,{path:"/",sameSite:"strict",secure:true,httpOnly:true});
+        setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
         navigate(`/room/${data.roomTitle}`);
     }
 

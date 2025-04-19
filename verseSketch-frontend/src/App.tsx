@@ -1,11 +1,13 @@
-import { createBrowserRouter, RouterProvider } from 'react-router';
-import { CookiesProvider } from 'react-cookie'; // Adjust the import path if necessary
+import { createBrowserRouter, RouterProvider, useNavigationType } from 'react-router';
+import { useCookies } from 'react-cookie';
 import { WelcomePage } from './pages/WelcomePage';
 import { MainLayout } from './components/MainLayout';
 import { JoinRoomPage } from './pages/JoinRoomPage';
 import { CreateRoomPage } from './pages/CreateRoomPage';
 import { RoomPage } from './pages/RoomPage';
 import { CreatePlayerPage } from './pages/CreatePlayerPage';
+import { useEffect } from 'react';
+import { leave } from './misc/MiscFunctions';
 
 const router=createBrowserRouter([
   {
@@ -41,11 +43,32 @@ const router=createBrowserRouter([
 ]);
 
 
+
 function App() {
+
+  const [cookie,,removeCookie]=useCookies(['player']);
+  const navigationType = useNavigationType();
+
+  async function onUnload()
+  {
+    await leave(cookie,removeCookie);
+  }
+
+  useEffect(() => {
+    if (navigationType === "POP") {
+      onUnload();
+    }
+  }, [navigationType]);
+
+  useEffect(()=>{
+    window.addEventListener("beforeunload",onUnload)
+    return ()=> {
+      window.removeEventListener("beforeunload",onUnload);
+    }
+  },[])
+
   return (
-    <CookiesProvider>
       <RouterProvider router={router}/>
-    </CookiesProvider>
   )
 }
 
@@ -55,3 +78,6 @@ export default App;
 //TODO: leave and back buttons
 //TODO: move from hardcoding margins and inline css
 //TODO: is admin indicator in room page
+//TODO: mark player's nickname
+//TODO: do not keep history of navigation (back button will move to whatever was before openning the app)
+//TODO: context for keeping track of ws connections

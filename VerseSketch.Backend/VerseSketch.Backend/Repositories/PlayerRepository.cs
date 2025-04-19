@@ -37,7 +37,11 @@ public class PlayerRepository
     {
         return await _dbContext.Players.AsNoTracking().Where(p => p.RoomTitle == roomTitle&p.Id==playerId).FirstOrDefaultAsync() != null;
     }
-    
+
+    public void DeletePlayer(Player player)
+    {
+        _dbContext.Players.Remove(player);
+    }
     public async Task<bool> SaveChangesAsync()
     {
         try
