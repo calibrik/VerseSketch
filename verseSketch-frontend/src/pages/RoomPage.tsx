@@ -9,6 +9,7 @@ import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useCookies } from "react-cookie";
 import * as signalR from "@microsoft/signalr";
 import { InviteButton } from "../components/InviteButton";
+import { useSignalRConnection } from "../components/SignalRProvider";
 
 interface IRoomPageProps {};
 interface IPlayerModel{
@@ -39,7 +40,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
-    const connection = useRef<signalR.HubConnection | null>(null);
+    const connection=useSignalRConnection();
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -59,8 +60,9 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     async function initLoad()
     {
-        setLoading(true);
-        let response=await fetch(`${ConnectionConfig.Api}/rooms/${roomTitle}`,{
+        let response=await fetch(`${ConnectionConfig.Api}/rooms/isRoomAccessible?${new URLSearchParams({
+                roomTitle: roomTitle??"",
+            })}`,{
             method:"GET",
             headers:{
                 "Content-Type":"application/json",
@@ -70,9 +72,8 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         if (response.status===401||response.status===404) {
             throw (response);
         }
-        let data:IRoomModel=await response?.json();
-        onRoomReceive(data);
-        setLoading(false);
+        // let data:IRoomModel=await response?.json();
+        // onRoomReceive(data);
     }
 
     function applyParams(data:ISetParamsModel) {
@@ -163,12 +164,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     {
         connection.current?.state!="Connected"?null:connection.current?.stop();
         removeCookie('player',{path:"/non-existent-cookie-path"});
-        navigate("/");
-    }
-
-    function onGoBack()
-    {
-        connection.current?.state!="Connected"?null:connection.current?.stop();
+        navigate("/",{replace:true});
     }
 
     useEffect(() => {
@@ -181,28 +177,32 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     useEffect(() => {
         document.title = roomTitle ?? "Room";
+        console.log("remount");
+        setLoading(true);
         initLoad()
-            .then(() => {
+            .then(async () => {
                 connection.current = new signalR.HubConnectionBuilder()
                     .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
                     .build();
                 
-                // connection.current.on("ReceiveRoom", onRoomReceive);
+                connection.current.on("ReceiveRoom", onRoomReceive);
                 connection.current.on("ReceiveParams", onReceiveParams);
                 connection.current.on("ReceivePlayerList", onReceivePlayerList);
                 connection.current.on("RoomDeleted",onRoomDeleted);
 
-                connection.current.start()
+                await connection.current.start()
                     .then(() => {
                         console.log("Connected to SignalR hub");
                     })
                     .catch((error) => {
                         console.error("Error connecting to SignalR hub:", error);
                     });
+                setLoading(false);
             })
             .catch((error) => {
+                setLoading(false);
                 console.error("Error loading room:", error);
-                navigate("/");
+                onRoomDeleted();
             });
         return () => {
             // connection.current?.state!="Connected"?null:connection.current?.stop();//this is gonna be removed

@@ -118,6 +118,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<RoomHub>("/api/rooms/roomHub");
-// app.MapHub<SearchHub>("/api/rooms/searchHub");
 app.MapControllers();
+app.MapFallbackToFile("index.html");
 app.Run();

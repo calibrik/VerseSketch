@@ -88,7 +88,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         console.log("Success:", data);
         console.log(`/room/${data.roomTitle}`);
         setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
-        navigate(`/room/${data.roomTitle}`);
+        navigate(`/room/${data.roomTitle}`,{replace:true});
     }
 
     async function validateNickname(_:RuleObject, value:string) {

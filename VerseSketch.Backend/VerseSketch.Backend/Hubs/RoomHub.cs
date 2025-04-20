@@ -8,7 +8,7 @@ namespace VerseSketch.Backend.Hubs;
 
 public interface IRoomHub
 {
-    // Task ReceiveRoom(RoomViewModel model);
+    Task ReceiveRoom(RoomViewModel model);
     Task ReceiveParams(SetParamsViewModel model);
     Task ReceivePlayerList(List<PlayerViewModel> players);
     Task RoomDeleted();
@@ -39,17 +39,26 @@ public class RoomHub:Hub<IRoomHub>
             Context.Abort();
             return;
         }
-        List<PlayerViewModel> model = new List<PlayerViewModel>();
+        RoomViewModel model = new RoomViewModel()
+        {
+            Title = room.Title,
+            isPublic = room.isPublic,
+            MaxPlayersCount = room.MaxPlayersCount,
+            PlayersCount = room.PlayersCount,
+            TimeToDraw = room.TimeToDraw,
+            isPlayerAdmin = playerId==room.AdminId
+        };
         foreach (Player player in room.Players)
         {
-            model.Add(new PlayerViewModel()
+            model.Players.Add(new PlayerViewModel()
             {
                 isAdmin = room.AdminId == player.Id,
                 Nickname = player.Nickname??""
             });
         }
+        await Clients.Groups(roomTitle).ReceivePlayerList(model.Players);
         await Groups.AddToGroupAsync(Context.ConnectionId,room.Title);
-        await Clients.Groups(roomTitle).ReceivePlayerList(model);
+        await Clients.Clients(Context.ConnectionId).ReceiveRoom(model);
     }
 
     public async Task SendParams(SetParamsViewModel model)
@@ -101,7 +110,9 @@ public class RoomHub:Hub<IRoomHub>
         if (player == null)
             return;
         Room? room = await _roomsRepository.GetRoomAsyncRO(player.RoomTitle,true);
-        if (room == null)
+        _playerRepository.DeletePlayer(player);
+        await _playerRepository.SaveChangesAsync();
+        if (room.AdminId == player.Id)
         {
             await Clients.Groups(player.RoomTitle).RoomDeleted();
             return;

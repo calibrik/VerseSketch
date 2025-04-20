@@ -102,7 +102,26 @@ public class RoomsController:ControllerBase
         return Ok(model);
     }
 
+    [HttpGet("/api/rooms/isRoomAccessible")]
+    [ResponseCache(NoStore = true)]
+    public async Task<IActionResult> IsRoomAccessible([FromQuery] string roomTitle)
+    {
+        if (!User.Identity.IsAuthenticated)
+            return Unauthorized(new {message = "You are not authenticated"});
+        string? playerId = User.FindFirst("PlayerId")?.Value;
+        Player? currPlayer = await _playerRepository.GetPlayerAsyncRO(playerId);
+        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,true);
+        if (room == null)
+            return NotFound(new {message = $"Room called {roomTitle} is not found"});
+        if (currPlayer == null)
+            return StatusCode(500,new {message = $"Player {playerId} not found"});
+        if (currPlayer.RoomTitle!=room.Title)
+            return Unauthorized(new {message = $"You should be in room {roomTitle} to get it"});
+        return Ok();
+    }
+
     [HttpGet("/api/rooms/validateJoinLink")]
+    [ResponseCache(NoStore = true)]
     public async Task<IActionResult> ValidateJoinLink([FromQuery] string? roomTitle, [FromQuery] string? joinToken)
     {
         if (roomTitle == null && joinToken == null)
@@ -127,6 +146,7 @@ public class RoomsController:ControllerBase
     
     
     [HttpGet("/api/rooms/validateRoomTitle")]
+    [ResponseCache(NoStore = true)]
     public async Task<IActionResult> ValidateRoomTitle([FromQuery] string roomTitle,CancellationToken ct)
     {
         return Ok( new {isExist = await _roomsRepository.GetRoomAsyncRO(roomTitle,false,ct) != null});
@@ -164,6 +184,7 @@ public class RoomsController:ControllerBase
     }
 
     [HttpGet("/api/rooms/validatePlayerNickname")]
+    [ResponseCache(NoStore = true)]
     public async Task<IActionResult> ValidatePlayerNickname([FromQuery] string nickname,[FromQuery] string? roomTitle,[FromQuery] string? joinToken,CancellationToken ct)
     {
         if (roomTitle == null && joinToken == null)
@@ -302,10 +323,9 @@ public class RoomsController:ControllerBase
         return Ok();
     }
 } 
-//TODO Leave and destroy player functionality
-//TODO Somehow destroy empty rooms (either bg service or destroy on admin leave (db trigger?)?)
+//TODO Leave and destroy player functionality (it works but test more)
 //TODO kick player
-//TODO player order in list
 //TODO Caching where appropriate
 //TODO Room hub reconnection 
 //TODO test dat shit
+//TODO issue with non-english letters

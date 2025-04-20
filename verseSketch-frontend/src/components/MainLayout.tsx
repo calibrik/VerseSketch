@@ -1,15 +1,34 @@
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import { Layout } from "antd";
 import { Content, Header } from "antd/es/layout/layout";
 import { Typography } from 'antd';
 import {Color} from "../misc/colors";
-import { Outlet } from "react-router";
+import { Outlet, useNavigationType } from "react-router";
+import { leave } from "../misc/MiscFunctions";
+import { useSignalRConnection } from "./SignalRProvider";
+import { useCookies } from "react-cookie";
 
 const { Title } = Typography;
 interface IMainLayoutProps {};
 
 
 export const MainLayout: FC<IMainLayoutProps> = () => {
+    
+    const navigationType = useNavigationType();
+    const [cookie,,removeCookie]=useCookies(['player']);
+    const connection=useSignalRConnection();
+
+    async function onUnload()
+    {
+        await leave(cookie.player,removeCookie,connection);
+    }
+    
+      useEffect(() => {
+        if (navigationType === "POP") {
+          onUnload();
+        }
+      }, [navigationType]);
+
     return (
         <Layout>
             <Header color="primary" style={{ display: 'flex',justifyContent:"center", background: Color.Primary, alignItems: 'center',height:64}}>

@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, useNavigationType } from 'react-router';
+import { createBrowserRouter, RouterProvider } from 'react-router';
 import { useCookies } from 'react-cookie';
 import { WelcomePage } from './pages/WelcomePage';
 import { MainLayout } from './components/MainLayout';
@@ -6,8 +6,9 @@ import { JoinRoomPage } from './pages/JoinRoomPage';
 import { CreateRoomPage } from './pages/CreateRoomPage';
 import { RoomPage } from './pages/RoomPage';
 import { CreatePlayerPage } from './pages/CreatePlayerPage';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { leave } from './misc/MiscFunctions';
+import { useSignalRConnection } from './components/SignalRProvider';
 
 const router=createBrowserRouter([
   {
@@ -47,18 +48,17 @@ const router=createBrowserRouter([
 function App() {
 
   const [cookie,,removeCookie]=useCookies(['player']);
-  const navigationType = useNavigationType();
+  const connection=useSignalRConnection();
+  const cookieRef=useRef<string>(undefined)
 
   async function onUnload()
   {
-    await leave(cookie,removeCookie);
+    await leave(cookieRef.current,removeCookie,connection);
   }
 
-  useEffect(() => {
-    if (navigationType === "POP") {
-      onUnload();
-    }
-  }, [navigationType]);
+  useEffect(()=>{
+    cookieRef.current=cookie.player;//this makes no sense, but it works lol. Could be inconsistent tho, cuz it's just timings
+  },[cookie])
 
   useEffect(()=>{
     window.addEventListener("beforeunload",onUnload)
@@ -68,7 +68,7 @@ function App() {
   },[])
 
   return (
-      <RouterProvider router={router}/>
+      <RouterProvider router={router} key={location.pathname}/>
   )
 }
 
@@ -79,5 +79,4 @@ export default App;
 //TODO: move from hardcoding margins and inline css
 //TODO: is admin indicator in room page
 //TODO: mark player's nickname
-//TODO: do not keep history of navigation (back button will move to whatever was before openning the app)
-//TODO: context for keeping track of ws connections
+//TODO: Force reload is not working

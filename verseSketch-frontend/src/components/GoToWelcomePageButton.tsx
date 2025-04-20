@@ -9,6 +9,6 @@ interface IGoToWelcomePageButtonProps {
 export const GoToWelcomePageButton: FC<IGoToWelcomePageButtonProps> = (props) => {
     const navigate=useNavigate();
     return (
-        <PrimaryButton style={props.style} onClick={()=>navigate("/")} icon={<HomeOutlined style={{fontSize:20}}/>}>Home</PrimaryButton>
+        <PrimaryButton style={props.style} onClick={()=>navigate("/",{replace:true})} icon={<HomeOutlined style={{fontSize:20}}/>}>Home</PrimaryButton>
     );
 }

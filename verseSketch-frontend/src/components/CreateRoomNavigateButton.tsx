@@ -9,6 +9,6 @@ interface ICreateRoomNavigateButtonProps {
 export const CreateRoomNavigateButton: FC<ICreateRoomNavigateButtonProps> = (props) => {
     let navigate=useNavigate()
     return (
-        <SecondaryButton style={props.style} onClick={()=>{navigate('/create-room')}} icon={<PlusSquareFilled style={{fontSize:33}}/>}>CREATE ROOM</SecondaryButton>
+        <SecondaryButton style={props.style} onClick={()=>{navigate('/create-room',{replace:true})}} icon={<PlusSquareFilled style={{fontSize:33}}/>}>CREATE ROOM</SecondaryButton>
     );
 }

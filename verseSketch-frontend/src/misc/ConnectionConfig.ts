@@ -1,4 +1,7 @@
+const baseURL="http://localhost:5151";
+// const baseURL=location.protocol;
+
 export const ConnectionConfig = {
-    Api: "http://localhost:5151/api"
+    Api: `${baseURL}/api`
 } as const;
 
