@@ -4,11 +4,11 @@ import { Form, Input } from "antd";
 import { Color } from "../misc/colors";
 import { PageTitle } from "../components/PageTitle";
 import { RuleObject } from "antd/es/form";
-import { JoinRoomButton } from "../components/JoinRoomButton";
+import { JoinRoomButton } from "../components/buttons/JoinRoomButton";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useCookies } from "react-cookie";
 import { Spinner } from "../components/Spinner";
-import { ErrorDisplay } from "../components/ErrorDisplay";
+import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 interface ICreatePlayerPageProps {};
 interface ICreatePlayerModel{
     nickname:string,
@@ -21,10 +21,12 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     const navigate=useNavigate();
     const validateAbort=useRef<AbortController|null>(null);
     const [loading,setLoading]=useState<boolean>(false);
-    const [validationErrorMessage,setValidationErrorMessage]=useState<string|undefined>(undefined);
+    const errorModals=useErrorDisplayContext();
     const [validationLoading,setValidationLoading]=useState<boolean>(true);
+    const isLinkValid=useRef<boolean>(true);
     
     useEffect(()=>{
+        console.log(`cookies: ${cookies.player}`);
         validateJoinLink();
     },[]);
 
@@ -42,23 +44,25 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             });
         }
         catch(error:any) {
-            console.error("There was a problem with the fetch operation:", error);
-            setValidationErrorMessage("Something went wrong, please try again later");
+            isLinkValid.current=false;
+            errorModals.errorModal.current?.show("No internet");
+            setValidationLoading(false);
             return;
         }
         if (response.ok)
         {
-            setValidationErrorMessage(undefined);
             setValidationLoading(false);
             return;
         }
         let data=await response?.json();
-        console.log("Join link validation response:",data);
-        setValidationErrorMessage(data.message);
+        isLinkValid.current=false;
+        errorModals.errorModal.current?.show(data.message);
         setValidationLoading(false);
     }
     
     async function onSuccessfulSubmit(values:ICreatePlayerModel) {
+        if (!isLinkValid.current) 
+            return;
         values.nickname=values.nickname.trim();
         setLoading(true);
 
@@ -74,24 +78,24 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
                 joinToken:joinToken
             })
             })
-            .catch((error)=>{
-                console.error("There was a problem with the fetch operation:", error);
+            .catch((_)=>{
+                errorModals.errorModalClosable.current?.show("No internet");
                 setLoading(false);
             });
 
         let data=await response?.json();
         setLoading(false);
         if (!response?.ok) {
-            console.error("Error:", data);
+            errorModals.errorModalClosable.current?.show(data.message);
             return;
         }
-        console.log("Success:", data);
-        console.log(`/room/${data.roomTitle}`);
         setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
         navigate(`/room/${data.roomTitle}`,{replace:true});
     }
 
     async function validateNickname(_:RuleObject, value:string) {
+        if (!isLinkValid.current)
+            return;
         validateAbort.current?.abort();
         validateAbort.current=new AbortController();
         value=value.trim();
@@ -119,7 +123,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         }
         catch(error:any) {
             if (error.name!=="AbortError"){
-                console.error("There was a problem with the fetch operation:", error);
+                errorModals.errorModalClosable.current?.show("No internet");
                 setLoading(false);
             }
             return Promise.resolve();
@@ -127,7 +131,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         let data=await response?.json();
         setLoading(false);
         if (!response?.ok) {
-            console.error("Error:", data);
+            errorModals.errorModalClosable.current?.show(data.message);
             return Promise.resolve();
         }
         if (data.isExist){
@@ -142,7 +146,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         );
     }
 
-    return validationErrorMessage===undefined ?(
+    return (
         <div className="container-small">
             <PageTitle style={{marginTop:148,width:"70%"}}>Choose your nickname and join the game!</PageTitle>
             <Form
@@ -165,7 +169,5 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
                     </Form.Item>
             </Form>
         </div>
-    ):(
-        <ErrorDisplay style={{marginTop:200}}>{validationErrorMessage}</ErrorDisplay>
-    );
+    )
 }

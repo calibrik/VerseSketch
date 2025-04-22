@@ -1,6 +1,6 @@
 import { FC } from "react";
 import Title from "antd/es/typography/Title";
-import '../css/PageTitle.css'
+import '../index.css'
 interface IPageTitleProps {
     children:string
     style?:React.CSSProperties

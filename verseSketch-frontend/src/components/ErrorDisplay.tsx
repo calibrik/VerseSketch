@@ -1,15 +1,35 @@
-import { FC } from "react";
-import { GoToWelcomePageButton } from "./GoToWelcomePageButton";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { GoToWelcomePageButton } from "./buttons/GoToWelcomePageButton";
+import { Modal } from "antd";
+import { CloseCircleOutlined } from "@ant-design/icons";
 interface IErrorDisplayProps {
-    children: string;
-    style?:React.CSSProperties;
 };
 
-export const ErrorDisplay: FC<IErrorDisplayProps> = (props) => {
-    return (
-        <div style={props.style} className="container-mid">
-            <label style={{width:'100%',textAlign:"center"}} className="error-placeholder-text">{props.children}</label>
-            <GoToWelcomePageButton style={{marginTop:100}}/>
-        </div>
-    );
+export interface IErrorDisplayHandle{
+    show:(err:string)=>void;
 }
+
+export const ErrorDisplay = forwardRef<IErrorDisplayHandle,IErrorDisplayProps>((_,ref) => {
+    const [open,setOpen]=useState<boolean>(false);
+    const errorMsg=useRef<string>("")
+
+    useImperativeHandle(ref, () => ({
+        show: (err:string) => {
+          errorMsg.current=err;
+          setOpen(true);
+        },
+      }));
+
+    return (
+        <Modal
+        className="error-modal"
+        open={open}
+        closable={false}
+        centered
+        title={<label className="error-modal-title"><CloseCircleOutlined />  Error</label>}
+        footer={<div style={{width:'100%',display:'flex',justifyContent:'center'}}><GoToWelcomePageButton onClick={()=>setOpen(false)}/></div>}
+        >
+            <label className="error-modal-text">{errorMsg.current}</label>
+        </Modal>
+    );
+})

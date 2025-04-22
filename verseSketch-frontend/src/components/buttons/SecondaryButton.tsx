@@ -1,6 +1,6 @@
 import { FC, ReactNode } from "react";
 import { BaseButton } from "./BaseButton";
-import '../css/Button.css';
+import '../../index.css';
 interface ISecondaryButtonProps {
     children:string;
     style?:React.CSSProperties;

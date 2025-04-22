@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { SecondaryButton } from "./SecondaryButton";
 import { PlusSquareFilled } from "@ant-design/icons";
-import { Spinner } from "./Spinner";
+import { Spinner } from "../Spinner";
 interface ICreateRoomButtonProps {
         onClick?:()=>void,
         style?:React.CSSProperties,

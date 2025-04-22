@@ -2,14 +2,15 @@ import { Card, Col, Divider, Flex, List, Row, Select, Switch } from "antd";
 import { FC, useEffect, useRef, useState } from "react";
 import { Color } from "../misc/colors";
 import { Spinner } from "../components/Spinner";
-import { StartGameButton } from "../components/StartGameButton";
+import { StartGameButton } from "../components/buttons/StartGameButton";
 import Title from "antd/es/typography/Title";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useCookies } from "react-cookie";
 import * as signalR from "@microsoft/signalr";
-import { InviteButton } from "../components/InviteButton";
+import { InviteButton } from "../components/buttons/InviteButton";
 import { useSignalRConnection } from "../components/SignalRProvider";
+import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 
 interface IRoomPageProps {};
 interface IPlayerModel{
@@ -35,12 +36,12 @@ interface ISetParamsModel{
 export const RoomPage: FC<IRoomPageProps> = () => {
     const [model, setModel] = useState<IRoomModel|null>(null);
     const modelRef=useRef<IRoomModel|null>(null);
-    const navigate=useNavigate();
     const [cookies,,removeCookie] = useCookies(['player']);
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
     const connection=useSignalRConnection();
+    const errorModals=useErrorDisplayContext();
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -60,20 +61,25 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     async function initLoad()
     {
-        let response=await fetch(`${ConnectionConfig.Api}/rooms/isRoomAccessible?${new URLSearchParams({
+        let response=null;
+        try{
+            response=await fetch(`${ConnectionConfig.Api}/rooms/isRoomAccessible?${new URLSearchParams({
                 roomTitle: roomTitle??"",
-            })}`,{
-            method:"GET",
-            headers:{
-                "Content-Type":"application/json",
-                "Authorization":`Bearer ${cookies.player}`
-            }
-        });
-        if (response.status===401||response.status===404) {
-            throw (response);
+                })}`,{
+                method:"GET",
+                headers:{
+                    "Content-Type":"application/json",
+                    "Authorization":`Bearer ${cookies.player}`
+                }
+            });
         }
-        // let data:IRoomModel=await response?.json();
-        // onRoomReceive(data);
+        catch(_:any){
+            throw("No internet.")
+        }
+        if (!response.ok) {
+            let data=await response?.json();
+            throw (data.message);
+        }
     }
 
     function applyParams(data:ISetParamsModel) {
@@ -104,7 +110,6 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             applyParams(data);
         }
         catch (e) {
-            console.error(e);
             return;
         }
     }
@@ -117,14 +122,14 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         try{
             applyParams(params);
         }
-        catch (e) {
-            console.error(e);
+        catch (e:any) {
+            errorModals.errorModalClosable.current?.show(e);
             return;
         }
         if (connection.current?.state!="Connected") return;
         connection.current?.invoke("SendParams", params)
-            .catch((error) => {
-                console.error("Error sending params:", error);
+            .catch((_) => {
+                errorModals.errorModalClosable.current?.show("An error occured when tried to connect the server.");
                 setModel(oldModel);
             });
     }
@@ -144,10 +149,13 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         }
         catch (error:any)
         {
-            console.error("Error",error);
+            errorModals.errorModalClosable.current?.show("No internet.");
             return;
         }
         let data=await response?.json();
+        if (!response.ok){
+            errorModals.errorModalClosable.current?.show(data.message);
+        }
         navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data.joinToken}`)
     }
     
@@ -164,7 +172,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     {
         connection.current?.state!="Connected"?null:connection.current?.stop();
         removeCookie('player',{path:"/non-existent-cookie-path"});
-        navigate("/",{replace:true});
+        errorModals.errorModal.current?.show("Admin has left the room.");
     }
 
     useEffect(() => {
@@ -177,7 +185,6 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     useEffect(() => {
         document.title = roomTitle ?? "Room";
-        console.log("remount");
         setLoading(true);
         initLoad()
             .then(async () => {
@@ -194,15 +201,16 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     .then(() => {
                         console.log("Connected to SignalR hub");
                     })
-                    .catch((error) => {
-                        console.error("Error connecting to SignalR hub:", error);
+                    .catch((_) => {
+                        errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
                     });
                 setLoading(false);
             })
             .catch((error) => {
                 setLoading(false);
-                console.error("Error loading room:", error);
-                onRoomDeleted();
+                errorModals.errorModal.current?.show(error);
+                connection.current?.state!="Connected"?null:connection.current?.stop();
+                removeCookie('player',{path:"/non-existent-cookie-path"});
             });
         return () => {
             // connection.current?.state!="Connected"?null:connection.current?.stop();//this is gonna be removed

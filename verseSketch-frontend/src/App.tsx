@@ -74,9 +74,8 @@ function App() {
 
 export default App;
 
-//TODO: dynamic feedback on errors
 //TODO: leave and back buttons
 //TODO: move from hardcoding margins and inline css
 //TODO: is admin indicator in room page
 //TODO: mark player's nickname
-//TODO: Force reload is not working
+//TODO: session cookies are not in sync with tabs

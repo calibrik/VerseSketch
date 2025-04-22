@@ -2,12 +2,13 @@ import { FC, useEffect, useRef, useState } from "react";
 import { PageTitle } from "../components/PageTitle";
 import { Flex, Input} from "antd";
 import { Spinner } from "../components/Spinner";
-import { JoinToRoomNavigationButton } from "../components/JoinToRoomNavigationButton";
-import { CreateRoomNavigateButton } from "../components/CreateRoomNavigateButton";
+import { JoinToRoomNavigationButton } from "../components/buttons/JoinToRoomNavigationButton";
+import { CreateRoomNavigateButton } from "../components/buttons/CreateRoomNavigateButton";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { SearchOutlined } from "@ant-design/icons";
-import { RefreshButton } from "../components/RefreshButton";
+import { RefreshButton } from "../components/buttons/RefreshButton";
+import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 interface IJoinRoomPageProps {
 };
 
@@ -27,6 +28,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
     const debounceTimeoutRef = useRef<number | null>(null);
     const loadMoreAbortController=useRef<AbortController | null>(null);
     const searchAbortController=useRef<AbortController | null>(null);
+    const errorModals=useErrorDisplayContext();
 
 
     useEffect(() => {
@@ -66,7 +68,8 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
         }
         catch(error:any) {
             if (error.name !== 'AbortError') {
-                console.error("There was a problem with the fetch operation:", error);
+                errorModals.errorModalClosable.current?.show("No internet.")
+                setLoading(false);
             }
             return;
         }
@@ -85,8 +88,8 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
         }
         catch(error:any) {
             if (error.name !== 'AbortError') {
+                errorModals.errorModalClosable.current?.show("No internet.")
                 setLoading(false);
-                console.error("There was a problem with the fetch operation:", error);
             }
             return;
         }
@@ -115,8 +118,8 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
             }
             catch(error:any) {
                 if (error.name !== 'AbortError') {
+                    errorModals.errorModalClosable.current?.show("No internet.")
                     setLoading(false);
-                    console.error("There was a problem with the fetch operation:", error);
                 }
                 return;
             }

@@ -1,8 +1,8 @@
 import { FC, useEffect } from "react";
 import { Col, Row } from "antd";
 import { PageTitle } from "../components/PageTitle";
-import { CreateRoomNavigateButton } from "../components/CreateRoomNavigateButton";
-import { JoinRoomNavigateButton } from "../components/JoinRoomNavigateButton";
+import { CreateRoomNavigateButton } from "../components/buttons/CreateRoomNavigateButton";
+import { JoinRoomNavigateButton } from "../components/buttons/JoinRoomNavigateButton";
 
 interface IWelcomePageProps {};
 

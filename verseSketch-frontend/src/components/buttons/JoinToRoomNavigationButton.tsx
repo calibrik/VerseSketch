@@ -2,7 +2,7 @@ import { PlaySquareFilled } from "@ant-design/icons";
 import { Button } from "antd";
 import { FC } from "react";
 import { useNavigate } from "react-router";
-import '../css/JoinRoomButton.css'
+import '../../index.css'
 interface IJoinToRoomNavigationButtonProps {
     style?:React.CSSProperties
     roomName:string

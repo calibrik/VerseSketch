@@ -2,12 +2,14 @@ import { FC, useRef } from "react";
 import { PageTitle } from "../components/PageTitle";
 import { Col, Form, Input, Row, Select, Switch } from "antd";
 import { Color } from "../misc/colors";
-import { CreateRoomButton } from "../components/CreateRoomButton";
+import { CreateRoomButton } from "../components/buttons/CreateRoomButton";
 import { useState } from "react";
 import { RuleObject } from "antd/es/form";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useNavigate } from "react-router";
 import { useCookies } from "react-cookie";
+import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+
 interface ICreateRoomPageProps {};
 
 interface ICreateRoomModel{
@@ -22,6 +24,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     const navigate=useNavigate();
     const [, setCookie, ] = useCookies();
     const validateAbort=useRef<AbortController|null>(null);
+    const errorModals=useErrorDisplayContext();
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -44,8 +47,9 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             },
             body:JSON.stringify(values)
             })
-            .catch((error)=>{
-                console.error("There was a problem with the fetch operation:", error);
+            .catch((_)=>{
+                errorModals.errorModalClosable.current?.show("No internet connection");
+                setLoading(false);
             });
         let data=await response?.json();
         if (!response?.ok) {
@@ -53,7 +57,6 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             setLoading(false);
             return;
         }
-        console.log("Success:", data);
         setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
         setLoading(false);
         navigate(`/join-room/by-link/${data.joinToken}`,{replace:true});
@@ -80,7 +83,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         }
         catch(error:any) {
             if (error.name!=="AbortError"){
-                console.error("There was a problem with the fetch operation:", error);
+                errorModals.errorModalClosable.current?.show("No internet connection");
                 setLoading(false);
             }
             return Promise.resolve();

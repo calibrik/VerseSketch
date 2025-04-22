@@ -1,7 +1,7 @@
 import { FC, ReactNode, useState } from "react";
 import { SecondaryButton } from "./SecondaryButton";
 import { CheckOutlined, LinkOutlined } from "@ant-design/icons";
-import { Spinner } from "./Spinner";
+import { Spinner } from "../Spinner";
 interface IInviteButtonProps {
     style?:React.CSSProperties;
     onClick:()=>Promise<void>;

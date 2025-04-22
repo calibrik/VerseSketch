@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { PlaySquareFilled } from "@ant-design/icons";
 import { PrimaryButton } from "./PrimaryButton";
-import { Spinner } from "./Spinner";
+import { Spinner } from "../Spinner";
 interface IJoinRoomButtonProps {
     style?: React.CSSProperties;
     loading?: boolean;

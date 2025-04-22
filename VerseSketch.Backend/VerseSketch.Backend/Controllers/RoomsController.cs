@@ -107,16 +107,16 @@ public class RoomsController:ControllerBase
     public async Task<IActionResult> IsRoomAccessible([FromQuery] string roomTitle)
     {
         if (!User.Identity.IsAuthenticated)
-            return Unauthorized(new {message = "You are not authenticated"});
+            return Unauthorized(new {message = $"You are not part of the {roomTitle}."});
         string? playerId = User.FindFirst("PlayerId")?.Value;
         Player? currPlayer = await _playerRepository.GetPlayerAsyncRO(playerId);
         Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,true);
         if (room == null)
-            return NotFound(new {message = $"Room called {roomTitle} is not found"});
+            return NotFound(new {message = $"The room {roomTitle} is not found."});
         if (currPlayer == null)
-            return StatusCode(500,new {message = $"Player {playerId} not found"});
+            return StatusCode(500,new {message = "Something went wrong, please try again later."});
         if (currPlayer.RoomTitle!=room.Title)
-            return Unauthorized(new {message = $"You should be in room {roomTitle} to get it"});
+            return Unauthorized(new {message = $"You are not part of the {roomTitle}."});
         return Ok();
     }
 
@@ -157,9 +157,9 @@ public class RoomsController:ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateRoomViewModel model)
     {
         if (await _roomsRepository.GetRoomAsyncRO(model.Title, false) != null)
-            ModelState.AddModelError("Title", "Title already exists");
+            return BadRequest(new {message = "Room with this title already exists."});
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+            return BadRequest(new {message = ModelState.Values.FirstOrDefault()?.Errors.FirstOrDefault()?.ErrorMessage});
         Player admin = new Player()
         {
             Id = Guid.NewGuid().ToString(),
@@ -225,9 +225,9 @@ public class RoomsController:ControllerBase
             roomTitle=await ValidateJoinToken(model.JoinToken);
         
         if (model.RoomTitle == null&&model.JoinToken==null)
-            return BadRequest(new {message="Room Title is required"});//check if user passed at least smth
+            return BadRequest(new {message="Room title is required"});//check if user passed at least smth
         if (roomTitle==null)
-            return BadRequest(new {message="Join link is not valid"});//check if join link is valid if present
+            return BadRequest(new {message="Join link is not valid"});//check if join link is valid if room title is not present
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
             return BadRequest(new {message="Room you trying to join doesn't exist"});//check if room exists
@@ -238,7 +238,7 @@ public class RoomsController:ControllerBase
             string playerId=User.FindFirst("PlayerId").Value;
             player = await _playerRepository.GetPlayerAsync(playerId);
             if (player == null)
-                return BadRequest(new {message=$"Player instance {playerId} is not found"});
+                return StatusCode(500,new {message="Something went wrong, please try again later."});
         }
         if (await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname, roomTitle) != null)
             return BadRequest(new {message="Nickname already exists in this room."});//check if username exists
@@ -247,7 +247,7 @@ public class RoomsController:ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);//any invalidations on model
         if (room.PlayersCount>=room.MaxPlayersCount)
-            return BadRequest(new {message="Room is full."});//check if room is fullrf
+            return BadRequest(new {message="Room is full."});//check if room is full
         
         
         if (player == null) 
