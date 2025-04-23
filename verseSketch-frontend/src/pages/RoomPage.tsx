@@ -4,19 +4,22 @@ import { Color } from "../misc/colors";
 import { Spinner } from "../components/Spinner";
 import { StartGameButton } from "../components/buttons/StartGameButton";
 import Title from "antd/es/typography/Title";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useCookies } from "react-cookie";
 import * as signalR from "@microsoft/signalr";
 import { InviteButton } from "../components/buttons/InviteButton";
 import { useSignalRConnection } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+import '../index.css';
+import { LeaveRoomButton } from "../components/buttons/LeaveRoomButton";
 
 interface IRoomPageProps {};
 interface IPlayerModel{
     nickname:string;
     id:string;
     isAdmin:boolean;
+    isPlayer:boolean;
 }
 interface IRoomModel{
     title:string;
@@ -42,6 +45,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     const {roomTitle} = useParams();
     const connection=useSignalRConnection();
     const errorModals=useErrorDisplayContext();
+    const navigate=useNavigate()
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -74,10 +78,11 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             });
         }
         catch(_:any){
-            throw("No internet.")
+            throw("No connection to the server.")
         }
         if (!response.ok) {
             let data=await response?.json();
+            console.log(data.message,response.status);
             throw (data.message);
         }
     }
@@ -149,7 +154,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         }
         catch (error:any)
         {
-            errorModals.errorModalClosable.current?.show("No internet.");
+            errorModals.errorModalClosable.current?.show("No connection to the server.");
             return;
         }
         let data=await response?.json();
@@ -157,6 +162,13 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             errorModals.errorModalClosable.current?.show(data.message);
         }
         navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data.joinToken}`)
+    }
+
+    async function onLeave()
+    {
+        connection.current?.state!="Connected"?null:connection.current?.stop();
+        removeCookie('player',{path:"/non-existent-cookie-path"});
+        navigate("/",{replace:true});
     }
     
     function onTimeToDrawChange(value:number) {
@@ -174,6 +186,12 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         removeCookie('player',{path:"/non-existent-cookie-path"});
         errorModals.errorModal.current?.show("Admin has left the room.");
     }
+    function onConnectionClose(error?:Error)
+    {
+        if (error)
+            errorModals.errorModal.current?.show("Lost connection to the server.");
+        removeCookie('player',{path:"/non-existent-cookie-path"});
+    }
 
     useEffect(() => {
         console.log("rerender",model);
@@ -190,17 +208,16 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             .then(async () => {
                 connection.current = new signalR.HubConnectionBuilder()
                     .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
+                    // .configureLogging("none")
                     .build();
                 
                 connection.current.on("ReceiveRoom", onRoomReceive);
                 connection.current.on("ReceiveParams", onReceiveParams);
                 connection.current.on("ReceivePlayerList", onReceivePlayerList);
                 connection.current.on("RoomDeleted",onRoomDeleted);
+                connection.current.onclose(onConnectionClose);
 
                 await connection.current.start()
-                    .then(() => {
-                        console.log("Connected to SignalR hub");
-                    })
                     .catch((_) => {
                         errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
                     });
@@ -219,14 +236,17 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     return (
         <div className="container-mid" style={{height:"100%"}}>
-            <Row style={{width:"100%", height:"70%",marginTop:48}} gutter={50}>
+            <div style={{margin:"15px 0px",width:'100%',display:'flex',justifyContent:'right',marginRight:50}}>
+                <LeaveRoomButton onClick={onLeave}/>
+            </div>
+            <Row style={{width:"100%", height:"70%"}} gutter={50}>
                 <Col md={8}>
                 <List
                     className="player-list"
                     header={
                         <div style={{width:"100%",display:"flex",marginBottom:10}}>
                             <div style={{ width: "50%" }}>
-                                <span style={{ width: "100%", wordBreak: "break-word", whiteSpace: "normal", fontSize:25 }}>
+                                <span className="room-title">
                                     {roomTitle}
                                 </span>
                             </div>
@@ -244,20 +264,20 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     renderItem={(player) => {
                         if (player.id === "")
                             return(
-                                <List.Item>
+                                <List.Item className="player-field">
                                 <List.Item.Meta
                                     title={
-                                    <span className="placeholder-text" style={{ fontSize: 18 }}>
+                                    <span className="player-placeholder-text">
                                         Player spot
                                     </span>
                                     }
                                 />
                                 </List.Item>);
                         return (
-                        <List.Item>
+                        <List.Item className={player.isPlayer?"player-selected-field":"player-field"}>
                         <List.Item.Meta
                             title={
-                            <span style={{ color: Color.Secondary, fontSize: 18 }}>
+                            <span className="player-nickname-text">
                                 {player.nickname}
                             </span>
                             }
@@ -297,7 +317,9 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                     <label ref={switchLabelRef} style={{color:Color.Secondary,fontSize:20,marginRight:10}}>Public room</label>
                                     <Switch disabled={loading||!model?.isPlayerAdmin} onChange={onSwitchChange} value={model?.isPublic??true} />
                                 </div>
-                                <InviteButton onClick={onInvite} disabled={loading||!model?.isPlayerAdmin}/>
+                                <div style={{display:"flex",flexDirection:"row",alignItems:"center",alignContent:"center"}}>
+                                    <InviteButton onClick={onInvite} disabled={loading||!model?.isPlayerAdmin}/>
+                                </div>
                             </Flex>
                         </div>
                     </Card>

@@ -48,7 +48,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             body:JSON.stringify(values)
             })
             .catch((_)=>{
-                errorModals.errorModalClosable.current?.show("No internet connection");
+                errorModals.errorModalClosable.current?.show("No connection to the server.");
                 setLoading(false);
             });
         let data=await response?.json();
@@ -67,8 +67,14 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         validateAbort.current=new AbortController();
         value=value.trim();
         if (value.length===0) {
-            return Promise.reject("Room name is required!");
+            return Promise.reject("Room title is required!");
         }
+        if (value.length>30) {
+            return Promise.reject("Room title cannot be longer than 30 characters!");
+        }
+        const pattern=/.*\W/;
+        if (pattern.test(value))
+            return Promise.reject("Room title cannot contain special characters!");
         setLoading(true);
         let response:Response|null=null;
         try{
@@ -83,7 +89,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         }
         catch(error:any) {
             if (error.name!=="AbortError"){
-                errorModals.errorModalClosable.current?.show("No internet connection");
+                errorModals.errorModalClosable.current?.show("No connection to the server.");
                 setLoading(false);
             }
             return Promise.resolve();
@@ -116,9 +122,9 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
                     <Form.Item
                         name="title"
                         validateDebounce={300}
-                        label={<label style={{color:Color.Secondary}}>Room Name</label>}
+                        label={<label style={{color:Color.Secondary}}>Room Title</label>}
                         rules={[{validator:validateTitle}]}>
-                        <Input className="input-field" placeholder="Enter room name"/>
+                        <Input className="input-field" placeholder="Enter room title"/>
                     </Form.Item>
                     </Col>
                     <Col md={8}>

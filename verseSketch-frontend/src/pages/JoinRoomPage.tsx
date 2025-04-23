@@ -68,7 +68,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
         }
         catch(error:any) {
             if (error.name !== 'AbortError') {
-                errorModals.errorModalClosable.current?.show("No internet.")
+                errorModals.errorModalClosable.current?.show("No connection to the server.")
                 setLoading(false);
             }
             return;
@@ -88,7 +88,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
         }
         catch(error:any) {
             if (error.name !== 'AbortError') {
-                errorModals.errorModalClosable.current?.show("No internet.")
+                errorModals.errorModalClosable.current?.show("No connection to the server.")
                 setLoading(false);
             }
             return;
@@ -118,7 +118,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
             }
             catch(error:any) {
                 if (error.name !== 'AbortError') {
-                    errorModals.errorModalClosable.current?.show("No internet.")
+                    errorModals.errorModalClosable.current?.show("No connection to the server.")
                     setLoading(false);
                 }
                 return;

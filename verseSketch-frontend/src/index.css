@@ -44,17 +44,20 @@
 .secondary-button:disabled,
 .error-modal-button:disabled,
 .refresh-button:disabled,
-.join-room-button:disabled{
+.join-room-button:disabled,
+.leave-button:disabled{
   background-color: #F8DCFF !important;
-  cursor: default;
+  cursor: not-allowed;
   border: 2px solid #7C009B !important;
   color: #7C009B !important;
+  pointer-events: none;
 }
 .primary-button:active,
 .secondary-button:active,
 .error-modal-button:active,
 .refresh-button:active,
-.join-room-button:active{
+.join-room-button:active,
+.leave-button:active{
   background-color: #F8DCFF !important;
   border: 2px solid #7C009B !important;
   color: #7C009B !important;
@@ -64,7 +67,9 @@
 .secondary-button:active .button-text,
 .secondary-button:disabled .button-text,
 .error-modal-button:active  .button-text,
-.error-modal-button:disabled  .button-text{
+.error-modal-button:disabled  .button-text,
+.leave-button:active  .button-text,
+.leave-button:disabled  .button-text{
   color: #7C009B !important;
 }
 
@@ -87,8 +92,9 @@
   height:63px;
   padding: 10px;
 }
-.secondary-button:hover{
-  background-color: #7b2a8f !important;
+.secondary-button:hover,
+.leave-button:hover{
+  background-color: #aa2dc9 !important;
 }
 
 .navbar{
@@ -126,6 +132,14 @@
   align-items:center;
   display:flex;
   padding:0 32px;
+  flex-direction:column;
+  /* // alignContent:"center" */
+}
+.container-large{
+  /* justify-content:"center"; */
+  align-items:center;
+  display:flex;
+  /* padding:0 32px; */
   flex-direction:column;
   /* // alignContent:"center" */
 }
@@ -199,6 +213,10 @@
 .player-list .ant-list-item{
   height: 70px;
   color: #7C009B;
+  padding: 12px 5px !important;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  border: 2px solid #7C009B !important;
 }
 
 .placeholder-text{
@@ -300,10 +318,53 @@
 
 .error-modal-button{
   background-color: #9000FF;
-  padding: 20px !important;
+  /* padding: 20px !important; */
+  width:140px;
+  height:40px;
 }
 
 .error-modal-button .button-text{
   font-size: 17px;
   width: auto;
+}
+
+.room-title{
+  width: "100%";
+  word-break: "break-word";
+  white-space: "normal";
+  font-size:24px;
+  font-weight: bold;
+}
+
+.leave-button{
+  background-color: #7C009B;
+  /* padding: 20px; */
+  border-radius: 5px;
+  width:150px;
+  height:50px;
+}
+
+.leave-button .button-text{
+  font-size: 20px;
+  width: auto;
+}
+
+.player-field{
+  background-color: #f2c0ff;
+}
+
+.player-selected-field{
+  background-color: #ea97ff;
+}
+
+.player-placeholder-text{
+  opacity: 0.5;
+  color: #7C009B;
+  font-size: 18px;
+}
+
+.player-nickname-text{
+  color: #7C009B;
+  font-size: 18px;
+  font-weight: 700;
 }

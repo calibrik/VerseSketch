@@ -121,3 +121,9 @@ app.MapHub<RoomHub>("/api/rooms/roomHub");
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 app.Run();
+//TODO Leave and destroy player functionality (it works but test more)
+//TODO kick player
+//TODO Caching where appropriate
+//TODO Room hub reconnection 
+//TODO test dat shit
+//TODO isPLayer in room hub is not working actually

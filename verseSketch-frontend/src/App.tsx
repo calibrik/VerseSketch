@@ -79,3 +79,5 @@ export default App;
 //TODO: is admin indicator in room page
 //TODO: mark player's nickname
 //TODO: session cookies are not in sync with tabs
+//TODO: random error with errorDisplayProvider (probably hot reload issue only)
+//TODO: Regex doesn't allow space bars

@@ -45,7 +45,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         }
         catch(error:any) {
             isLinkValid.current=false;
-            errorModals.errorModal.current?.show("No internet");
+            errorModals.errorModal.current?.show("No connection to the server.");
             setValidationLoading(false);
             return;
         }
@@ -79,7 +79,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             })
             })
             .catch((_)=>{
-                errorModals.errorModalClosable.current?.show("No internet");
+                errorModals.errorModalClosable.current?.show("No connection to the server.");
                 setLoading(false);
             });
 
@@ -105,6 +105,9 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         if (value.length>30) {
             return Promise.reject("Nickname cannot be longer than 30 characters!");
         }
+        const pattern=/.*\W/;
+        if (pattern.test(value))
+            return Promise.reject("Nickname cannot contain special characters!");
         setLoading(true);
 
         let response:Response|null=null;
@@ -123,7 +126,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         }
         catch(error:any) {
             if (error.name!=="AbortError"){
-                errorModals.errorModalClosable.current?.show("No internet");
+                errorModals.errorModalClosable.current?.show("No connection to the server.");
                 setLoading(false);
             }
             return Promise.resolve();

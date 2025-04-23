@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using VerseSketch.Backend.Misc;
 using VerseSketch.Backend.Models;
@@ -96,6 +97,7 @@ public class RoomsController:ControllerBase
             {
                 Nickname = player.Nickname??"NULL",
                 isAdmin = player.Id==room.AdminId,
+                isPlayer = player.Id == playerId,
             };
             model.Players.Add(playerVM);
         }
@@ -110,7 +112,7 @@ public class RoomsController:ControllerBase
             return Unauthorized(new {message = $"You are not part of the {roomTitle}."});
         string? playerId = User.FindFirst("PlayerId")?.Value;
         Player? currPlayer = await _playerRepository.GetPlayerAsyncRO(playerId);
-        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,true);
+        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,false);
         if (room == null)
             return NotFound(new {message = $"The room {roomTitle} is not found."});
         if (currPlayer == null)
@@ -160,6 +162,8 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message = "Room with this title already exists."});
         if (!ModelState.IsValid)
             return BadRequest(new {message = ModelState.Values.FirstOrDefault()?.Errors.FirstOrDefault()?.ErrorMessage});
+        if (Regex.IsMatch(model.Title,@".*\W"))
+            return BadRequest(new {message = "Room title cannot contain special characters!"});
         Player admin = new Player()
         {
             Id = Guid.NewGuid().ToString(),
@@ -228,6 +232,8 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message="Room title is required"});//check if user passed at least smth
         if (roomTitle==null)
             return BadRequest(new {message="Join link is not valid"});//check if join link is valid if room title is not present
+        if (Regex.IsMatch(model.Nickname,@".*\W"))
+            return BadRequest(new {message = "Nickname cannot contain special characters!"});
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
             return BadRequest(new {message="Room you trying to join doesn't exist"});//check if room exists
@@ -323,9 +329,4 @@ public class RoomsController:ControllerBase
         return Ok();
     }
 } 
-//TODO Leave and destroy player functionality (it works but test more)
-//TODO kick player
-//TODO Caching where appropriate
-//TODO Room hub reconnection 
-//TODO test dat shit
-//TODO issue with non-english letters
+

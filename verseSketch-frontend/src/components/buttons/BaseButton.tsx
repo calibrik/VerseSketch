@@ -1,7 +1,7 @@
 import { Button } from "antd";
 import { FC, ReactNode } from "react";
 interface IBaseButtonProps {
-    icon:ReactNode
+    icon?:ReactNode
     children?:string,
     onClick?:()=>void,
     style?:React.CSSProperties,

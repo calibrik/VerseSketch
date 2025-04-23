@@ -53,7 +53,8 @@ public class RoomHub:Hub<IRoomHub>
             model.Players.Add(new PlayerViewModel()
             {
                 isAdmin = room.AdminId == player.Id,
-                Nickname = player.Nickname??""
+                Nickname = player.Nickname??"",
+                isPlayer = player.Id == playerId,
             });
         }
         await Clients.Groups(roomTitle).ReceivePlayerList(model.Players);
@@ -125,7 +126,8 @@ public class RoomHub:Hub<IRoomHub>
             model.Add(new PlayerViewModel()
             {
                 isAdmin = room.AdminId == player.Id,
-                Nickname = p.Nickname??""
+                Nickname = p.Nickname??"",
+                isPlayer = player.Id == p.Id,
             });
         }
         await Clients.Groups(player.RoomTitle).ReceivePlayerList(model);
