@@ -9,6 +9,8 @@ import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useNavigate } from "react-router";
 import { useCookies } from "react-cookie";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+import { BackButton } from "../components/buttons/BackButtton";
+import { useHistoryContext } from "../components/HistoryProvider";
 
 interface ICreateRoomPageProps {};
 
@@ -25,6 +27,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     const [, setCookie, ] = useCookies();
     const validateAbort=useRef<AbortController|null>(null);
     const errorModals=useErrorDisplayContext();
+    const historyStack=useHistoryContext();
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -59,6 +62,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         }
         setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
         setLoading(false);
+        historyStack.current.push(location.pathname);
         navigate(`/join-room/by-link/${data.joinToken}`,{replace:true});
     }
 
@@ -72,7 +76,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         if (value.length>30) {
             return Promise.reject("Room title cannot be longer than 30 characters!");
         }
-        const pattern=/.*\W/;
+        const pattern=/.*[^a-zA-Z0-9 _]/;
         if (pattern.test(value))
             return Promise.reject("Room title cannot contain special characters!");
         setLoading(true);
@@ -107,7 +111,10 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     
     return (
         <div className="container-small">
-            <PageTitle style={{marginTop:'20%'}}>Create your room!</PageTitle>
+            <div style={{width:"100%",marginTop:50,marginBottom:70}}>
+                <BackButton/>
+            </div>
+            <PageTitle>Create your room!</PageTitle>
             <Form 
                 style={{marginTop:'30%',width:'100%',display:"flex", flexDirection: "column", alignItems: "center"}}
                 name="create-room"

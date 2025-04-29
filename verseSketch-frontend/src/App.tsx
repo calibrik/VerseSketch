@@ -8,7 +8,7 @@ import { RoomPage } from './pages/RoomPage';
 import { CreatePlayerPage } from './pages/CreatePlayerPage';
 import { useEffect, useRef } from 'react';
 import { leave } from './misc/MiscFunctions';
-import { useSignalRConnection } from './components/SignalRProvider';
+import { useSignalRConnectionContext } from './components/SignalRProvider';
 
 const router=createBrowserRouter([
   {
@@ -48,7 +48,7 @@ const router=createBrowserRouter([
 function App() {
 
   const [cookie,,removeCookie]=useCookies(['player']);
-  const connection=useSignalRConnection();
+  const connection=useSignalRConnectionContext();
   const cookieRef=useRef<string>(undefined)
 
   async function onUnload()
@@ -74,10 +74,10 @@ function App() {
 
 export default App;
 
-//TODO: leave and back buttons
-//TODO: move from hardcoding margins and inline css
-//TODO: is admin indicator in room page
-//TODO: mark player's nickname
-//TODO: session cookies are not in sync with tabs
+//TODO: website design on other devices is beyond fucked
+//TODO: session cookies are not in sync with tabs (it's not really a problem tbf)
 //TODO: random error with errorDisplayProvider (probably hot reload issue only)
-//TODO: Regex doesn't allow space bars
+//TODO: Random WS handshake issue on devices
+//TODO: Room creating bug when not accessing website by localhost
+//TODO: Going back/forward do not remount on IIS
+//TODO: WS should be terminated even if it not in connected state

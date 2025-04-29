@@ -9,6 +9,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { SearchOutlined } from "@ant-design/icons";
 import { RefreshButton } from "../components/buttons/RefreshButton";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+
 interface IJoinRoomPageProps {
 };
 
@@ -29,6 +30,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
     const loadMoreAbortController=useRef<AbortController | null>(null);
     const searchAbortController=useRef<AbortController | null>(null);
     const errorModals=useErrorDisplayContext();
+
 
 
     useEffect(() => {
@@ -96,6 +98,8 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
         loadMoreAbortController.current=null;
         setLoading(false);
     }
+
+    
 
     async function onSearchTextChange(e: any) {
         if (debounceTimeoutRef.current) {

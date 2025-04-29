@@ -27,4 +27,10 @@
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="8.1.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Properties\PublishProfiles\localIS.pubxml" />
+      <None Remove="Properties\PublishProfiles\test.pubxml" />
+      <None Remove="Properties\PublishProfiles\web.pubxml" />
+    </ItemGroup>
+
 </Project>

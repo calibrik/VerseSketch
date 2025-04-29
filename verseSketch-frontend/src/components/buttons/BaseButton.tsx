@@ -8,6 +8,7 @@ interface IBaseButtonProps {
     htmlType?:"button" | "submit" | "reset" | undefined,
     disabled?:boolean,
     className?:string,
+    iconPosition?:"start"|"end";
 };
 
 export const BaseButton: FC<IBaseButtonProps> = (props) => {
@@ -20,7 +21,7 @@ export const BaseButton: FC<IBaseButtonProps> = (props) => {
             icon={props.icon}
             onClick={props.onClick}
             className={props.className}
-            iconPosition="end">
+            iconPosition={props.iconPosition??"end"}>
             <span className="button-text">{props.children}</span>   
         </Button>
     );

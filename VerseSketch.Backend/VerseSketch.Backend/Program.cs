@@ -31,6 +31,7 @@ builder.Services.AddDbContext<VerseSketchDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection"));
 });
 builder.Services.AddOpenApi();
+#if DEBUG
 builder.Services.AddSwaggerGen(options =>
 {
     OpenApiSecurityScheme jwtSecurityScheme = new OpenApiSecurityScheme()
@@ -53,6 +54,7 @@ builder.Services.AddSwaggerGen(options =>
         { jwtSecurityScheme, new string[] { } }
     });
 });
+#endif
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme=JwtBearerDefaults.AuthenticationScheme;
@@ -122,8 +124,9 @@ app.MapControllers();
 app.MapFallbackToFile("index.html");
 app.Run();
 //TODO Leave and destroy player functionality (it works but test more)
-//TODO kick player
 //TODO Caching where appropriate
 //TODO Room hub reconnection 
 //TODO test dat shit
-//TODO isPLayer in room hub is not working actually
+//TODO Figure out how to pass errors to client from room hub (tbf, not that important?)
+//TODO Migrate to MongoDB, cuz it's gonna be better than sql, since i don't do complex queries?
+//TODO Debug on IIS

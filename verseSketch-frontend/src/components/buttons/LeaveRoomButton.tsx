@@ -24,7 +24,7 @@ export const LeaveRoomButton: FC<ILeaveRoomButtonProps> = (props) => {
         disabled={loading||props.disabled}
         icon={loading?<Spinner/>:<LogoutOutlined style={{fontSize:20}}/>}
         onClick={onClick}>
-            Leave
+            LEAVE
         </BaseButton>
     );
 }

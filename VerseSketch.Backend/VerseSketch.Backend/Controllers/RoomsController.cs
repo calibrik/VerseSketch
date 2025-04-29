@@ -37,7 +37,7 @@ public class RoomsController:ControllerBase
             JoinTokenData? data = JsonSerializer.Deserialize<JoinTokenData>(Encoding.UTF8.GetString(bytes));
             if (data==null)
                 return null;
-            return await _roomsRepository.IsTokenValid(data.CurrentJoinToken,data.RoomTitle,ct)?data.RoomTitle:null;
+            return await _roomsRepository.IsJoinTokenValid(data.CurrentJoinToken,data.RoomTitle,ct)?data.RoomTitle:null;
         }
         catch (Exception ex)
         {
@@ -50,11 +50,6 @@ public class RoomsController:ControllerBase
         _roomsRepository = roomsRepository;
         _playerRepository = playerRepository;
         _configuration = configuration;
-    }
-    [HttpGet("/api/rooms")]
-    public async Task<IActionResult> GetRooms()
-    {
-        return Ok(new {message = "Room List"});
     }
 
     [HttpGet("/api/getCurrentPlayer")]
@@ -89,7 +84,8 @@ public class RoomsController:ControllerBase
             MaxPlayersCount = room.MaxPlayersCount,
             PlayersCount = room.PlayersCount,
             TimeToDraw = room.TimeToDraw,
-            isPlayerAdmin = playerId==room.AdminId
+            isPlayerAdmin = playerId==room.AdminId,
+            PlayerId = currPlayer.Nickname,
         };
         foreach (Player player in room.Players)
         {
@@ -97,7 +93,6 @@ public class RoomsController:ControllerBase
             {
                 Nickname = player.Nickname??"NULL",
                 isAdmin = player.Id==room.AdminId,
-                isPlayer = player.Id == playerId,
             };
             model.Players.Add(playerVM);
         }
@@ -162,7 +157,7 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message = "Room with this title already exists."});
         if (!ModelState.IsValid)
             return BadRequest(new {message = ModelState.Values.FirstOrDefault()?.Errors.FirstOrDefault()?.ErrorMessage});
-        if (Regex.IsMatch(model.Title,@".*\W"))
+        if (Regex.IsMatch(model.Title,@".*[^a-zA-Z0-9 _]"))
             return BadRequest(new {message = "Room title cannot contain special characters!"});
         Player admin = new Player()
         {
@@ -232,13 +227,13 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message="Room title is required"});//check if user passed at least smth
         if (roomTitle==null)
             return BadRequest(new {message="Join link is not valid"});//check if join link is valid if room title is not present
-        if (Regex.IsMatch(model.Nickname,@".*\W"))
+        if (Regex.IsMatch(model.Nickname,@".*[^a-zA-Z0-9 _]"))
             return BadRequest(new {message = "Nickname cannot contain special characters!"});
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
             return BadRequest(new {message="Room you trying to join doesn't exist"});//check if room exists
         if ((room.PlayersCount==0||!room.isPublic)&&model.JoinToken==null)
-            return BadRequest(new {message="You can't join private room"});//check user provides join token for rooms with 0 players or private
+            return BadRequest(new {message="You can't join private room."});//check user provides join token for rooms with 0 players or private
         if (User.Identity.IsAuthenticated)
         {
             string playerId=User.FindFirst("PlayerId").Value;
@@ -251,7 +246,7 @@ public class RoomsController:ControllerBase
         if (room.PlayersCount==0&&(player==null||player.Id!=room.AdminId))
             return BadRequest(new {message="Only creator of the room is allowed to join."});//check if only admin can join room with 0 players
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);//any invalidations on model
+            return BadRequest(new {message="One or more fields in the form are invalid."});//any invalidations on model
         if (room.PlayersCount>=room.MaxPlayersCount)
             return BadRequest(new {message="Room is full."});//check if room is full
         

@@ -5,7 +5,7 @@ import { Typography } from 'antd';
 import {Color} from "../misc/colors";
 import { Outlet, useNavigationType } from "react-router";
 import { leave } from "../misc/MiscFunctions";
-import { useSignalRConnection } from "./SignalRProvider";
+import { useSignalRConnectionContext } from "./SignalRProvider";
 import { useCookies } from "react-cookie";
 import { ErrorDisplayProvider } from "./ErrorDisplayProvider";
 
@@ -17,7 +17,7 @@ export const MainLayout: FC<IMainLayoutProps> = () => {
     
     const navigationType = useNavigationType();
     const [cookie,,removeCookie]=useCookies(['player']);
-    const connection=useSignalRConnection();
+    const connection=useSignalRConnectionContext();
 
     async function onUnload()
     {

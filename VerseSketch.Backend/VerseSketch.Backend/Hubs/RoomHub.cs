@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Protocol;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 using VerseSketch.Backend.ViewModels;
@@ -12,6 +13,8 @@ public interface IRoomHub
     Task ReceiveParams(SetParamsViewModel model);
     Task ReceivePlayerList(List<PlayerViewModel> players);
     Task RoomDeleted();
+    Task PlayerLeft(string playerId);
+    Task PlayerJoined(PlayerViewModel player);
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -34,7 +37,8 @@ public class RoomHub:Hub<IRoomHub>
         string roomTitle=Context.GetHttpContext().Request.Query["roomTitle"];
         Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,true);
         string playerId = Context.User.FindFirst("PlayerId").Value;
-        if (room == null||!await _playerRepository.IsPlayerInRoomAsyncRO(playerId,room.Title))
+        Player? player = await _playerRepository.GetPlayerAsyncRO(playerId);
+        if (room == null||player==null||player.RoomTitle!=roomTitle)
         {
             Context.Abort();
             return;
@@ -46,18 +50,24 @@ public class RoomHub:Hub<IRoomHub>
             MaxPlayersCount = room.MaxPlayersCount,
             PlayersCount = room.PlayersCount,
             TimeToDraw = room.TimeToDraw,
-            isPlayerAdmin = playerId==room.AdminId
+            isPlayerAdmin = playerId==room.AdminId,
+            PlayerId = player.Id,
         };
-        foreach (Player player in room.Players)
+        foreach (Player p in room.Players)
         {
             model.Players.Add(new PlayerViewModel()
             {
-                isAdmin = room.AdminId == player.Id,
-                Nickname = player.Nickname??"",
-                isPlayer = player.Id == playerId,
+                isAdmin = room.AdminId == p.Id,
+                Nickname = p.Nickname??"",
+                Id = p.Id,
             });
         }
-        await Clients.Groups(roomTitle).ReceivePlayerList(model.Players);
+        await Clients.Groups(roomTitle).PlayerJoined(new PlayerViewModel()
+        {
+            isAdmin = room.AdminId == player.Id,
+            Nickname = player.Nickname,
+            Id = player.Id,
+        });
         await Groups.AddToGroupAsync(Context.ConnectionId,room.Title);
         await Clients.Clients(Context.ConnectionId).ReceiveRoom(model);
     }
@@ -105,12 +115,28 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Groups(model.RoomTitle).ReceiveParams(model);
     }
 
+    public async Task KickPlayer(string playerId, string roomTitle)
+    {
+        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,false);
+        if (room == null)
+            throw new HubException("Room not found.");
+        if (!Context.User.Identity.IsAuthenticated||room.AdminId!=Context.User.FindFirst("PlayerId").Value)
+            throw new HubException("You are not the admin in this room.");
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
+        if (player == null||player.RoomTitle!=roomTitle)
+            throw new HubException("Player is not in this room.");
+        _playerRepository.DeletePlayer(player);
+        await _playerRepository.SaveChangesAsync();
+        await Clients.Groups(roomTitle).PlayerLeft(playerId);
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        Player? player = await _playerRepository.GetPlayerAsync(Context.User.FindFirst("PlayerId").Value);
+        string playerId = Context.User.FindFirst("PlayerId").Value;
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
         if (player == null)
             return;
-        Room? room = await _roomsRepository.GetRoomAsyncRO(player.RoomTitle,true);
+        Room? room = await _roomsRepository.GetRoomAsyncRO(player.RoomTitle,false);
         _playerRepository.DeletePlayer(player);
         await _playerRepository.SaveChangesAsync();
         if (room.AdminId == player.Id)
@@ -118,18 +144,6 @@ public class RoomHub:Hub<IRoomHub>
             await Clients.Groups(player.RoomTitle).RoomDeleted();
             return;
         }
-        List<PlayerViewModel> model = new List<PlayerViewModel>();
-        foreach (Player p in room.Players)
-        {
-            if (p.Id == player.Id)
-                continue;
-            model.Add(new PlayerViewModel()
-            {
-                isAdmin = room.AdminId == player.Id,
-                Nickname = p.Nickname??"",
-                isPlayer = player.Id == p.Id,
-            });
-        }
-        await Clients.Groups(player.RoomTitle).ReceivePlayerList(model);
+        await Clients.Groups(player.RoomTitle).PlayerLeft(playerId);
     }
 }

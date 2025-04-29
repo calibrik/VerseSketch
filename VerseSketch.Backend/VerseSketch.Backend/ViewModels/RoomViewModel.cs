@@ -10,6 +10,7 @@ public class RoomViewModel
     public int TimeToDraw { get; set; }
     public bool isPublic { get; set; }
     public bool isPlayerAdmin { get; set; }
+    public string PlayerId { get; set; }
 
     public List<PlayerViewModel> Players { get; set; } = new();
 }

@@ -20,8 +20,8 @@ public class RoomsRepository
     {
         return await _dbContext.Rooms.FindAsync(roomTitle);
     }
-
-    public async Task<bool> IsTokenValid(string token, string title, CancellationToken ct)
+    
+    public async Task<bool> IsJoinTokenValid(string token, string title, CancellationToken ct)
     {
         return await _dbContext.Rooms.AsNoTracking().Where(room => room.Title == title&&room.CurrentJoinToken==token).FirstOrDefaultAsync(ct) != null;
     }

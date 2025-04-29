@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<parameters>
+  <parameter name="IIS Web Application Name" description="" value="C:\inetpub\wwwroot\verse-sketch" tags="IisApp">
+    <parameterEntry kind="ProviderPath" scope="IisApp" match="^C:\\Users\\Matt\\Documents\\Projects-and-other-stuff\\ASP\.NET\ projects\\VerseSketch\\VerseSketch\.Backend\\VerseSketch\.Backend\\bin\\Release\\net9\.0\\publish\\$" />
+  </parameter>
+</parameters>

@@ -17,7 +17,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
     );
 }
 
-export const useSignalRConnection = () => {
+export const useSignalRConnectionContext = () => {
     const context = useContext(SignalRContext);
     if (!context) {
       throw new Error('useSignalRConnection must be used within a SignalRProvider');

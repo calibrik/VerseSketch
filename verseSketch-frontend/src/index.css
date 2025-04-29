@@ -36,8 +36,7 @@
 }
 .primary-button:hover,
 .error-modal-button:hover,
-.refresh-button:hover,
-.join-room-button:hover{
+.refresh-button:hover{
   background-color: #ac40ff !important;
 }
 .primary-button:disabled,
@@ -45,7 +44,8 @@
 .error-modal-button:disabled,
 .refresh-button:disabled,
 .join-room-button:disabled,
-.leave-button:disabled{
+.leave-button:disabled,
+.back-button:disabled{
   background-color: #F8DCFF !important;
   cursor: not-allowed;
   border: 2px solid #7C009B !important;
@@ -57,7 +57,8 @@
 .error-modal-button:active,
 .refresh-button:active,
 .join-room-button:active,
-.leave-button:active{
+.leave-button:active,
+.back-button:active{
   background-color: #F8DCFF !important;
   border: 2px solid #7C009B !important;
   color: #7C009B !important;
@@ -69,8 +70,17 @@
 .error-modal-button:active  .button-text,
 .error-modal-button:disabled  .button-text,
 .leave-button:active  .button-text,
-.leave-button:disabled  .button-text{
+.leave-button:disabled  .button-text,
+.back-button:active  .button-text,
+.back-button:disabled  .button-text{
   color: #7C009B !important;
+}
+
+.secondary-button:hover,
+.leave-button:hover,
+.back-button:hover,
+.join-room-button:hover{
+  background-color: #aa2dc9 !important;
 }
 
 .page-title{
@@ -81,9 +91,16 @@
 }
 
 .join-room-button{
-  background-color: #9000FF;
+  background-color: #7C009B;
   width: 50px !important;
   height: 50px;
+}
+
+.kick-button{
+  color: #7C009B;
+  font-weight: 700;
+  font-size: 19px;
+  cursor: pointer;
 }
 
 .secondary-button{
@@ -91,10 +108,6 @@
   width:195px;
   height:63px;
   padding: 10px;
-}
-.secondary-button:hover,
-.leave-button:hover{
-  background-color: #aa2dc9 !important;
 }
 
 .navbar{
@@ -329,9 +342,8 @@
 }
 
 .room-title{
-  width: "100%";
-  word-break: "break-word";
-  white-space: "normal";
+  word-break: break-word;
+  white-space: normal;
   font-size:24px;
   font-weight: bold;
 }
@@ -358,13 +370,26 @@
 }
 
 .player-placeholder-text{
-  opacity: 0.5;
+  opacity: 0.3;
   color: #7C009B;
   font-size: 18px;
+  font-weight: 600;
 }
 
 .player-nickname-text{
   color: #7C009B;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 600;
+}
+
+.back-button{
+  background-color: #7C009B;
+  border-radius: 5px;
+  width:110px;
+  height:45px;
+}
+
+.back-button .button-text{
+  font-size: 20px;
+  width: auto;
 }

@@ -1,5 +1,5 @@
 import { Card, Col, Divider, Flex, List, Row, Select, Switch } from "antd";
-import { FC, useEffect, useRef, useState } from "react";
+import { FC, ReactNode, useEffect, useRef, useState } from "react";
 import { Color } from "../misc/colors";
 import { Spinner } from "../components/Spinner";
 import { StartGameButton } from "../components/buttons/StartGameButton";
@@ -9,17 +9,19 @@ import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useCookies } from "react-cookie";
 import * as signalR from "@microsoft/signalr";
 import { InviteButton } from "../components/buttons/InviteButton";
-import { useSignalRConnection } from "../components/SignalRProvider";
+import { useSignalRConnectionContext } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import '../index.css';
 import { LeaveRoomButton } from "../components/buttons/LeaveRoomButton";
+import { leave } from "../misc/MiscFunctions";
+import { StarFilled } from "@ant-design/icons";
+import { KickButton } from "../components/buttons/KickButton";
 
 interface IRoomPageProps {};
 interface IPlayerModel{
     nickname:string;
     id:string;
     isAdmin:boolean;
-    isPlayer:boolean;
 }
 interface IRoomModel{
     title:string;
@@ -29,6 +31,7 @@ interface IRoomModel{
     timeToDraw:number;
     isPublic:boolean;
     isPlayerAdmin:boolean;
+    playerId:string;
 }
 interface ISetParamsModel{
     maxPlayersCount?:number;
@@ -43,7 +46,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
-    const connection=useSignalRConnection();
+    const connection=useSignalRConnectionContext();
     const errorModals=useErrorDisplayContext();
     const navigate=useNavigate()
 
@@ -58,9 +61,40 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         }
         setModel(data);
     }
-    function onReceivePlayerList(data:IPlayerModel[]) {
-        if (!modelRef.current) return;
-        onRoomReceive({...modelRef.current, players:data,playersCount:data.length});
+
+    function onPlayerJoined(data:IPlayerModel) {
+        if (!modelRef.current)
+            return;
+        let newModel={...modelRef.current};
+        let i=0;
+        for (;i<newModel?.players.length;i++)
+        {
+            if (newModel.players[i].id=="")
+                break;
+        }
+        newModel.players[i]=data;
+        setModel(newModel);
+    }
+
+    function onPlayerLeft(playerId:string){
+        if (!modelRef.current)
+            return;
+        if (playerId==modelRef.current.playerId)
+        {
+            leave(cookies.player,removeCookie,connection);
+            errorModals.errorModal.current?.show("You have been kicked out of room.");
+            return;
+        }
+        let newModel={...modelRef.current};
+        let i=0;
+        for (;i<newModel?.players.length;i++)
+        {
+            if (newModel.players[i].id==playerId)
+                break;
+        }
+        newModel.players.splice(i,1);
+        newModel.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
+        setModel(newModel);
     }
 
     async function initLoad()
@@ -120,7 +154,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     }
 
     function onChangeParams(params:ISetParamsModel) {
-        if (!model) return;
+        if (!model||!model.isPlayerAdmin) return;
 
         params.roomTitle=roomTitle;
         let oldModel:IRoomModel=model;
@@ -129,17 +163,20 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         }
         catch (e:any) {
             errorModals.errorModalClosable.current?.show(e);
+            setModel(oldModel);
             return;
         }
-        if (connection.current?.state!="Connected") return;
+        // if (connection.current?.state!="Connected") return;
         connection.current?.invoke("SendParams", params)
             .catch((_) => {
-                errorModals.errorModalClosable.current?.show("An error occured when tried to connect the server.");
+                errorModals.errorModalClosable.current?.show("An error occurred while trying to proccess request on server.");
                 setModel(oldModel);
             });
     }
     async function onInvite()
     {
+        if (!model||!model.isPlayerAdmin)
+            return;
         let response: Response | null;
         try{
             response=await fetch(`${ConnectionConfig.Api}/rooms/generateJoinToken?${new URLSearchParams({
@@ -166,8 +203,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     async function onLeave()
     {
-        connection.current?.state!="Connected"?null:connection.current?.stop();
-        removeCookie('player',{path:"/non-existent-cookie-path"});
+        leave(cookies.player,removeCookie,connection);
         navigate("/",{replace:true});
     }
     
@@ -180,10 +216,9 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     function onSwitchChange(checked:boolean) {
         onChangeParams({isPublic:checked});
     }
-    function onRoomDeleted()
+    async function onRoomDeleted()
     {
-        connection.current?.state!="Connected"?null:connection.current?.stop();
-        removeCookie('player',{path:"/non-existent-cookie-path"});
+        leave(cookies.player,removeCookie,connection);
         errorModals.errorModal.current?.show("Admin has left the room.");
     }
     function onConnectionClose(error?:Error)
@@ -193,9 +228,9 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         removeCookie('player',{path:"/non-existent-cookie-path"});
     }
 
-    useEffect(() => {
-        console.log("rerender",model);
-    });
+    // useEffect(() => {
+    //     console.log("rerender",model);
+    // });
 
     useEffect(() => {
         modelRef.current=model;
@@ -203,35 +238,35 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     useEffect(() => {
         document.title = roomTitle ?? "Room";
+        console.log("remount")
         setLoading(true);
         initLoad()
             .then(async () => {
                 connection.current = new signalR.HubConnectionBuilder()
                     .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
-                    // .configureLogging("none")
+                    .configureLogging("none")
                     .build();
                 
                 connection.current.on("ReceiveRoom", onRoomReceive);
                 connection.current.on("ReceiveParams", onReceiveParams);
-                connection.current.on("ReceivePlayerList", onReceivePlayerList);
+                connection.current.on("PlayerJoined", onPlayerJoined);
+                connection.current.on("PlayerLeft", onPlayerLeft);
                 connection.current.on("RoomDeleted",onRoomDeleted);
                 connection.current.onclose(onConnectionClose);
 
                 await connection.current.start()
-                    .catch((_) => {
+                    .catch(async (_) => {
+                        await leave(cookies.player,removeCookie,connection);
+                        setLoading(false);
                         errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
                     });
                 setLoading(false);
             })
-            .catch((error) => {
+            .catch(async (error) => {
+                await leave(cookies.player,removeCookie,connection);
                 setLoading(false);
                 errorModals.errorModal.current?.show(error);
-                connection.current?.state!="Connected"?null:connection.current?.stop();
-                removeCookie('player',{path:"/non-existent-cookie-path"});
             });
-        return () => {
-            // connection.current?.state!="Connected"?null:connection.current?.stop();//this is gonna be removed
-        }
     }, []);
 
     return (
@@ -262,26 +297,24 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     locale={{ emptyText: <span className="placeholder-text">Loading...</span>}}
                     dataSource={model?.players ?? []}
                     renderItem={(player) => {
+                        let suffix:ReactNode|null=null;
+                        if (player.isAdmin)
+                            suffix=<StarFilled style={{fontSize:20,marginRight:10}}/>;
+                        else if (model?.isPlayerAdmin)
+                            suffix=<KickButton style={{marginRight:10}} playerId={player.id} roomTitle={roomTitle}/>
                         if (player.id === "")
                             return(
                                 <List.Item className="player-field">
-                                <List.Item.Meta
-                                    title={
-                                    <span className="player-placeholder-text">
-                                        Player spot
-                                    </span>
-                                    }
-                                />
+                                <span className="player-placeholder-text">
+                                    Player slot
+                                </span>
                                 </List.Item>);
                         return (
-                        <List.Item className={player.isPlayer?"player-selected-field":"player-field"}>
-                        <List.Item.Meta
-                            title={
-                            <span className="player-nickname-text">
-                                {player.nickname}
-                            </span>
-                            }
-                        />
+                        <List.Item className={model?.playerId==player.id?"player-selected-field":"player-field"}>
+                        <span className="player-nickname-text">
+                            {player.nickname}
+                        </span>
+                        {suffix}
                         </List.Item>);
                     }}
                     />

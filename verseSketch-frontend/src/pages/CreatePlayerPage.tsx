@@ -9,6 +9,11 @@ import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useCookies } from "react-cookie";
 import { Spinner } from "../components/Spinner";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+import { leave } from "../misc/MiscFunctions";
+import { BackButton } from "../components/buttons/BackButtton";
+import { useHistoryContext } from "../components/HistoryProvider";
+
+
 interface ICreatePlayerPageProps {};
 interface ICreatePlayerModel{
     nickname:string,
@@ -17,13 +22,14 @@ interface ICreatePlayerModel{
 
 export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     const { roomTitle,joinToken } = useParams<string>();
-    const [cookies, setCookie] = useCookies(['player']);
+    const [cookies, setCookie,removeCookie] = useCookies(['player']);
     const navigate=useNavigate();
     const validateAbort=useRef<AbortController|null>(null);
     const [loading,setLoading]=useState<boolean>(false);
     const errorModals=useErrorDisplayContext();
     const [validationLoading,setValidationLoading]=useState<boolean>(true);
     const isLinkValid=useRef<boolean>(true);
+    const historyStack=useHistoryContext();
     
     useEffect(()=>{
         console.log(`cookies: ${cookies.player}`);
@@ -60,6 +66,11 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         setValidationLoading(false);
     }
     
+    async function beforeBack()
+    {
+        await leave(cookies.player,removeCookie);
+    }
+    
     async function onSuccessfulSubmit(values:ICreatePlayerModel) {
         if (!isLinkValid.current) 
             return;
@@ -90,6 +101,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             return;
         }
         setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
+        historyStack.current=[];
         navigate(`/room/${data.roomTitle}`,{replace:true});
     }
 
@@ -105,7 +117,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
         if (value.length>30) {
             return Promise.reject("Nickname cannot be longer than 30 characters!");
         }
-        const pattern=/.*\W/;
+        const pattern=/.*[^a-zA-Z0-9 _]/;
         if (pattern.test(value))
             return Promise.reject("Nickname cannot contain special characters!");
         setLoading(true);
@@ -151,7 +163,10 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
 
     return (
         <div className="container-small">
-            <PageTitle style={{marginTop:148,width:"70%"}}>Choose your nickname and join the game!</PageTitle>
+            <div style={{width:"100%",marginTop:50,marginBottom:70}}>
+                <BackButton beforeBack={beforeBack}/>
+            </div>
+            <PageTitle style={{width:"70%"}}>Choose your nickname and join the game!</PageTitle>
             <Form
                 name="create-player"
                 layout="vertical"
