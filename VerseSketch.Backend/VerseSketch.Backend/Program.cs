@@ -23,6 +23,10 @@ builder.Services.AddCors(options =>
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();
+            policy.WithOrigins("http://10.14.5.10:5173") // Network React app's origin
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
         });
 });
 #endif

@@ -6,7 +6,6 @@ import { StartGameButton } from "../components/buttons/StartGameButton";
 import Title from "antd/es/typography/Title";
 import { useNavigate, useParams } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
-import { useCookies } from "react-cookie";
 import * as signalR from "@microsoft/signalr";
 import { InviteButton } from "../components/buttons/InviteButton";
 import { useSignalRConnectionContext } from "../components/SignalRProvider";
@@ -42,7 +41,6 @@ interface ISetParamsModel{
 export const RoomPage: FC<IRoomPageProps> = () => {
     const [model, setModel] = useState<IRoomModel|null>(null);
     const modelRef=useRef<IRoomModel|null>(null);
-    const [cookies,,removeCookie] = useCookies(['player']);
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
@@ -81,7 +79,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             return;
         if (playerId==modelRef.current.playerId)
         {
-            leave(cookies.player,removeCookie,connection);
+            leave(connection);
             errorModals.errorModal.current?.show("You have been kicked out of room.");
             return;
         }
@@ -107,7 +105,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 method:"GET",
                 headers:{
                     "Content-Type":"application/json",
-                    "Authorization":`Bearer ${cookies.player}`
+                    "Authorization":`Bearer ${sessionStorage.getItem("player")}`
                 }
             });
         }
@@ -185,7 +183,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization":`Bearer ${cookies.player}`
+                    "Authorization":`Bearer ${sessionStorage.getItem("player")}`
                 },
             });
         }
@@ -203,7 +201,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     async function onLeave()
     {
-        leave(cookies.player,removeCookie,connection);
+        leave(connection);
         navigate("/",{replace:true});
     }
     
@@ -218,14 +216,14 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     }
     async function onRoomDeleted()
     {
-        leave(cookies.player,removeCookie,connection);
+        leave(connection);
         errorModals.errorModal.current?.show("Admin has left the room.");
     }
     function onConnectionClose(error?:Error)
     {
         if (error)
             errorModals.errorModal.current?.show("Lost connection to the server.");
-        removeCookie('player',{path:"/non-existent-cookie-path"});
+        sessionStorage.removeItem("player")
     }
 
     // useEffect(() => {
@@ -243,8 +241,8 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         initLoad()
             .then(async () => {
                 connection.current = new signalR.HubConnectionBuilder()
-                    .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${cookies.player}`)
-                    .configureLogging("none")
+                    .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${sessionStorage.getItem("player")}`)
+                    // .configureLogging("none")
                     .build();
                 
                 connection.current.on("ReceiveRoom", onRoomReceive);
@@ -254,16 +252,17 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 connection.current.on("RoomDeleted",onRoomDeleted);
                 connection.current.onclose(onConnectionClose);
 
-                await connection.current.start()
-                    .catch(async (_) => {
-                        await leave(cookies.player,removeCookie,connection);
-                        setLoading(false);
-                        errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
-                    });
+                try{
+                    await connection.current.start();
+                }
+                catch(_){
+                    await leave(connection);
+                    errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
+                }
                 setLoading(false);
             })
             .catch(async (error) => {
-                await leave(cookies.player,removeCookie,connection);
+                await leave(connection);
                 setLoading(false);
                 errorModals.errorModal.current?.show(error);
             });

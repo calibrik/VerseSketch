@@ -7,7 +7,6 @@ import { useState } from "react";
 import { RuleObject } from "antd/es/form";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useNavigate } from "react-router";
-import { useCookies } from "react-cookie";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import { BackButton } from "../components/buttons/BackButtton";
 import { useHistoryContext } from "../components/HistoryProvider";
@@ -24,7 +23,6 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const navigate=useNavigate();
-    const [, setCookie, ] = useCookies();
     const validateAbort=useRef<AbortController|null>(null);
     const errorModals=useErrorDisplayContext();
     const historyStack=useHistoryContext();
@@ -60,7 +58,8 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             setLoading(false);
             return;
         }
-        setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
+        sessionStorage.setItem("player",data.accessToken);
+        console.log("session storage after room submit: ", sessionStorage.getItem("player"));
         setLoading(false);
         historyStack.current.push(location.pathname);
         navigate(`/join-room/by-link/${data.joinToken}`,{replace:true});

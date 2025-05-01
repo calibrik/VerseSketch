@@ -6,7 +6,6 @@ import { PageTitle } from "../components/PageTitle";
 import { RuleObject } from "antd/es/form";
 import { JoinRoomButton } from "../components/buttons/JoinRoomButton";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
-import { useCookies } from "react-cookie";
 import { Spinner } from "../components/Spinner";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import { leave } from "../misc/MiscFunctions";
@@ -22,7 +21,6 @@ interface ICreatePlayerModel{
 
 export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     const { roomTitle,joinToken } = useParams<string>();
-    const [cookies, setCookie,removeCookie] = useCookies(['player']);
     const navigate=useNavigate();
     const validateAbort=useRef<AbortController|null>(null);
     const [loading,setLoading]=useState<boolean>(false);
@@ -32,9 +30,10 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     const historyStack=useHistoryContext();
     
     useEffect(()=>{
-        console.log(`cookies: ${cookies.player}`);
+        console.log(`token on load: ${sessionStorage.getItem("player")}`);
         validateJoinLink();
     },[]);
+
 
     async function validateJoinLink() {
         let response:Response|null=null;
@@ -68,7 +67,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     
     async function beforeBack()
     {
-        await leave(cookies.player,removeCookie);
+        await leave();
     }
     
     async function onSuccessfulSubmit(values:ICreatePlayerModel) {
@@ -76,12 +75,12 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             return;
         values.nickname=values.nickname.trim();
         setLoading(true);
-
+        console.log(`cookies before submit: ${sessionStorage.getItem("player")}`);
         let response=await fetch(`${ConnectionConfig.Api}/rooms/join`,{
             method:"POST",
             headers:{
                 "Content-Type":"application/json",
-                "Authorization":`Bearer ${cookies.player}`
+                "Authorization":`Bearer ${sessionStorage.getItem("player")}`
             },
             body:JSON.stringify({
                 nickname:values.nickname,
@@ -100,7 +99,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             errorModals.errorModalClosable.current?.show(data.message);
             return;
         }
-        setCookie('player',data.accessToken,{path:"/non-existent-cookie-path",sameSite:"strict",secure:true,httpOnly:true});
+        sessionStorage.setItem("player",data.accessToken);
         historyStack.current=[];
         navigate(`/room/${data.roomTitle}`,{replace:true});
     }

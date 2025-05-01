@@ -1,22 +1,22 @@
 import { HubConnection } from "@microsoft/signalr";
 import { ConnectionConfig } from "./ConnectionConfig";
 
-export async function leave(cookie:string|undefined,removeCookie:(name:"player",options?:any)=>void,connection?:React.RefObject<HubConnection | null>)
+export async function leave(connection?:React.RefObject<HubConnection | null>)
 {
-    if (cookie==undefined)
-        return;
-    if (connection&&connection.current?.state==="Connected"){
+    const token=sessionStorage.getItem("player");
+    console.log("Leaving",token,connection?.current);
+    if (connection&&connection.current){
         connection.current?.stop();
         connection.current=null;
     }
-    else{
+    else if (token!=null){
         fetch(`${ConnectionConfig.Api}/rooms/leave`,{
             method:'DELETE',
             headers:{
                 "Content-Type":"application/json",
-                "Authorization":`Bearer ${cookie}`
+                "Authorization":`Bearer ${token}`
             }
         });
     }
-    removeCookie('player',{path:"/non-existent-cookie-path"});
+    sessionStorage.removeItem("player");
 }

@@ -6,7 +6,6 @@ import {Color} from "../misc/colors";
 import { Outlet, useNavigationType } from "react-router";
 import { leave } from "../misc/MiscFunctions";
 import { useSignalRConnectionContext } from "./SignalRProvider";
-import { useCookies } from "react-cookie";
 import { ErrorDisplayProvider } from "./ErrorDisplayProvider";
 
 const { Title } = Typography;
@@ -16,12 +15,11 @@ interface IMainLayoutProps {};
 export const MainLayout: FC<IMainLayoutProps> = () => {
     
     const navigationType = useNavigationType();
-    const [cookie,,removeCookie]=useCookies(['player']);
     const connection=useSignalRConnectionContext();
 
     async function onUnload()
     {
-        await leave(cookie.player,removeCookie,connection);
+        await leave(connection);
     }
     
       useEffect(() => {
