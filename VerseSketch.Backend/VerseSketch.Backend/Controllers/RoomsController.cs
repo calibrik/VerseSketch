@@ -157,7 +157,7 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message = "Room with this title already exists."});
         if (!ModelState.IsValid)
             return BadRequest(new {message = ModelState.Values.FirstOrDefault()?.Errors.FirstOrDefault()?.ErrorMessage});
-        if (Regex.IsMatch(model.Title,@".*[^a-zA-Z0-9 _]"))
+        if (Regex.IsMatch(model.Title,@"[^\p{L}\p{N}_ ]"))
             return BadRequest(new {message = "Room title cannot contain special characters!"});
         Player admin = new Player()
         {
@@ -227,7 +227,7 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message="Room title is required"});//check if user passed at least smth
         if (roomTitle==null)
             return BadRequest(new {message="Join link is not valid"});//check if join link is valid if room title is not present
-        if (Regex.IsMatch(model.Nickname,@".*[^a-zA-Z0-9 _]"))
+        if (Regex.IsMatch(model.Nickname,@"[^\p{L}\p{N}_ ]"))
             return BadRequest(new {message = "Nickname cannot contain special characters!"});
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)

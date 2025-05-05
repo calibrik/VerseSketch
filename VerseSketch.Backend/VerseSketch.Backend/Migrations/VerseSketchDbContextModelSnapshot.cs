@@ -27,6 +27,9 @@ namespace VerseSketch.Backend.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
+                    b.Property<string>("ConnectionID")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -45,7 +48,7 @@ namespace VerseSketch.Backend.Migrations
 
                     b.HasIndex("Nickname", "RoomTitle");
 
-                    b.ToTable("Players", (string)null);
+                    b.ToTable("Players");
                 });
 
             modelBuilder.Entity("VerseSketch.Backend.Models.Room", b =>
@@ -77,7 +80,7 @@ namespace VerseSketch.Backend.Migrations
 
                     b.HasIndex("AdminId");
 
-                    b.ToTable("Rooms", (string)null);
+                    b.ToTable("Rooms");
                 });
 
             modelBuilder.Entity("VerseSketch.Backend.Models.Player", b =>

@@ -30,7 +30,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://10.14.5.10:80/join-room",
+      "applicationUrl": "http://10.14.5.10:80",
       "sslPort": 0
     }
   }

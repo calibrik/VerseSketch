@@ -14,6 +14,7 @@ public interface IRoomHub
     Task ReceivePlayerList(List<PlayerViewModel> players);
     Task RoomDeleted();
     Task PlayerLeft(string playerId);
+    Task PlayerKicked(string playerId);
     Task PlayerJoined(PlayerViewModel player);
 }
 
@@ -37,12 +38,14 @@ public class RoomHub:Hub<IRoomHub>
         string roomTitle=Context.GetHttpContext().Request.Query["roomTitle"];
         Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,true);
         string playerId = Context.User.FindFirst("PlayerId").Value;
-        Player? player = await _playerRepository.GetPlayerAsyncRO(playerId);
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
         if (room == null||player==null||player.RoomTitle!=roomTitle)
         {
             Context.Abort();
             return;
         }
+        player.ConnectionID = Context.ConnectionId;
+        await _playerRepository.SaveChangesAsync();
         RoomViewModel model = new RoomViewModel()
         {
             Title = room.Title,
@@ -62,14 +65,34 @@ public class RoomHub:Hub<IRoomHub>
                 Id = p.Id,
             });
         }
+        await Clients.Clients(Context.ConnectionId).ReceiveRoom(model);
+        await Groups.AddToGroupAsync(Context.ConnectionId,roomTitle);
+    }
+
+    public async Task Join(string roomTitle)
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+        {
+            throw new HubException("You are not in this room.");
+        }
+        string playerId = Context.User.FindFirst("PlayerId").Value;
+        Player? player = await _playerRepository.GetPlayerAsyncRO(playerId);
+        Room? room=await _roomsRepository.GetRoomAsyncRO(roomTitle,false);
+        if (player == null)
+        {
+            throw new HubException("Player not found.");
+        }
+    
+        if (room == null)
+        {
+            throw new HubException("Room not found.");
+        }
         await Clients.Groups(roomTitle).PlayerJoined(new PlayerViewModel()
         {
             isAdmin = room.AdminId == player.Id,
             Nickname = player.Nickname,
             Id = player.Id,
         });
-        await Groups.AddToGroupAsync(Context.ConnectionId,room.Title);
-        await Clients.Clients(Context.ConnectionId).ReceiveRoom(model);
     }
 
     public async Task SendParams(SetParamsViewModel model)
@@ -125,25 +148,71 @@ public class RoomHub:Hub<IRoomHub>
         Player? player = await _playerRepository.GetPlayerAsync(playerId);
         if (player == null||player.RoomTitle!=roomTitle)
             throw new HubException("Player is not in this room.");
-        _playerRepository.DeletePlayer(player);
-        await _playerRepository.SaveChangesAsync();
-        await Clients.Groups(roomTitle).PlayerLeft(playerId);
+        await Clients.Group(roomTitle).PlayerKicked(playerId);
     }
 
+    public async Task Leave()
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+            return;
+        string playerId = Context.User.FindFirst("PlayerId").Value;
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
+        if (player == null)
+        {
+            Context.Abort();
+            return;
+        }
+        Room? room = await _roomsRepository.GetRoomAsyncRO(player.RoomTitle,false);
+        _playerRepository.DeletePlayer(player);
+        await _playerRepository.SaveChangesAsync();
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId,room.Title);
+        if (room.AdminId == player.Id)
+        {
+            await Clients.Groups(player.RoomTitle).RoomDeleted();
+        }
+        else
+        {
+            await Clients.Groups(player.RoomTitle).PlayerLeft(player.Id);
+        }
+        Context.Abort();
+    }
+
+    // async Task LeaveRoom()
+    // {
+    //     if (!Context.User.Identity.IsAuthenticated)
+    //         return;
+    //     string playerId = Context.User.FindFirst("PlayerId").Value;
+    //     Player? player = await _playerRepository.GetPlayerAsync(playerId);
+    //     if (player == null)
+    //         return;
+    //     
+    // }
+    
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        if (!Context.User.Identity.IsAuthenticated)
+            return;
         string playerId = Context.User.FindFirst("PlayerId").Value;
         Player? player = await _playerRepository.GetPlayerAsync(playerId);
         if (player == null)
             return;
+        if (player.ConnectionID != null)
+        {
+            string currConnectionId = player.ConnectionID;
+            await Task.Delay(25000);
+            Player? currPlayer=await _playerRepository.GetPlayerAsyncRO(playerId);
+            if (currPlayer == null || currConnectionId != currPlayer.ConnectionID)
+                return;
+        }
         Room? room = await _roomsRepository.GetRoomAsyncRO(player.RoomTitle,false);
         _playerRepository.DeletePlayer(player);
         await _playerRepository.SaveChangesAsync();
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId,room.Title);
         if (room.AdminId == player.Id)
         {
             await Clients.Groups(player.RoomTitle).RoomDeleted();
             return;
         }
-        await Clients.Groups(player.RoomTitle).PlayerLeft(playerId);
+        await Clients.Groups(player.RoomTitle).PlayerLeft(player.Id);
     }
 }

@@ -46,7 +46,8 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     const {roomTitle} = useParams();
     const connection=useSignalRConnectionContext();
     const errorModals=useErrorDisplayContext();
-    const navigate=useNavigate()
+    const navigate=useNavigate();
+    const isRecconecting=useRef<boolean>(false);
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
@@ -61,7 +62,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     }
 
     function onPlayerJoined(data:IPlayerModel) {
-        if (!modelRef.current)
+        if (!modelRef.current||modelRef.current.playerId==data.id)
             return;
         let newModel={...modelRef.current};
         let i=0;
@@ -74,15 +75,16 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         setModel(newModel);
     }
 
+    function onPlayerKicked(playerId:string) {
+        if (!modelRef.current||playerId!=modelRef.current.playerId)
+            return;
+        leave(connection);
+        errorModals.errorModal.current?.show("You have been kicked out of room.");
+    }
+
     function onPlayerLeft(playerId:string){
         if (!modelRef.current)
             return;
-        if (playerId==modelRef.current.playerId)
-        {
-            leave(connection);
-            errorModals.errorModal.current?.show("You have been kicked out of room.");
-            return;
-        }
         let newModel={...modelRef.current};
         let i=0;
         for (;i<newModel?.players.length;i++)
@@ -196,7 +198,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         if (!response.ok){
             errorModals.errorModalClosable.current?.show(data.message);
         }
-        navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data.joinToken}`)
+        await navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data.joinToken}`);
     }
 
     async function onLeave()
@@ -219,11 +221,23 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         leave(connection);
         errorModals.errorModal.current?.show("Admin has left the room.");
     }
-    function onConnectionClose(error?:Error)
+    function onConnectionClose(error?:any)
     {
-        if (error)
+        console.log("Connection closed",error);
+        errorModals.statusModal.current?.close();
+        if (error||isRecconecting.current)
             errorModals.errorModal.current?.show("Lost connection to the server.");
         sessionStorage.removeItem("player")
+    }
+    function onRecconnect(){
+        console.log("Reconnecting to the server...");
+        isRecconecting.current=true;
+        errorModals.statusModal.current?.show("Reconnecting to the server...");
+    }
+    function onRecconnected(){
+        console.log("Reconnected to the server.");
+        isRecconecting.current=false;
+        errorModals.statusModal.current?.close();
     }
 
     // useEffect(() => {
@@ -234,6 +248,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         modelRef.current=model;
     }, [model]);
 
+
     useEffect(() => {
         document.title = roomTitle ?? "Room";
         console.log("remount")
@@ -243,17 +258,25 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 connection.current = new signalR.HubConnectionBuilder()
                     .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${sessionStorage.getItem("player")}`)
                     // .configureLogging("none")
+                    .withAutomaticReconnect([0,5000,10000,10000])
                     .build();
                 
+                connection.current.keepAliveIntervalInMilliseconds=3000;
+                connection.current.serverTimeoutInMilliseconds=5000;
+
                 connection.current.on("ReceiveRoom", onRoomReceive);
                 connection.current.on("ReceiveParams", onReceiveParams);
                 connection.current.on("PlayerJoined", onPlayerJoined);
                 connection.current.on("PlayerLeft", onPlayerLeft);
                 connection.current.on("RoomDeleted",onRoomDeleted);
+                connection.current.on("PlayerKicked",onPlayerKicked);
+                connection.current.onreconnecting(onRecconnect);
+                connection.current.onreconnected(onRecconnected);
                 connection.current.onclose(onConnectionClose);
 
                 try{
                     await connection.current.start();
+                    connection.current.invoke("Join", roomTitle);
                 }
                 catch(_){
                     await leave(connection);

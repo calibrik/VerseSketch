@@ -305,17 +305,38 @@
   height:60px !important;
 }
 
+
 .error-modal .ant-modal-content{
   width:500px !important;
   /* height:300px !important; */
 }
+.status-modal .ant-modal-content{
+  width:400px !important;
+}
 
+.status-modal .ant-modal-body,
 .error-modal .ant-modal-body{
   height: 70px;
+  color: #7C009B;
+}
+
+.status-modal-text{
+  color: #7C009B;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.status-modal .ant-modal-body{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .error-modal .ant-modal-content,
-.error-modal .ant-modal-header{
+.error-modal .ant-modal-header,
+.status-modal .ant-modal-content,
+.status-modal .ant-modal-header{
   background-color: #F8DCFF !important;
 }
 

@@ -14,7 +14,7 @@ $$
 language plpgsql;
 
 create or replace trigger OnPlayerAdd
-	after insert or delete or update on "Players"
+	after insert or delete or update of "RoomTitle" on "Players"
 		for each row
 			execute function IncrementPlayersCount();
 

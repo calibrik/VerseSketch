@@ -77,8 +77,8 @@ function App() {
 export default App;
 
 //TODO: website design on other devices is beyond fucked
-//TODO: session cookies are not in sync with tabs (it's not really a problem tbf)
+//TODO: session storage are not in sync with tabs (it's not really a problem tbf)
 //TODO: random error with errorDisplayProvider (probably hot reload issue only)
-//TODO: Random WS handshake issue on devices (it kinda works now, apparently it was related to cookies, but not sure)
+//TODO: Random WS handshake issue on devices (if connecting by wifi on the phone, still random tho)
 //TODO: WS should be terminated even if it not in connected state
-//TODO: Cookies had to go because they don't work properly on IIS with settings for some reason, session storage is used instead, but it less safe
+//TODO: onInvite clipboard bug when accessing by local (api doesn't work on http)

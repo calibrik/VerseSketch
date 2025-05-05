@@ -75,7 +75,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         if (value.length>30) {
             return Promise.reject("Room title cannot be longer than 30 characters!");
         }
-        const pattern=/.*[^a-zA-Z0-9 _]/;
+        const pattern=/[^\p{L}\p{N}_ ]/u;
         if (pattern.test(value))
             return Promise.reject("Room title cannot contain special characters!");
         setLoading(true);
