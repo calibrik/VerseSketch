@@ -11,7 +11,7 @@ export const JoinRoomNavigateButton: FC<IJoinRoomNavigateButtonProps> = () => {
     return (
         <PrimaryButton 
             onClick={()=>navigate('/join-room',{replace:true})} 
-            icon={<PlaySquareFilled style={{ fontSize: 33 }} />}>
+            icon={<PlaySquareFilled className="button-icon" />}>
             JOIN ROOM
         </PrimaryButton>
     );

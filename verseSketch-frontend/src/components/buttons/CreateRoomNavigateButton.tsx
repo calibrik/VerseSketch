@@ -17,7 +17,7 @@ export const CreateRoomNavigateButton: FC<ICreateRoomNavigateButtonProps> = (pro
                 historyStack.current=[location.pathname];
                 navigate('/create-room',{replace:true});
             }} 
-            icon={<PlusSquareFilled style={{fontSize:33}}/>}>
+            icon={<PlusSquareFilled className="button-icon"/>}>
             CREATE ROOM
         </SecondaryButton>
     );

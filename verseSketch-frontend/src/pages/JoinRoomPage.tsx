@@ -9,6 +9,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { SearchOutlined } from "@ant-design/icons";
 import { RefreshButton } from "../components/buttons/RefreshButton";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+import "../index.css"
 
 interface IJoinRoomPageProps {
 };
@@ -22,7 +23,7 @@ interface IRoomModel{
 export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
     const [data, setData] = useState<IRoomModel[]>([]);
     const searchText = useRef<string>("");
-    const pageSize=9;
+    const pageSize=13;
     const isMoreDataAvailable=useRef<boolean>(true);
     const pageNumber=useRef<number>(0);
     const [loading, setLoading] = useState<boolean>(false);
@@ -136,13 +137,13 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
 
     return (
         <div className="container-mid">
-            <PageTitle style={{marginTop:15}}>Join existing rooms!</PageTitle>
+            <PageTitle style={{marginTop:"3vh"}}>Join existing rooms!</PageTitle>
             <Flex
                 justify="space-between"
                 align="center"
                 dir="row"
-                style={{marginBottom:28,marginTop:118, width:'100%'}}
-                gap={22}>
+                style={{marginBottom:"2vh",marginTop:"8vh", width:'100%'}}
+                gap={"1vw"}>
                 <Input onChange={onSearchTextChange} suffix={<SearchOutlined style={{fontSize:20}}/>} className="input-field" placeholder="Search..." />
                 <RefreshButton spin={loading} onClick={onRefresh} disabled={loading}/>
             </Flex>
@@ -155,24 +156,24 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
                 loader={""}>
                     {
                         data.length===0?
-                        <div style={{marginTop:20, display:'flex', justifyContent:'center', alignItems:'center'}}>
+                        <div style={{marginTop:"2vh", display:'flex', justifyContent:'center', alignItems:'center'}}>
                             <label className="placeholder-text">No rooms found</label>
                         </div>:
                         data.map((room, index) => (
                             <div className="scrollable-list-item" key={index}>
-                                <label style={{fontSize:16}}><b>{room.title}</b></label>
+                                <label className="item-title"><b>{room.title}</b></label>
                                 <div className="sub-item">
-                                    <div>{room.playersCount}/{room.maxPlayersCount}</div>
-                                    <JoinToRoomNavigationButton roomName={room.title} style={{marginLeft:100}}/>
+                                    <label>{room.playersCount}/{room.maxPlayersCount}</label>
+                                    <JoinToRoomNavigationButton roomName={room.title} style={{marginLeft:"13vw"}}/>
                                 </div>
                             </div>
                         ))
                     }
-                    {loading?<Spinner style={{ margin: '15px' }}/>:""}
+                    {loading?<Spinner style={{ margin: '2.5vmin' }}/>:""}
                 </InfiniteScroll>
             </div>
-            <div style={{display:'flex', justifyContent:'flex-end', alignItems:'center', width: '100%'}}>
-                <CreateRoomNavigateButton style={{marginTop:28}}/>
+            <div style={{marginTop:"2vh",display:'flex', justifyContent:'flex-end', alignItems:'center', width: '100%'}}>
+                <CreateRoomNavigateButton/>
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { SyncOutlined } from "@ant-design/icons";
-import { Button } from "antd";
+import { BaseButton } from "./BaseButton";
 interface IRefreshButtonProps {
     style?: React.CSSProperties;
     onClick?: () => void;
@@ -10,12 +10,11 @@ interface IRefreshButtonProps {
 
 export const RefreshButton: FC<IRefreshButtonProps> = (props) => {
     return (
-        <Button
-            type="primary"
+        <BaseButton
             style={props.style}
             onClick={props.onClick}
             disabled={props.disabled}
             className="refresh-button"
-            icon={<SyncOutlined spin={props.spin} style={{fontSize:23}}/>}/>
+            icon={<SyncOutlined spin={props.spin} className="button-icon-md"/>}/>
     );
 }

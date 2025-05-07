@@ -1,5 +1,6 @@
 import { Button } from "antd";
 import { FC, ReactNode } from "react";
+import { IconWrapper } from "../IconWrapper";
 interface IBaseButtonProps {
     icon?:ReactNode
     children?:string,
@@ -18,11 +19,11 @@ export const BaseButton: FC<IBaseButtonProps> = (props) => {
             type="primary"
             htmlType={props.htmlType}
             style={props.style}
-            icon={props.icon}
+            icon={<IconWrapper icon={props.icon}/>}
             onClick={props.onClick}
             className={props.className}
             iconPosition={props.iconPosition??"end"}>
-            <span className="button-text">{props.children}</span>   
+            {props.children!=null?<span className="button-text">{props.children}</span>:""}   
         </Button>
     );
 }

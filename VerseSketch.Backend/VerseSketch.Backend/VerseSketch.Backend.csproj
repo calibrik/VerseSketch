@@ -34,4 +34,45 @@
       <None Remove="Properties\PublishProfiles\web.pubxml" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index--yxZlkv2.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-4oZReHsT.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-B1_ejBmS.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-B2KTHrCy.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-B4zDyVkP.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-B7xbSzZB.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BA9JNMBE.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BbLJH4j8.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BdGVxuWd.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-Bi_drwwT.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BJtauasg.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BoLJcWwM.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-Bq__lXNQ.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BrgMC9tC.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BRZlWavL.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BYwjWv4N.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-BzgyZjQd.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-Cll3PnQB.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-Co1nuzuG.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-CSN0ptmZ.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-Cu6sYlB9.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-CzMSz5jn.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-D-plDwT1.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-D18EGqpM.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-D1TOENRf.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-D8ef5PWM.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-dDpFNllu.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-DKT4kLxS.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-Dsj79mhR.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-DXQYMF6W.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-DzCo7rte.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-nzrTiN6r.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-TCFSRkPj.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-TXmmMHHl.js" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot\" />
+    </ItemGroup>
+
 </Project>

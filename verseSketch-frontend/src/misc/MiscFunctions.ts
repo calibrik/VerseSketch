@@ -7,7 +7,7 @@ export async function leave(connection?:React.RefObject<HubConnection | null>)
     sessionStorage.removeItem("player");
     console.log("Leaving",token,connection?.current);
     if (connection&&connection.current){
-        connection.current?.invoke("Leave");
+        await connection.current?.invoke("Leave");
         connection.current=null;
     }
     else if (token!=null){

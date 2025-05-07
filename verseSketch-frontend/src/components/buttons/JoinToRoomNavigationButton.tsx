@@ -1,9 +1,9 @@
 import { PlaySquareFilled } from "@ant-design/icons";
-import { Button } from "antd";
 import { FC } from "react";
 import { useNavigate } from "react-router";
 import '../../index.css'
 import { useHistoryContext } from "../HistoryProvider";
+import { BaseButton } from "./BaseButton";
 interface IJoinToRoomNavigationButtonProps {
     style?:React.CSSProperties
     roomName:string
@@ -13,11 +13,10 @@ export const JoinToRoomNavigationButton: FC<IJoinToRoomNavigationButtonProps> = 
     const navigate=useNavigate();
     const historyStack=useHistoryContext();
     return (
-        <Button
+        <BaseButton
             style={props.style}
             className="join-room-button"
-            type="primary"
-            icon={<PlaySquareFilled style={{ fontSize: 30 }} />}
+            icon={<PlaySquareFilled className="button-icon" />}
             onClick={() => {
                 historyStack.current=[location.pathname];
                 navigate(`/join-room/${props.roomName}`,{replace:true});
