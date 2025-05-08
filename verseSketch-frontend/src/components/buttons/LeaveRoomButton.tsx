@@ -22,7 +22,7 @@ export const LeaveRoomButton: FC<ILeaveRoomButtonProps> = (props) => {
         className="leave-button"
         style={props.style}
         disabled={loading||props.disabled}
-        icon={loading?<Spinner/>:<LogoutOutlined style={{fontSize:20}}/>}
+        icon={loading?<Spinner/>:<LogoutOutlined className="button-icon-md"/>}
         onClick={onClick}>
             LEAVE
         </BaseButton>

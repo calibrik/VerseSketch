@@ -14,7 +14,7 @@ export const CreateRoomButton: FC<ICreateRoomButtonProps> = (props) => {
             style={props.style}
             htmlType="submit"
             onClick={props.onClick}
-            icon={props.loading?<Spinner/>:<PlusSquareFilled style={{fontSize:33}}/>}
+            icon={props.loading?<Spinner/>:<PlusSquareFilled className="button-icon"/>}
             disabled={props.loading}>
             CREATE ROOM
             </SecondaryButton>

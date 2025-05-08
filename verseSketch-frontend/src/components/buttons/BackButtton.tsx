@@ -29,7 +29,7 @@ export const BackButton: FC<IBackButtonProps> = (props) => {
             onClick={onClick}
             style={props.style}
             disabled={loading}
-            icon={loading?<Spinner/>:<ArrowLeftOutlined style={{fontSize:20}}/>}
+            icon={loading?<Spinner/>:<ArrowLeftOutlined className="button-icon-md"/>}
             iconPosition="start">
             BACK
         </BaseButton>

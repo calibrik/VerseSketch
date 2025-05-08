@@ -18,10 +18,10 @@ html{
 }
 .button-text{
   color:white;
-  font-size: clamp(0.7rem,3vmin,1.5rem);
+  font-size: clamp(0.7rem,2.7vmin,1.5rem);
   text-align: center;
   text-wrap-mode: wrap;
-  line-height: clamp(0.7rem,3vmin,1.5rem);
+  line-height: clamp(0.7rem,2.7vmin,1.5rem);
   width: 115px;
   /* margin-right: 10px;
   margin-left: 10px;; */
@@ -35,11 +35,11 @@ html{
   font-size: clamp(1rem,3.5vmin,2rem) !important;
 }
 .button-icon-md{
-  font-size: clamp(1rem,3.5vmin,1.5rem) !important;
+  font-size: clamp(1rem,3vmin,1.5rem) !important;
 }
 .primary-button{
   background-color: #9000FF;
-  width:clamp(75px,18vmin,195px);
+  width:clamp(80px,18vmin,195px);
   height:clamp(20px,10vmin,63px);
   padding: 10px;
 }
@@ -108,13 +108,13 @@ html{
 .kick-button{
   color: #7C009B;
   font-weight: 700;
-  font-size: 19px;
+  font-size: clamp(0.8rem,2.4vmin,1.2rem);
   cursor: pointer;
 }
 
 .secondary-button{
   background-color: #7C009B;
-  width:clamp(75px,18vmin,195px);
+  width:clamp(80px,18vmin,195px);
   height:clamp(20px,10vmin,63px);
   padding: 10px;
 }
@@ -138,6 +138,7 @@ html{
 .input-field{
   height: clamp(40px,10vmin,60px);
   border-radius: 4px;
+  font-size: clamp(0.7rem,2.4vmin,1rem);
   border: 2px solid #7C009B !important;
   background-color: #F8DCFF !important;
   color:#7C009B !important;
@@ -155,8 +156,18 @@ html{
 }
 .input-field::placeholder{
   color: #7C009B !important;
-  font-size: 1rem;
+  font-size: clamp(0.7rem,2.4vmin,1rem);
   opacity: 0.5;
+}
+.input-field-label{
+  color: #7C009B;
+  font-size: clamp(0.7rem,2.4vmin,1rem);
+  font-weight: 600;
+}
+.input-field-label-bg{
+  color: #7C009B;
+  font-size: clamp(0.8rem,2.6vmin,1.3rem);
+  font-weight: 600;
 }
 .container-mid{
   /* justify-content:"center"; */
@@ -186,11 +197,13 @@ html{
   border: none !important;
   background: none !important;
   color: inherit !important;
+  font-size: inherit !important;
 }
 
 .input-field .ant-select-item {
   background: none !important;
   color: inherit !important;
+  font-size: inherit !important;
 }
 .ant-switch {
   background-color: #bb6acf !important;
@@ -239,8 +252,13 @@ html{
   width: 100%;
   height: 100%;
 }
+.player-list .ant-list-items{
+  overflow-y: auto !important;
+  max-height: 50vh !important;
+}
+
 .player-list .ant-list-item{
-  height: 70px;
+  height: auto !important;
   color: #7C009B;
   padding: 12px 5px !important;
   border-radius: 6px;
@@ -251,6 +269,7 @@ html{
 .placeholder-text{
   color: #7C009B;
   opacity: 0.5;
+  font-size: clamp(0.6rem,2vmin,1rem);
 }
 
 .container-layout{
@@ -265,7 +284,12 @@ html{
   color: #7C009B;
   border-radius: 6px;
   width: 100%;
-  height: 100%;
+  height: auto;
+}
+.room-card .card-title{
+  text-align: center;
+  color: #7C009B;
+  font-size: clamp(1.5rem,3.5vmin,3rem) !important;
 }
 .room-card .ant-card-body
 {
@@ -273,21 +297,21 @@ html{
 }
 .room-card .ant-card-head
 {
-  min-height:10% !important;
+  height:10% !important;
+  color:#7C009B !important;
 }
 .room-card .card-text{
   color: #7C009B;
-  font-size: 30px;
+  font-size: clamp(1rem,3.5vmin,2.4rem) !important;
   font-weight: 400;
 }
 
 .room-card .card-content{
-  height:80%;
+  height:auto;
   width: 100%;
 }
 .room-card .card-footer{
-  height:20%;
-  width: 100%;
+  margin-top: auto;
 }
 
 .scrollable-list-item{
@@ -384,7 +408,7 @@ html{
 .room-title{
   word-break: break-word;
   white-space: normal;
-  font-size:24px;
+  font-size:clamp(1rem,3.5vmin,1.7rem) !important;
   font-weight: bold;
 }
 
@@ -399,12 +423,12 @@ html{
   background-color: #7C009B;
   /* padding: 20px; */
   border-radius: 5px;
-  width:150px;
-  height:50px;
+  width:clamp(70px,15vmin,150px);
+  height:clamp(30px,6vmin,50px);
 }
 
 .leave-button .button-text{
-  font-size: 20px;
+  font-size: clamp(0.7rem,2.6vmin,1.3rem);
   width: auto;
 }
 
@@ -419,25 +443,27 @@ html{
 .player-placeholder-text{
   opacity: 0.3;
   color: #7C009B;
-  font-size: 18px;
+  font-size: clamp(0.7rem,2.4vmin,1rem);
   font-weight: 600;
+  word-break: break-word;
 }
 
 .player-nickname-text{
   color: #7C009B;
-  font-size: 18px;
+  font-size: clamp(0.7rem,2.4vmin,1rem);
   font-weight: 600;
+  word-break: break-word;
 }
 
 .back-button{
   background-color: #7C009B;
   border-radius: 5px;
-  width:110px;
-  height:45px;
+  width:clamp(70px,15vmin,110px);
+  height:clamp(30px,6vmin,45px);
 }
 
 .back-button .button-text{
-  font-size: 20px;
+  font-size: clamp(0.7rem,2.7vmin,1.3rem);
   width: auto;
 }
 

@@ -25,9 +25,9 @@ export const InviteButton: FC<IInviteButtonProps> = (props) => {
     if (loading)
         icon=<Spinner/>
     else if (copied)
-        icon=<CheckOutlined style={{fontSize:25}}/>
+        icon=<CheckOutlined className="button-icon"/>
     else
-        icon=<LinkOutlined style={{fontSize:25}}/>
+        icon=<LinkOutlined className="button-icon"/>
 
     return (
         <SecondaryButton onClick={onClick} style={props.style} disabled={props.disabled||loading||copied} icon={icon}>{copied?"COPIED":"INVITE"}</SecondaryButton>

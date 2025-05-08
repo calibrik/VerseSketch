@@ -9,8 +9,8 @@ export const StartGameButton: FC<IStartGameButtonProps> = (props) => {
     return (
         <PrimaryButton
             style={props.style}
-            icon={<PlaySquareFilled style={{ fontSize: 30 }} />}>
-            START THE GAME
+            icon={<PlaySquareFilled className="button-icon" />}>
+            START GAME
         </PrimaryButton>
     );
 }

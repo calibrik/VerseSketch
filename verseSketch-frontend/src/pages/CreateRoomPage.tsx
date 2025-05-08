@@ -1,7 +1,6 @@
-import { FC, useRef } from "react";
+import { FC, useEffect, useRef } from "react";
 import { PageTitle } from "../components/PageTitle";
 import { Col, Form, Input, Row, Select, Switch } from "antd";
-import { Color } from "../misc/colors";
 import { CreateRoomButton } from "../components/buttons/CreateRoomButton";
 import { useState } from "react";
 import { RuleObject } from "antd/es/form";
@@ -107,15 +106,19 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
         }
         return Promise.resolve();
     }
+
+    useEffect(()=>{
+        document.title="Create Room!";
+    },[]);
     
     return (
         <div className="container-small">
-            <div style={{width:"100%",marginTop:50,marginBottom:70}}>
+            <div style={{width:"100%",marginTop:"4vh",marginBottom:"7vh"}}>
                 <BackButton/>
             </div>
             <PageTitle>Create your room!</PageTitle>
             <Form 
-                style={{marginTop:'30%',width:'100%',display:"flex", flexDirection: "column", alignItems: "center"}}
+                style={{marginTop:'15vh',width:'100%',display:"flex", flexDirection: "column", alignItems: "center"}}
                 name="create-room"
                 layout="vertical"
                 onFinish={onSuccessfulSubmit}
@@ -123,29 +126,29 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
                     title:"",
                     maxPlayersCount:selectionItems[0].value,
                     isPublic:true,} as ICreateRoomModel}>
-                <Row gutter={20} style={{ width: "100%" }}>
-                    <Col md={16}>
+                <Row gutter={[{xs:8,sm:8,md:16,lg:20},0]} style={{ width: "100%" }}>
+                    <Col sm={24} md={16}>
                     <Form.Item
                         name="title"
                         validateDebounce={300}
-                        label={<label style={{color:Color.Secondary}}>Room Title</label>}
+                        label={<label className="input-field-label">Room Title</label>}
                         rules={[{validator:validateTitle}]}>
                         <Input className="input-field" placeholder="Enter room title"/>
                     </Form.Item>
                     </Col>
-                    <Col md={8}>
+                    <Col sm={14} md={8}>
                     <Form.Item
                         name="maxPlayersCount"
-                        label={<label style={{color:Color.Secondary}}>Max. Players</label>}>
+                        label={<label className="input-field-label">Max. Players</label>}>
                         <Select
                         className="input-field"
                         options={selectionItems}
                         />
                     </Form.Item>
                     </Col>
-                    <Col md={10} offset={14}>
+                    <Col span={10} offset={14}>
                         <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"end"}}>
-                            <label ref={switchLabelRef} style={{color:Color.Secondary,fontSize:20}}>Public room</label>
+                            <label ref={switchLabelRef} className="input-field-label-bg">Public room</label>
                             <Form.Item 
                                 name="isPublic" style={{marginBottom:0,marginLeft:10}} valuePropName="checked">
                                     <Switch onChange={onSwitchChange} defaultChecked={true} />
@@ -153,7 +156,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
                         </div>
                     </Col>
                 </Row>
-                <Form.Item style={{ marginTop: 70 }}>
+                <Form.Item style={{ marginTop: "7vh" }}>
                     <CreateRoomButton loading={loading}/>
                 </Form.Item>
             </Form>

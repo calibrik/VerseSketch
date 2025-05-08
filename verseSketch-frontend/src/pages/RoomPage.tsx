@@ -71,6 +71,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             if (newModel.players[i].id=="")
                 break;
         }
+        newModel.playersCount++;
         newModel.players[i]=data;
         setModel(newModel);
     }
@@ -92,6 +93,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             if (newModel.players[i].id==playerId)
                 break;
         }
+        newModel.playersCount--;
         newModel.players.splice(i,1);
         newModel.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
         setModel(newModel);
@@ -293,11 +295,11 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     return (
         <div className="container-mid" style={{height:"100%"}}>
-            <div style={{margin:"15px 0px",width:'100%',display:'flex',justifyContent:'right',marginRight:50}}>
+            <div style={{marginTop:"1vh",width:'100%',display:'flex',justifyContent:'right'}}>
                 <LeaveRoomButton onClick={onLeave}/>
             </div>
-            <Row style={{width:"100%", height:"70%"}} gutter={50}>
-                <Col md={8}>
+            <Row style={{width:"100%",height:"auto",marginTop:"1vh"}} gutter={[{ xs: 8, sm: 16, md: 24, lg: 50 }, { xs: 8, sm: 16, md: 24, lg: 46 }]}>
+                <Col xs={8}>
                 <List
                     className="player-list"
                     header={
@@ -321,7 +323,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     renderItem={(player) => {
                         let suffix:ReactNode|null=null;
                         if (player.isAdmin)
-                            suffix=<StarFilled style={{fontSize:20,marginRight:10}}/>;
+                            suffix=<StarFilled className="button-icon" style={{marginRight:10}}/>;
                         else if (model?.isPlayerAdmin)
                             suffix=<KickButton style={{marginRight:10}} playerId={player.id} roomTitle={roomTitle}/>
                         if (player.id === "")
@@ -341,17 +343,17 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     }}
                     />
                 </Col>
-                <Col md={16}>
-                    <Card className="room-card" title={<Title style={{textAlign:"center",color:Color.Secondary,fontSize:32}}>Rules:</Title>}>
+                <Col xs={16}>
+                    <Card className="room-card" title={<Title className="card-title">Rules:</Title>}>
                         <div className="card-content">
                             <p className="card-text">Each player picks a song they love and selects 2 × (n - 1) lines from the lyrics, where n is the number of players. Then, everyone takes turns drawing pictures based on two lines from each other’s songs.</p>
                             <p className="card-text">Once all the drawings are done, the final compilation plays—each song is showcased along with the images created by the group, bringing the lyrics to life!</p>
                         </div>
-                        <Divider style={{background:Color.Secondary}}/>
                         <div className="card-footer">
-                            <Flex gap={50}>
+                            <Divider style={{background:Color.Secondary}}/>
+                            <Flex gap={"1vw"} wrap align="center" justify="space-between" style={{width:"100%"}}>
                                 <div style={{display:"flex",flexDirection:"column"}}>
-                                    <label style={{color:Color.Secondary}}>Max. Players</label>
+                                    <label className="input-field-label">Max. Players</label>
                                     <Select
                                         className="input-field"
                                         options={selectionItems}
@@ -359,8 +361,8 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                         disabled={loading||!model?.isPlayerAdmin}
                                         onChange={onMaxPlayersChange}/>
                                 </div>
-                                <div style={{display:"flex",flexDirection:"column"}}>
-                                    <label style={{color:Color.Secondary}}>Time to draw</label>
+                                <div style={{display:"flex",flexDirection:"column",alignItems:"center",alignContent:"center"}}>
+                                    <label className="input-field-label">Time to draw</label>
                                     <Select
                                         className="input-field"
                                         options={[{label:"10s",value:10},{label:"15s",value:15},{label:"30s",value:30},{label:"1m",value:60}]}
@@ -368,8 +370,8 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                         disabled={loading||!model?.isPlayerAdmin}
                                         onChange={onTimeToDrawChange}/>
                                 </div>
-                                <div style={{display:"flex",flexDirection:"row",alignItems:"center",alignContent:"center"}}>
-                                    <label ref={switchLabelRef} style={{color:Color.Secondary,fontSize:20,marginRight:10}}>Public room</label>
+                                <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center"}}>
+                                    <label ref={switchLabelRef} className="input-field-label-bg" style={{marginRight:10}}>Public room</label>
                                     <Switch disabled={loading||!model?.isPlayerAdmin} onChange={onSwitchChange} value={model?.isPublic??true} />
                                 </div>
                                 <div style={{display:"flex",flexDirection:"row",alignItems:"center",alignContent:"center"}}>
@@ -380,7 +382,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     </Card>
                 </Col>
             </Row>
-            <StartGameButton style={{marginTop:50}}/>
+            <StartGameButton style={{marginTop:"3vh"}}/>
         </div>
     );
 }

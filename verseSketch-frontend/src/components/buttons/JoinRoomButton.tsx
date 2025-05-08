@@ -13,7 +13,7 @@ export const JoinRoomButton: FC<IJoinRoomButtonProps> = (props) => {
         <PrimaryButton 
             htmlType="submit" 
             style={props.style} 
-            icon={props.loading?<Spinner/>:<PlaySquareFilled style={{fontSize:33}}/>}
+            icon={props.loading?<Spinner/>:<PlaySquareFilled className="button-icon"/>}
             disabled={props.loading}>
             JOIN ROOM
         </PrimaryButton>

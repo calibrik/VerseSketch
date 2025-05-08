@@ -1,7 +1,6 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Form, Input } from "antd";
-import { Color } from "../misc/colors";
 import { PageTitle } from "../components/PageTitle";
 import { RuleObject } from "antd/es/form";
 import { JoinRoomButton } from "../components/buttons/JoinRoomButton";
@@ -30,7 +29,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
     const historyStack=useHistoryContext();
     
     useEffect(()=>{
-        console.log(`token on load: ${sessionStorage.getItem("player")}`);
+        document.title="Join Room!";
         validateJoinLink();
     },[]);
 
@@ -162,7 +161,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
 
     return (
         <div className="container-small">
-            <div style={{width:"100%",marginTop:50,marginBottom:70}}>
+            <div style={{width:"100%",marginTop:"4vh",marginBottom:"7vh"}}>
                 <BackButton beforeBack={beforeBack}/>
             </div>
             <PageTitle style={{width:"70%"}}>Choose your nickname and join the game!</PageTitle>
@@ -173,15 +172,15 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
                 initialValues={{
                     nickname:"",
                 } as ICreatePlayerModel}
-                style={{width:"100%",marginTop:148}}>
+                style={{width:"100%",marginTop:"10vh"}}>
                     <Form.Item
                         name="nickname"
-                        label={<label style={{color:Color.Secondary}}>Nickname</label>}
+                        label={<label className="input-field-label">Nickname</label>}
                         validateDebounce={500}
                         rules={[{validator:validateNickname}]}>
                         <Input style={{width:"100%"}} className="input-field" placeholder="Enter your nickname"/>
                     </Form.Item>
-                    <Form.Item style={{display:"flex",justifyContent:"center",marginTop:80}}>
+                    <Form.Item style={{display:"flex",justifyContent:"center",marginTop:"8vh"}}>
                         <JoinRoomButton loading={loading}/>
                     </Form.Item>
             </Form>
