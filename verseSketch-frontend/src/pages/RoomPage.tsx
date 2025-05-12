@@ -298,8 +298,8 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             <div style={{marginTop:"1vh",width:'100%',display:'flex',justifyContent:'right'}}>
                 <LeaveRoomButton onClick={onLeave}/>
             </div>
-            <Row style={{width:"100%",height:"auto",marginTop:"1vh"}} gutter={[{ xs: 8, sm: 16, md: 24, lg: 50 }, { xs: 8, sm: 16, md: 24, lg: 46 }]}>
-                <Col xs={8}>
+            <Row className="room-table" style={{marginTop:"1vh"}} gutter={[{ xs: 8, sm: 16, md: 24, lg: 50 }, { xs: 8, sm: 16, md: 24, lg: 46 }]}>
+                <Col xs={24} md={8}>
                 <List
                     className="player-list"
                     header={
@@ -343,7 +343,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     }}
                     />
                 </Col>
-                <Col xs={16}>
+                <Col xs={24} md={16}>
                     <Card className="room-card" title={<Title className="card-title">Rules:</Title>}>
                         <div className="card-content">
                             <p className="card-text">Each player picks a song they love and selects 2 × (n - 1) lines from the lyrics, where n is the number of players. Then, everyone takes turns drawing pictures based on two lines from each other’s songs.</p>
@@ -351,7 +351,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                         </div>
                         <div className="card-footer">
                             <Divider style={{background:Color.Secondary}}/>
-                            <Flex gap={"1vw"} wrap align="center" justify="space-between" style={{width:"100%"}}>
+                            <Flex gap={"2vw"} wrap align="center" style={{width:"100%"}}>
                                 <div style={{display:"flex",flexDirection:"column"}}>
                                     <label className="input-field-label">Max. Players</label>
                                     <Select

@@ -54,7 +54,8 @@ html{
 .refresh-button:disabled,
 .join-room-button:disabled,
 .leave-button:disabled,
-.back-button:disabled{
+.back-button:disabled,
+.invite-button:disabled{
   background-color: #F8DCFF !important;
   cursor: not-allowed;
   border: 2px solid #7C009B !important;
@@ -67,7 +68,8 @@ html{
 .refresh-button:active,
 .join-room-button:active,
 .leave-button:active,
-.back-button:active{
+.back-button:active,
+.invite-button:active{
   background-color: #F8DCFF !important;
   border: 2px solid #7C009B !important;
   color: #7C009B !important;
@@ -81,14 +83,17 @@ html{
 .leave-button:active  .button-text,
 .leave-button:disabled  .button-text,
 .back-button:active  .button-text,
-.back-button:disabled  .button-text{
+.back-button:disabled  .button-text,
+.invite-button:active  .button-text,
+.invite-button:disabled  .button-text{
   color: #7C009B !important;
 }
 
 .secondary-button:hover,
 .leave-button:hover,
 .back-button:hover,
-.join-room-button:hover{
+.join-room-button:hover,
+.invite-button:hover{
   background-color: #aa2dc9 !important;
 }
 
@@ -135,8 +140,14 @@ html{
   text-align: center;
   height: clamp(40px,8vh,64px);
 }
+.invite-button{
+  height: clamp(40px,8vmin,60px);
+  width: clamp(80px,18vmin,140px);
+  background-color: #7C009B;
+}
+
 .input-field{
-  height: clamp(40px,10vmin,60px);
+  height: clamp(40px,8vmin,60px);
   border-radius: 4px;
   font-size: clamp(0.7rem,2.4vmin,1rem);
   border: 2px solid #7C009B !important;
@@ -252,10 +263,6 @@ html{
   width: 100%;
   height: 100%;
 }
-.player-list .ant-list-items{
-  overflow-y: auto !important;
-  max-height: 50vh !important;
-}
 
 .player-list .ant-list-item{
   height: auto !important;
@@ -284,7 +291,7 @@ html{
   color: #7C009B;
   border-radius: 6px;
   width: 100%;
-  height: auto;
+  height: 100%;
 }
 .room-card .card-title{
   text-align: center;
@@ -294,6 +301,8 @@ html{
 .room-card .ant-card-body
 {
   height:90% !important;
+  display:flex;
+  flex-direction: column;
 }
 .room-card .ant-card-head
 {
@@ -302,7 +311,7 @@ html{
 }
 .room-card .card-text{
   color: #7C009B;
-  font-size: clamp(1rem,3.5vmin,2.4rem) !important;
+  font-size: clamp(1rem,3vmin,2.4rem) !important;
   font-weight: 400;
 }
 
@@ -405,6 +414,10 @@ html{
   width: auto;
 }
 
+.room-table{
+  width:100%;
+}
+
 .room-title{
   word-break: break-word;
   white-space: normal;
@@ -471,33 +484,50 @@ html{
   .container-small{
     padding:0 25%;
   }
+  .room-table{
+    height:auto;
+  }
 }
-@media (min-width: 576px) {
+@media (min-width:576px) and (max-width: 767px) {
   .container-small{
     padding:0 25%;
   }
+  .room-table{
+    height:auto;
+  }
 }
-@media (min-width: 768px) {
+@media (min-width:768) and (max-width: 991px) {
   .container-small{
     padding:0 25%;
   }
+  .room-table{
+    height:auto;
+  }
 }
-@media (min-width: 992px) {
+@media (min-width:992px) and (max-width: 1199px) {
   .container-small{
     padding:0 32%;
   }
+  .room-table{
+    height:auto;
+  }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) and (max-width: 1399px) {
   .container-small{
     padding:0 32%;
+  }
+  .room-table{
+    height:70vh;
   }
 }
 @media (min-width: 1400px) {
   .container-small{
     padding:0 32%;
   }
+  .room-table{
+    height:80vh;
+  }
 }
-
 @media (max-height:600px){
   .scrollable-list{
     height: 40vh !important;
@@ -505,8 +535,28 @@ html{
   .scrollable-list-item{
     height: 15vh !important;
   }
+  .player-list .ant-list-items{
+    overflow-y: auto !important;
+    max-height: 50vh !important;
+    border-bottom: 2px solid #7C009B !important;
+    border-top: 2px solid #7C009B !important;
+  }
 }
-@media (min-height:601px){
+@media (min-height:601px) and (max-height:1000px){
+  .scrollable-list{
+    height: 50vh !important;
+  }
+  .scrollable-list-item{
+    height: 8vh !important;
+  }
+  .player-list .ant-list-items{
+    overflow-y: auto !important;
+    max-height: 50vh !important;
+    border-bottom: 2px solid #7C009B !important;
+    border-top: 2px solid #7C009B !important;
+  }
+}
+@media (min-height:1001px) and (max-height: 1229px){
   .scrollable-list{
     height: 50vh !important;
   }

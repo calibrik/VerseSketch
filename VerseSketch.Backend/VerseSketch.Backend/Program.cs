@@ -137,6 +137,5 @@ app.Run();
 //TODO test dat shit
 //TODO Figure out how to pass errors to client from room hub (tbf, not that important?)
 //TODO Migrate to MongoDB, cuz it's gonna be better than sql, since i don't do complex queries?
-//TODO Db needs to be flushed after server shutdown (actually not?)
 //TODO Bg service to delete empty rooms and unused players
 //TODO Move methods in roomHub where makes sense (invite)

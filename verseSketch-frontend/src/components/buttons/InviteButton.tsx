@@ -2,6 +2,7 @@ import { FC, ReactNode, useState } from "react";
 import { SecondaryButton } from "./SecondaryButton";
 import { CheckOutlined, LinkOutlined } from "@ant-design/icons";
 import { Spinner } from "../Spinner";
+import { BaseButton } from "./BaseButton";
 interface IInviteButtonProps {
     style?:React.CSSProperties;
     onClick:()=>Promise<void>;
@@ -30,6 +31,13 @@ export const InviteButton: FC<IInviteButtonProps> = (props) => {
         icon=<LinkOutlined className="button-icon"/>
 
     return (
-        <SecondaryButton onClick={onClick} style={props.style} disabled={props.disabled||loading||copied} icon={icon}>{copied?"COPIED":"INVITE"}</SecondaryButton>
+        <BaseButton
+            onClick={onClick}
+            style={props.style}
+            disabled={props.disabled||loading||copied}
+            className="invite-button"
+            icon={icon}>
+            {copied?"COPIED":"INVITE"}
+        </BaseButton>
     );
 }
