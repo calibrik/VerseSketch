@@ -57,7 +57,7 @@ public class RoomsController:ControllerBase
     {
         if (!User.Identity.IsAuthenticated)
             return Unauthorized(new {message="You are not authenticated"});
-        Player? player=await _playerRepository.GetPlayerAsyncRO(User.FindFirst("PlayerId").Value);
+        Player? player=await _playerRepository.GetPlayerAsync(User.FindFirst("PlayerId").Value);
         if (player == null)
             return BadRequest(new {message="Player not found"});
         return Ok(player);
@@ -69,8 +69,8 @@ public class RoomsController:ControllerBase
         if (!User.Identity.IsAuthenticated)
             return Unauthorized(new {message = "You are not authenticated"});
         string? playerId = User.FindFirst("PlayerId")?.Value;
-        Player? currPlayer = await _playerRepository.GetPlayerAsyncRO(playerId);
-        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,true);
+        Player? currPlayer = await _playerRepository.GetPlayerAsync(playerId);
+        Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
             return NotFound(new {message = $"Room called {roomTitle} is not found"});
         if (currPlayer == null)
@@ -80,19 +80,20 @@ public class RoomsController:ControllerBase
         RoomViewModel model = new RoomViewModel()
         {
             Title = room.Title,
-            isPublic = room.isPublic,
+            isPublic = room.IsPublic,
             MaxPlayersCount = room.MaxPlayersCount,
             PlayersCount = room.PlayersCount,
             TimeToDraw = room.TimeToDraw,
             isPlayerAdmin = playerId==room.AdminId,
             PlayerId = currPlayer.Nickname,
         };
-        foreach (Player player in room.Players)
+        List<Player> players = await _playerRepository.GetPlayersInRoomAsync(roomTitle);
+        foreach (Player player in players)
         {
             PlayerViewModel playerVM = new PlayerViewModel()
             {
                 Nickname = player.Nickname??"NULL",
-                isAdmin = player.Id==room.AdminId,
+                isAdmin = player._Id==room.AdminId,
             };
             model.Players.Add(playerVM);
         }
@@ -106,8 +107,8 @@ public class RoomsController:ControllerBase
         if (!User.Identity.IsAuthenticated)
             return Unauthorized(new {message = $"You are not part of the {roomTitle}."});
         string? playerId = User.FindFirst("PlayerId")?.Value;
-        Player? currPlayer = await _playerRepository.GetPlayerAsyncRO(playerId);
-        Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,false);
+        Player? currPlayer = await _playerRepository.GetPlayerAsync(playerId);
+        Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
             return NotFound(new {message = $"The room {roomTitle} is not found."});
         if (currPlayer == null)
@@ -125,10 +126,10 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message = "At least one argument is required"});
         if (roomTitle != null)
         {
-            Room? room = await _roomsRepository.GetRoomAsyncRO(roomTitle,false);
+            Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
             if (room == null)
                 return NotFound(new {message = $"Sorry, room called {roomTitle} is not found"});
-            if (room.PlayersCount==0||!room.isPublic)
+            if (room.PlayersCount==0||!room.IsPublic)
                 return BadRequest(new {message = $"Sorry, room {roomTitle} is private"});
             return Ok();
         }
@@ -146,40 +147,51 @@ public class RoomsController:ControllerBase
     [ResponseCache(NoStore = true)]
     public async Task<IActionResult> ValidateRoomTitle([FromQuery] string roomTitle,CancellationToken ct)
     {
-        return Ok( new {isExist = await _roomsRepository.GetRoomAsyncRO(roomTitle,false,ct) != null});
+        return Ok( new {isExist = await _roomsRepository.GetRoomAsync(roomTitle,ct) != null});
     }
 
     
     [HttpPost("/api/rooms/create")]
     public async Task<IActionResult> Create([FromBody] CreateRoomViewModel model)
     {
-        if (await _roomsRepository.GetRoomAsyncRO(model.Title, false) != null)
+        if (await _roomsRepository.GetRoomAsync(model.Title) != null)
             return BadRequest(new {message = "Room with this title already exists."});
         if (!ModelState.IsValid)
             return BadRequest(new {message = ModelState.Values.FirstOrDefault()?.Errors.FirstOrDefault()?.ErrorMessage});
         if (Regex.IsMatch(model.Title,@"[^\p{L}\p{N}_ ]"))
             return BadRequest(new {message = "Room title cannot contain special characters!"});
+        
         Player admin = new Player()
         {
-            Id = Guid.NewGuid().ToString(),
             CreatedTime = DateTime.UtcNow,
         };
+        try
+        {
+            await _playerRepository.CreatePlayerAsync(admin);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { message = "Something went wrong, please try again later." });
+        }
         Room room = new Room()
         {
             Title = model.Title,
             PlayersCount = 0,
             MaxPlayersCount = model.MaxPlayersCount,
-            AdminId = admin.Id,
-            isPublic = model.IsPublic,
+            AdminId = admin._Id,
+            IsPublic = model.IsPublic,
             TimeToDraw = 10,
         };
         string joinToken = CreateJoinLinkToken(room);
-        await _playerRepository.CreatePlayer(admin);
-        await _roomsRepository.CreateRoomAsync(room);
-        bool res = await _roomsRepository.SaveChangesAsync();
-        if (!res)
+        try
+        {
+            await _roomsRepository.CreateRoomAsync(room);
+        }
+        catch (Exception e)
+        {
             return StatusCode(500, new { message = "Something went wrong, please try again later." });
-        return Ok(new { joinToken = joinToken, accessToken = JWTHandler.CreateToken(admin.Id, _configuration) });
+        }
+        return Ok(new { joinToken = joinToken, accessToken = JWTHandler.CreateToken(admin._Id, _configuration) });
     }
 
     [HttpGet("/api/rooms/validatePlayerNickname")]
@@ -194,7 +206,7 @@ public class RoomsController:ControllerBase
         if (roomTitle==null)
             return BadRequest(new {message="Join link is not valid"});
 
-        return Ok(new { isExist = await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(nickname, roomTitle, ct) });
+        return Ok(new { isExist = await _playerRepository.GetPlayerByNicknameInRoomAsync(nickname, roomTitle, ct) });
     }
 
     [HttpGet("/api/rooms/generateJoinToken")]
@@ -209,8 +221,14 @@ public class RoomsController:ControllerBase
         if (room.AdminId!=playerId)
             return Unauthorized(new {message = $"You must be the admin of the room {roomTitle} to change it parameters."});
         string joinToken = CreateJoinLinkToken(room);
-        if (!await _roomsRepository.SaveChangesAsync())
+        try
+        {
+            await _roomsRepository.UpdateRoomAsync(room);
+        }
+        catch (Exception e)
+        {
             return StatusCode(500,new {message="Something went wrong, please try again later."});
+        }
         return Ok(new {joinToken=joinToken});
     }
     [HttpPost("/api/rooms/join")]
@@ -232,7 +250,7 @@ public class RoomsController:ControllerBase
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
             return BadRequest(new {message="Room you trying to join doesn't exist"});//check if room exists
-        if ((room.PlayersCount==0||!room.isPublic)&&model.JoinToken==null)
+        if ((room.PlayersCount==0||!room.IsPublic)&&model.JoinToken==null)
             return BadRequest(new {message="You can't join private room."});//check user provides join token for rooms with 0 players or private
         if (User.Identity.IsAuthenticated)
         {
@@ -241,9 +259,9 @@ public class RoomsController:ControllerBase
             if (player == null)
                 return StatusCode(500,new {message="Something went wrong, please try again later."});
         }
-        if (await _playerRepository.GetPlayerByNicknameInRoomAsyncRO(model.Nickname, roomTitle) != null)
+        if (await _playerRepository.GetPlayerByNicknameInRoomAsync(model.Nickname, roomTitle) != null)
             return BadRequest(new {message="Nickname already exists in this room."});//check if username exists
-        if (room.PlayersCount==0&&(player==null||player.Id!=room.AdminId))
+        if (room.PlayersCount==0&&(player==null||player._Id!=room.AdminId))
             return BadRequest(new {message="Only creator of the room is allowed to join."});//check if only admin can join room with 0 players
         if (!ModelState.IsValid)
             return BadRequest(new {message="One or more fields in the form are invalid."});//any invalidations on model
@@ -255,18 +273,24 @@ public class RoomsController:ControllerBase
         {
             player = new Player()
             {
-                Id = Guid.NewGuid().ToString(),
                 CreatedTime = DateTime.UtcNow,
             };
-            await _playerRepository.CreatePlayer(player);
         }
-
-        string accessToken=JWTHandler.CreateToken(player.Id,_configuration);
 
         player.Nickname = model.Nickname;
         player.RoomTitle = room.Title;
-        if (!await _playerRepository.SaveChangesAsync())
+        try
+        {
+            if (User.Identity.IsAuthenticated)
+                await _playerRepository.UpdatePlayerAsync(player,true);
+            else
+                await _playerRepository.CreatePlayerAsync(player);
+        }
+        catch (Exception e)
+        {
             return StatusCode(500,new {message="Something went wrong, please try again later."});
+        }
+        string accessToken=JWTHandler.CreateToken(player._Id,_configuration);
         return Ok(new { accessToken = accessToken, roomTitle=room.Title });
     }
 
@@ -285,11 +309,17 @@ public class RoomsController:ControllerBase
             return BadRequest(ModelState);
 
 
-        room.isPublic = model.IsPublic??room.isPublic;
+        room.IsPublic = model.IsPublic??room.IsPublic;
         room.TimeToDraw = model.TimeToDraw??room.TimeToDraw;
         room.MaxPlayersCount = model.MaxPlayersCount??room.MaxPlayersCount;
-        if (!await _roomsRepository.SaveChangesAsync())
-            return StatusCode(500,new {message="Something went wrong, please try again later."});
+        try
+        {
+            await _roomsRepository.UpdateRoomAsync(room);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500,new {message="Something went wrong, please try again later."});   
+        }
         return Ok(new {message=$"Successfully changed parameters of the room {model.RoomTitle}."});
     }
     
@@ -316,11 +346,15 @@ public class RoomsController:ControllerBase
     {
         if (!User.Identity.IsAuthenticated)
             return Ok();
-        Player? player = await _playerRepository.GetPlayerAsync(User.FindFirst("PlayerId").Value);
-        if (player == null)
-            return Ok();
-        _playerRepository.DeletePlayer(player);
-        await _playerRepository.SaveChangesAsync();
+        try
+        {
+            await _playerRepository.DeletePlayerAsync(User.FindFirst("PlayerId").Value);
+        }
+        catch (Exception e)
+        {
+            // player will stay in db, or he is not there already
+        }
+
         return Ok();
     }
 } 

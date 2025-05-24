@@ -8,11 +8,13 @@ import { CreatePlayerPage } from './pages/CreatePlayerPage';
 import { useEffect } from 'react';
 import { leave } from './misc/MiscFunctions';
 import { useSignalRConnectionContext } from './components/SignalRProvider';
+import { ErrorPage } from './pages/ErrorPage';
 
 const router=createBrowserRouter([
   {
     path: "/",
     Component: MainLayout,
+    errorElement: <ErrorPage/>,
     children: [
       {
         index:true,

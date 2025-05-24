@@ -1,64 +1,59 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using VerseSketch.Backend.Models;
 
 namespace VerseSketch.Backend.Repositories;
 
 public class RoomsRepository
 {
-    private readonly VerseSketchDbContext _dbContext;
-    public RoomsRepository(VerseSketchDbContext dbContext)
+    private readonly IMongoCollection<Room> _rooms;
+    private readonly IMongoCollection<Player> _players;
+    
+    public RoomsRepository(IOptions<MongoDBSettings> settings,IMongoClient mongoClient)
     {
-        _dbContext = dbContext;
+        _rooms=mongoClient.GetDatabase(settings.Value.DatabaseName).GetCollection<Room>("rooms");
+        _players=mongoClient.GetDatabase(settings.Value.DatabaseName).GetCollection<Player>("players");
     }
 
     public async Task CreateRoomAsync(Room room)
     {
-        await _dbContext.Rooms.AddAsync(room);
-    }
-
-    public async Task<Room?> GetRoomAsync(string roomTitle)
-    {
-        return await _dbContext.Rooms.FindAsync(roomTitle);
+        await _rooms.InsertOneAsync(room);
     }
     
     public async Task<bool> IsJoinTokenValid(string token, string title, CancellationToken ct)
     {
-        return await _dbContext.Rooms.AsNoTracking().Where(room => room.Title == title&&room.CurrentJoinToken==token).FirstOrDefaultAsync(ct) != null;
+        return await _rooms.Find(room => room.Title == title&&room.CurrentJoinToken==token).SingleOrDefaultAsync(ct) != null;
     }
-    public async Task<Room?> GetRoomAsyncRO(string roomTitle,bool withPlayers,CancellationToken ct=default)
+    public async Task<Room?> GetRoomAsync(string roomTitle,CancellationToken ct=default)
     {
-        if (withPlayers)
-            return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players.OrderBy(p=>p.CreatedTime)).FirstOrDefaultAsync(r=>r.Title==roomTitle,ct);
-        return await _dbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(r=>r.Title==roomTitle,ct);
-    }
-
-    public async Task<Room?> GetPlayersRoomAsyncRO(string playerId)
-    {
-        Player? player=await _dbContext.Players.AsNoTracking().FirstOrDefaultAsync(p=>p.Id==playerId);
-        if (player == null)
-            return null;
-        return await _dbContext.Rooms.AsNoTracking().Include(r=>r.Players).FirstOrDefaultAsync(r=>r.Title==player.RoomTitle);
-    }
-
-    public async Task<List<Player>> GetPlayersInRoomAsyncRO(string roomTitle)
-    {
-        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle).OrderBy(p=>p.CreatedTime).ToListAsync();
+        return await _rooms.Find(r=>r.Title==roomTitle).SingleOrDefaultAsync(ct);
     }
 
     public async Task<List<Room>> SearchRoomsAsync(int page, int pageSize,string roomTitle="",CancellationToken cancelToken=default)
     {
-        return await _dbContext.Rooms.AsNoTracking().Where(r => r.isPublic && r.Title.Contains(roomTitle) && r.PlayersCount>0).OrderBy(r=>r.Title).Skip(page * pageSize).Take(pageSize).ToListAsync(cancelToken);
+        return await _rooms.Find(r => r.IsPublic && r.Title.Contains(roomTitle) && r.PlayersCount>0).SortBy(r=>r.Title).Skip(page * pageSize).Limit(pageSize).ToListAsync(cancelToken);
     }
-    
-    public async Task<bool> SaveChangesAsync()
+
+    public async Task IncrementPlayersCountAsync(string roomTitle,int amount)
     {
-        try
-        {
-            return await _dbContext.SaveChangesAsync() > 0;
-        }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r=>r.PlayersCount,amount);
+        await _rooms.FindOneAndUpdateAsync(r=>r.Title==roomTitle,update);
+    }
+
+    public async Task UpdateRoomAsync(Room room)
+    {
+        await _rooms.ReplaceOneAsync(r=>r.Title==room.Title,room);
+    }
+
+    public async Task<Room?> GetRoomByAdminId(string adminId)
+    {
+        return await _rooms.Find(r=>r.AdminId==adminId).SingleOrDefaultAsync();
+    }
+
+    public async Task DeleteRoomAsync(string roomTitle)
+    {
+        await _rooms.DeleteOneAsync(r=>r.Title==roomTitle);
+        await _players.DeleteManyAsync(p=>p.RoomTitle==roomTitle);
     }
 }

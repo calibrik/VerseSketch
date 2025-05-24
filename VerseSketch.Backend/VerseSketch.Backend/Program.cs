@@ -1,8 +1,10 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
 using VerseSketch.Backend.Hubs;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
@@ -35,10 +37,17 @@ builder.Services.AddCors(options =>
         });
 });
 #endif
-builder.Services.AddDbContext<VerseSketchDbContext>(options =>
+// builder.Services.AddDbContext<VerseSketchDbContext>(options =>
+// {
+//     options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection"));
+// });
+builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
+builder.Services.AddSingleton<IMongoClient>(sp =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection"));
+    MongoDBSettings settings = sp.GetRequiredService<IOptions<MongoDBSettings>>().Value;
+    return new MongoClient(settings.ConnectionString);
 });
+
 builder.Services.AddOpenApi();
 #if DEBUG
 builder.Services.AddSwaggerGen(options =>
@@ -133,9 +142,10 @@ app.Run();
 
 //TODO Leave and destroy player functionality (it works but test more)
 //TODO Caching where appropriate
+//TODO Browser caching
 //TODO Room hub reconnection (it is working but not all edge cases might be covered)
 //TODO test dat shit
 //TODO Figure out how to pass errors to client from room hub (tbf, not that important?)
-//TODO Migrate to MongoDB, cuz it's gonna be better than sql, since i don't do complex queries?
+//TODO Indexes in MongoDB
 //TODO Bg service to delete empty rooms and unused players
 //TODO Move methods in roomHub where makes sense (invite)

@@ -1,5 +1,4 @@
 import { FC, ReactNode, useState } from "react";
-import { SecondaryButton } from "./SecondaryButton";
 import { CheckOutlined, LinkOutlined } from "@ant-design/icons";
 import { Spinner } from "../Spinner";
 import { BaseButton } from "./BaseButton";

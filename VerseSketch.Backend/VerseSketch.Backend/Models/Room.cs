@@ -1,19 +1,26 @@
 ﻿
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
 namespace VerseSketch.Backend.Models;
 
 public class Room
 {
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string _Id { get; set; }
+    [BsonElement("title")]
     public required string Title { get; set; }
-    // public required string Id { get; set; }
+    [BsonElement("playersCount")]
     public required int PlayersCount { get; set; }
+    [BsonElement("maxPlayersCount")]
     public required int MaxPlayersCount { get; set; }
+    [BsonElement("timeToDraw")]
     public required int TimeToDraw { get; set; }
-    public required bool isPublic { get; set; }
+    [BsonElement("isPublic")]
+    public required bool IsPublic { get; set; }
+    [BsonElement("adminId")]
     public required string AdminId { get; set; }
-    
+    [BsonElement("currentJoinToken")]
     public string? CurrentJoinToken { get; set; }
-
-    public Player? Admin { get; set; }
-    public List<Player> Players { get; set; } = new();
-    
 }
