@@ -1,56 +1,74 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using VerseSketch.Backend.Models;
+using ZstdSharp.Unsafe;
 
 namespace VerseSketch.Backend.Repositories;
 
 public class PlayerRepository
 {
-    private readonly VerseSketchDbContext _dbContext;
-    public PlayerRepository(VerseSketchDbContext dbContext)
+    private readonly IMongoCollection<Player> _players;
+    private readonly RoomsRepository _roomsRepository;
+
+    public PlayerRepository(IOptions<MongoDBSettings> settings,IMongoClient mongoClient,RoomsRepository roomsRepository)
     {
-        _dbContext = dbContext;
+        _players=mongoClient.GetDatabase(settings.Value.DatabaseName).GetCollection<Player>("players");
+        _roomsRepository = roomsRepository;
     }
 
-    public async Task CreatePlayer(Player player)
+    public async Task CreatePlayerAsync(Player player)
     {
-        await _dbContext.Players.AddAsync(player);
+        if (player.RoomTitle!=null)
+            await _roomsRepository.IncrementPlayersCountAsync(player.RoomTitle, 1);
+        await _players.InsertOneAsync(player);
     }
 
-    public async Task<Player?> GetPlayerByNicknameInRoomAsyncRO(string nickname,string roomTitle,CancellationToken ct=default)
+    public async Task<Player?> GetPlayerByNicknameInRoomAsync(string nickname,string roomTitle,CancellationToken ct=default)
     {
-        return await _dbContext.Players.AsNoTracking().Where(p=>p.RoomTitle==roomTitle&p.Nickname == nickname).FirstOrDefaultAsync(ct);
+        return await _players.Find(p => p.Nickname == nickname&&p.RoomTitle==roomTitle).FirstOrDefaultAsync(ct);
     }
 
-    public async Task<Player?> GetPlayerAsyncRO(string? playerId)
+    public async Task<Player?> GetPlayerAsync(string playerId)
     {
-        if (playerId == null)
-            return null;
-        return await _dbContext.Players.AsNoTracking().FirstOrDefaultAsync(p => p.Id == playerId);
-    }
-    public async Task<Player?> GetPlayerAsync(string? playerId)
-    {
-        if (playerId == null)
-            return null;
-        return await _dbContext.Players.FirstOrDefaultAsync(p => p.Id == playerId);
-    }
-    public async Task<bool> IsPlayerInRoomAsyncRO(string playerId, string roomTitle)
-    {
-        return await _dbContext.Players.AsNoTracking().Where(p => p.RoomTitle == roomTitle&p.Id==playerId).FirstOrDefaultAsync() != null;
+        return await _players.Find(p=>p._Id==playerId).SingleOrDefaultAsync();
     }
 
-    public void DeletePlayer(Player player)
+    public async Task DeletePlayerAsync(Player player)
     {
-        _dbContext.Players.Remove(player);
-    }
-    public async Task<bool> SaveChangesAsync()
-    {
-        try
+        Room? room = null;
+        if (player.RoomTitle==null)
+            room=await _roomsRepository.GetRoomByAdminId(player._Id);
+        else
+            room=await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        
+        if (room != null)
         {
-            return await _dbContext.SaveChangesAsync() > 0;
+            if (room.AdminId == player._Id)
+                await _roomsRepository.DeleteRoomAsync(room.Title);
+            else
+                await _roomsRepository.IncrementPlayersCountAsync(player.RoomTitle, -1);
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        await _players.DeleteOneAsync(p=>p._Id == player._Id);
+    }
+
+    public async Task DeletePlayerAsync(string playerId)
+    {
+        Player? player=await GetPlayerAsync(playerId);
+        if(player==null)
+            return;
+        await DeletePlayerAsync(player);
+    }
+    public async Task<List<Player>> GetPlayersInRoomAsync(string roomTitle)
+    {
+        return await _players.Find(p=>p.RoomTitle==roomTitle).ToListAsync();
+    }
+
+    public async Task UpdatePlayerAsync(Player player,bool isRoomTitleChanged)
+    {
+        if (isRoomTitleChanged)
+            await _roomsRepository.IncrementPlayersCountAsync(player.RoomTitle, 1);
+        await _players.ReplaceOneAsync(p=>p._Id==player._Id,player);
     }
 }

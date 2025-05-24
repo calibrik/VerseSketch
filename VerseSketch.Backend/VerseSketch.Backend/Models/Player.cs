@@ -1,12 +1,19 @@
-﻿namespace VerseSketch.Backend.Models;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace VerseSketch.Backend.Models;
 
 public class Player
 {
-    public required string Id { get; set; }
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string _Id { get; set; }
+    [BsonElement("nickname")]
     public string? Nickname { get; set; }
-    public string? RoomTitle { get; set; }
+    [BsonElement("createdTime")]
     public required DateTime CreatedTime { get; set; }
+    [BsonElement("connectionID")]
     public string? ConnectionID { get; set; }
-    
-    public Room? Room { get; set; }
+    [BsonElement("roomTitle")]
+    public string? RoomTitle { get; set; }
 }

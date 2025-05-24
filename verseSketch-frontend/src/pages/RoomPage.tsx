@@ -259,7 +259,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             .then(async () => {
                 connection.current = new signalR.HubConnectionBuilder()
                     .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${sessionStorage.getItem("player")}`)
-                    // .configureLogging("none")
+                    .configureLogging("none")
                     .withAutomaticReconnect([0,5000,10000,10000])
                     .build();
                 
