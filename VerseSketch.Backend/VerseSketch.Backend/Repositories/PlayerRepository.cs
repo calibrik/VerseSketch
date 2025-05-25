@@ -62,7 +62,7 @@ public class PlayerRepository
     }
     public async Task<List<Player>> GetPlayersInRoomAsync(string roomTitle)
     {
-        return await _players.Find(p=>p.RoomTitle==roomTitle).ToListAsync();
+        return await _players.Find(p=>p.RoomTitle==roomTitle).SortBy(p=>p.CreatedTime).ToListAsync();
     }
 
     public async Task UpdatePlayerAsync(Player player,bool isRoomTitleChanged)

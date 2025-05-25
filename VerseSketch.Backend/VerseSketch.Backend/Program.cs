@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using VerseSketch.Backend.Hubs;
+using VerseSketch.Backend.Misc;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 
@@ -112,6 +113,13 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    IMongoClient client = scope.ServiceProvider.GetRequiredService<IMongoClient>();
+    IOptions<MongoDBSettings> settings = scope.ServiceProvider.GetRequiredService<IOptions<MongoDBSettings>>();
+    DBSetup.InitializeIndexes(client,settings);
+}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

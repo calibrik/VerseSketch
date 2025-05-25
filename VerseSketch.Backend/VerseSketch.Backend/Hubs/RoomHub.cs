@@ -209,7 +209,7 @@ public class RoomHub:Hub<IRoomHub>
         if (player.ConnectionID != null)
         {
             string currConnectionId = player.ConnectionID;
-            await Task.Delay(25000);
+            await Task.Delay(27000);
             Player? currPlayer=await _playerRepository.GetPlayerAsync(playerId);
             if (currPlayer == null || currConnectionId != currPlayer.ConnectionID)
                 return;
