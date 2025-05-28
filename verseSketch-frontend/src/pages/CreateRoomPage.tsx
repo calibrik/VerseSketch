@@ -133,7 +133,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
                         validateDebounce={300}
                         label={<label className="input-field-label">Room Title</label>}
                         rules={[{validator:validateTitle}]}>
-                        <Input className="input-field" placeholder="Enter room title"/>
+                        <Input showCount maxLength={30} className="input-field" placeholder="Enter room title"/>
                     </Form.Item>
                     </Col>
                     <Col sm={14} md={8}>

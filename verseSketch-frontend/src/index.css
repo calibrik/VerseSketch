@@ -98,10 +98,14 @@ html{
 }
 
 .page-title{
+    text-align:center !important;
+}
+
+.step-counter,
+.page-title{
   color:#7C009B !important;
-  text-align:center !important;
   width:100%;
-  font-size:clamp(2rem,5vmin,4rem) !important;
+  font-size:clamp(1.7rem,5vmin,4rem) !important;
 }
 
 .join-room-button{
@@ -146,30 +150,51 @@ html{
   background-color: #7C009B;
 }
 
+.text-area,
 .input-field{
-  height: clamp(40px,8vmin,60px);
   border-radius: 4px;
-  font-size: clamp(0.7rem,2.4vmin,1rem);
   border: 2px solid #7C009B !important;
   background-color: #F8DCFF !important;
   color:#7C009B !important;
 }
+
+.text-area{
+  font-size: clamp(0.8rem,2vmin,1.3rem);
+  resize: none !important;
+}
+
+.input-field{
+  height: clamp(40px,8vmin,60px);
+  font-size: clamp(0.7rem,2.4vmin,1rem);
+}
+
+.text-area,
 .input-field:focus{
   outline: none !important;
   border-color: #7C009B !important;
   background-color: #F8DCFF !important;
   color:#7C009B !important;
 }
+
+.text-area:hover,
 .input-field:hover{
-  border-color: #7C009B !important;
-  background-color: #edacfd !important;
-  color:#7C009B !important;
+  background-color: #f0c6fa !important;
 }
+
+.text-area::placeholder{
+  font-size: clamp(0.8rem,2vmin,1.3rem);
+}
+
+.input-field::placeholder{
+  font-size: clamp(0.7rem,2.4vmin,1rem);
+}
+
+.text-area::placeholder,
 .input-field::placeholder{
   color: #7C009B !important;
-  font-size: clamp(0.7rem,2.4vmin,1rem);
   opacity: 0.5;
 }
+
 .input-field-label{
   color: #7C009B;
   font-size: clamp(0.7rem,2.4vmin,1rem);
@@ -357,24 +382,19 @@ html{
   height:clamp(40px,10vmin,60px) !important;
 }
 
-
-.error-modal .ant-modal-content{
-  width:500px !important;
-  /* height:300px !important; */
-}
 .status-modal .ant-modal-content{
   width:400px !important;
 }
 
 .status-modal .ant-modal-body,
 .error-modal .ant-modal-body{
-  height: 70px;
+  height: clamp(40px,7vh,70px) !important;
   color: #7C009B;
 }
 
 .status-modal-text{
   color: #7C009B;
-  font-size: 20px;
+  font-size: clamp(0.5rem,3vmin,1rem) !important;
   font-weight: 600;
 }
 
@@ -394,12 +414,12 @@ html{
 
 .error-modal-title{
   color: #7C009B;
-  font-size: 30px
+  font-size: clamp(1.5rem,3vmin,2rem) !important;
 }
 
 .error-modal-text{
   color: #7C009B;
-  font-size: 16px
+  font-size: 1rem;
 }
 
 .error-modal-button{
@@ -410,7 +430,7 @@ html{
 }
 
 .error-modal-button .button-text{
-  font-size: 17px;
+  font-size: 1rem;
   width: auto;
 }
 

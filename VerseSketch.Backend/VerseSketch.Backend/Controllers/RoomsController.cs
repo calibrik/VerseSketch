@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Driver;
 using VerseSketch.Backend.Misc;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
@@ -21,7 +22,7 @@ public class RoomsController:ControllerBase
         public string CurrentJoinToken { get; set; }
         public string RoomTitle { get; set; }
     }
-    string CreateJoinLinkToken(Room room)
+    public static string CreateJoinLinkToken(Room room)
     {
         room.CurrentJoinToken = Guid.NewGuid().ToString();
         JoinTokenData data = new JoinTokenData{ CurrentJoinToken = room.CurrentJoinToken, RoomTitle = room.Title };
@@ -209,28 +210,28 @@ public class RoomsController:ControllerBase
         return Ok(new { isExist = await _playerRepository.GetPlayerByNicknameInRoomAsync(nickname, roomTitle, ct) });
     }
 
-    [HttpGet("/api/rooms/generateJoinToken")]
-    public async Task<IActionResult> GenerateJoinToken([FromQuery] string roomTitle)
-    {
-        if (!User.Identity.IsAuthenticated)
-            return Unauthorized(new {message = $"You must be the admin of the room {roomTitle} to change it parameters."});
-        Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
-        if (room == null)
-            return NotFound(new {message = $"Room {roomTitle} is not found"});
-        string playerId=User.FindFirst("PlayerId").Value;
-        if (room.AdminId!=playerId)
-            return Unauthorized(new {message = $"You must be the admin of the room {roomTitle} to change it parameters."});
-        string joinToken = CreateJoinLinkToken(room);
-        try
-        {
-            await _roomsRepository.UpdateRoomAsync(room);
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500,new {message="Something went wrong, please try again later."});
-        }
-        return Ok(new {joinToken=joinToken});
-    }
+    // [HttpGet("/api/rooms/generateJoinToken")]
+    // public async Task<IActionResult> GenerateJoinToken([FromQuery] string roomTitle)
+    // {
+    //     if (!User.Identity.IsAuthenticated)
+    //         return Unauthorized(new {message = $"You must be the admin of the room {roomTitle} to change it parameters."});
+    //     Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
+    //     if (room == null)
+    //         return NotFound(new {message = $"Room {roomTitle} is not found"});
+    //     string playerId=User.FindFirst("PlayerId").Value;
+    //     if (room.AdminId!=playerId)
+    //         return Unauthorized(new {message = $"You must be the admin of the room {roomTitle} to change it parameters."});
+    //     string joinToken = CreateJoinLinkToken(room);
+    //     try
+    //     {
+    //         await _roomsRepository.UpdateRoomAsync(room);
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         return StatusCode(500,new {message="Something went wrong, please try again later."});
+    //     }
+    //     return Ok(new {joinToken=joinToken});
+    // }
     [HttpPost("/api/rooms/join")]
     public async Task<IActionResult> Join([FromBody] CreatePlayerViewModel model)
     {
@@ -282,7 +283,12 @@ public class RoomsController:ControllerBase
         try
         {
             if (User.Identity.IsAuthenticated)
-                await _playerRepository.UpdatePlayerAsync(player,true);
+            {
+                UpdateDefinition<Player> update = Builders<Player>.Update
+                    .Set(p => p.Nickname, player.Nickname)
+                    .Set(p => p.RoomTitle, roomTitle);
+                await _playerRepository.UpdatePlayerAsync(player, update, true);
+            }
             else
                 await _playerRepository.CreatePlayerAsync(player);
         }
@@ -307,14 +313,14 @@ public class RoomsController:ControllerBase
             return Unauthorized(new {message = $"You must be the admin of the room {model.RoomTitle} to change it parameters."});
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
-
-        room.IsPublic = model.IsPublic??room.IsPublic;
-        room.TimeToDraw = model.TimeToDraw??room.TimeToDraw;
-        room.MaxPlayersCount = model.MaxPlayersCount??room.MaxPlayersCount;
+        
         try
         {
-            await _roomsRepository.UpdateRoomAsync(room);
+            UpdateDefinition<Room> update = Builders<Room>.Update
+                .Set(r => r.IsPublic, model.IsPublic)
+                .Set(r => r.MaxPlayersCount, model.MaxPlayersCount)
+                .Set(r => r.TimeToDraw, model.TimeToDraw);
+            await _roomsRepository.UpdateRoomAsync(room.Title,update);
         }
         catch (Exception e)
         {

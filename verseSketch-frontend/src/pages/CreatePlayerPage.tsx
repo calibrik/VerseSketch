@@ -178,7 +178,7 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
                         label={<label className="input-field-label">Nickname</label>}
                         validateDebounce={500}
                         rules={[{validator:validateNickname}]}>
-                        <Input style={{width:"100%"}} className="input-field" placeholder="Enter your nickname"/>
+                        <Input showCount maxLength={30} style={{width:"100%"}} className="input-field" placeholder="Enter your nickname"/>
                     </Form.Item>
                     <Form.Item style={{display:"flex",justifyContent:"center",marginTop:"8vh"}}>
                         <JoinRoomButton loading={loading}/>

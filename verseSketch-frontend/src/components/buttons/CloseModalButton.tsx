@@ -12,7 +12,7 @@ export const CloseModalButton: FC<ICloseModalButtonProps> = (props) => {
             className="error-modal-button" 
             style={props.style} 
             onClick={props.onClick} 
-            icon={<CloseOutlined style={{fontSize:20}}/>}>
+            icon={<CloseOutlined className="button-icon-md"/>}>
             Close
         </BaseButton>
     );

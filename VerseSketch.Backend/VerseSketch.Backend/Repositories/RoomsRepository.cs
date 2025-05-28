@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using VerseSketch.Backend.Models;
@@ -38,12 +39,12 @@ public class RoomsRepository
     public async Task IncrementPlayersCountAsync(string roomTitle,int amount)
     {
         UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r=>r.PlayersCount,amount);
-        await _rooms.FindOneAndUpdateAsync(r=>r.Title==roomTitle,update);
+        await _rooms.UpdateOneAsync(r=>r.Title==roomTitle,update);
     }
 
-    public async Task UpdateRoomAsync(Room room)
+    public async Task UpdateRoomAsync(string roomTitle,UpdateDefinition<Room> update)
     {
-        await _rooms.ReplaceOneAsync(r=>r.Title==room.Title,room);
+        await _rooms.UpdateOneAsync(r=>r.Title==roomTitle,update);
     }
 
     public async Task<Room?> GetRoomByAdminId(string adminId)

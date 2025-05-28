@@ -65,10 +65,10 @@ public class PlayerRepository
         return await _players.Find(p=>p.RoomTitle==roomTitle).SortBy(p=>p.CreatedTime).ToListAsync();
     }
 
-    public async Task UpdatePlayerAsync(Player player,bool isRoomTitleChanged)
+    public async Task UpdatePlayerAsync(Player player,UpdateDefinition<Player> update,bool isRoomTitleChanged)
     {
         if (isRoomTitleChanged)
             await _roomsRepository.IncrementPlayersCountAsync(player.RoomTitle, 1);
-        await _players.ReplaceOneAsync(p=>p._Id==player._Id,player);
+        await _players.UpdateOneAsync(p=>p._Id==player._Id,update);
     }
 }

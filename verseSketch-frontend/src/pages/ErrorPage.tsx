@@ -1,4 +1,4 @@
-import { FC, use, useEffect } from "react";
+import { FC, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { leave } from "../misc/MiscFunctions";
 import { useSignalRConnectionContext } from "../components/SignalRProvider";

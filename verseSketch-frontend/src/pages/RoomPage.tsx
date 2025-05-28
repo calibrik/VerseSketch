@@ -179,28 +179,14 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     {
         if (!model||!model.isPlayerAdmin)
             return;
-        let response: Response | null;
-        try{
-            response=await fetch(`${ConnectionConfig.Api}/rooms/generateJoinToken?${new URLSearchParams({
-                roomTitle: roomTitle??"",
-            })}`,{
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization":`Bearer ${sessionStorage.getItem("player")}`
-                },
-            });
+        try {
+            let data=await connection.current?.invoke<string>("GenerateJoinToken", roomTitle);
+            await navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data}`);
         }
-        catch (error:any)
-        {
-            errorModals.errorModalClosable.current?.show("No connection to the server.");
+        catch (error:any) {
+            errorModals.errorModalClosable.current?.show("An error occurred while trying to generate join link.");
             return;
         }
-        let data=await response?.json();
-        if (!response.ok){
-            errorModals.errorModalClosable.current?.show(data.message);
-        }
-        await navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data.joinToken}`);
     }
 
     async function onLeave()
@@ -259,7 +245,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             .then(async () => {
                 connection.current = new signalR.HubConnectionBuilder()
                     .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${sessionStorage.getItem("player")}`)
-                    .configureLogging("none")
+                    // .configureLogging("none")
                     .withAutomaticReconnect([0,5000,10000,10000])
                     .build();
                 

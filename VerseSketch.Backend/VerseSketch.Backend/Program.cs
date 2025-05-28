@@ -148,12 +148,9 @@ app.MapFallbackToFile("index.html");
 
 app.Run();
 
-//TODO Leave and destroy player functionality (it works but test more)
 //TODO Caching where appropriate
 //TODO Browser caching
-//TODO Room hub reconnection (it is working but not all edge cases might be covered)
+//TODO Room hub reconnection (it is working but onDisconnectedAsync sometimes not being called)
 //TODO test dat shit
 //TODO Figure out how to pass errors to client from room hub (tbf, not that important?)
-//TODO Indexes in MongoDB
 //TODO Bg service to delete empty rooms and unused players
-//TODO Move methods in roomHub where makes sense (invite)

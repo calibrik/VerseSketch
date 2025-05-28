@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Protocol;
+using MongoDB.Driver;
+using VerseSketch.Backend.Controllers;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 using VerseSketch.Backend.ViewModels;
@@ -44,10 +46,10 @@ public class RoomHub:Hub<IRoomHub>
             Context.Abort();
             return;
         }
-        player.ConnectionID = Context.ConnectionId;
         try
         {
-            await _playerRepository.UpdatePlayerAsync(player,false);
+            UpdateDefinition<Player> update = Builders<Player>.Update.Set(p => p.ConnectionID, Context.ConnectionId);
+            await _playerRepository.UpdatePlayerAsync(player,update,false);
         }
         catch (Exception e)
         {
@@ -134,14 +136,14 @@ public class RoomHub:Hub<IRoomHub>
         {
             throw new HubException("Max Players Count can't be greater than room players.");
         }
-
-
-        room.IsPublic = model.IsPublic??room.IsPublic;
-        room.TimeToDraw = model.TimeToDraw??room.TimeToDraw;
-        room.MaxPlayersCount = model.MaxPlayersCount??room.MaxPlayersCount;
+        
         try
         {
-            await _roomsRepository.UpdateRoomAsync(room);
+            UpdateDefinition<Room> update = Builders<Room>.Update
+                .Set(r => r.IsPublic, model.IsPublic??room.IsPublic)
+                .Set(r => r.MaxPlayersCount, model.MaxPlayersCount??room.MaxPlayersCount)
+                .Set(r => r.TimeToDraw, model.TimeToDraw??room.TimeToDraw);
+            await _roomsRepository.UpdateRoomAsync(room.Title,update);
         }
         catch (Exception e)
         {
@@ -161,6 +163,28 @@ public class RoomHub:Hub<IRoomHub>
         if (player == null||player.RoomTitle!=roomTitle)
             throw new HubException("Player is not in this room.");
         await Clients.Group(roomTitle).PlayerKicked(playerId);
+    }
+    public async Task<string> GenerateJoinToken(string roomTitle)
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+            throw new HubException("You are not an admin in this room.");
+        Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
+        if (room == null)
+            throw new HubException($"Room {roomTitle} is not found");
+        string playerId=Context.User.FindFirst("PlayerId").Value;
+        if (room.AdminId!=playerId)
+            throw new HubException("You are not an admin in this room.");
+        string joinToken = RoomsController.CreateJoinLinkToken(room);
+        try
+        {
+            UpdateDefinition<Room> update = Builders<Room>.Update.Set(r=>r.CurrentJoinToken,room.CurrentJoinToken);
+            await _roomsRepository.UpdateRoomAsync(roomTitle,update);
+        }
+        catch (Exception e)
+        {
+            throw new HubException("Something went wrong, please try again later.");
+        }
+        return joinToken;
     }
 
     public async Task Leave()
