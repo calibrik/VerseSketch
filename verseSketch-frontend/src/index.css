@@ -106,6 +106,7 @@ html{
   color:#7C009B !important;
   width:100%;
   font-size:clamp(1.7rem,5vmin,4rem) !important;
+  margin:0;
 }
 
 .join-room-button{
@@ -185,10 +186,14 @@ html{
   font-size: clamp(0.8rem,2vmin,1.3rem);
 }
 
+.input-field .ant-input::placeholder,
+.input-field .ant-input-show-count-suffix,
 .input-field::placeholder{
   font-size: clamp(0.7rem,2.4vmin,1rem);
 }
 
+.input-field .ant-input::placeholder,
+.input-field .ant-input-show-count-suffix,
 .text-area::placeholder,
 .input-field::placeholder{
   color: #7C009B !important;
@@ -206,27 +211,22 @@ html{
   font-weight: 600;
 }
 .container-mid{
-  /* justify-content:"center"; */
   align-items:center;
   display:flex;
-  padding:0 1.5%;
   flex-direction:column;
-  /* // alignContent:"center" */
+  width: 100%;
+  padding:0 16px;
 }
 .container-large{
-  /* justify-content:"center"; */
   align-items:center;
   display:flex;
-  /* padding:0 32px; */
   flex-direction:column;
-  /* // alignContent:"center" */
 }
 .container-small{
-  /* justifyContent:"center", */
   align-items:center;
   display:flex;
   flex-direction:column;
-  /* // alignContent:"center" */
+  /* width: 100%; */
 }
 
 .input-field .ant-select-selector {
@@ -500,9 +500,14 @@ html{
   width: auto;
 }
 
+.canvas-container{
+  background-color: white;
+  display: inline-block;
+}
+
 @media (max-width: 575px) {
   .container-small{
-    padding:0 25%;
+    padding:0 10%;
   }
   .room-table{
     height:auto;
@@ -510,7 +515,7 @@ html{
 }
 @media (min-width:576px) and (max-width: 767px) {
   .container-small{
-    padding:0 25%;
+    padding:0 15%;
   }
   .room-table{
     height:auto;
@@ -518,7 +523,7 @@ html{
 }
 @media (min-width:768) and (max-width: 991px) {
   .container-small{
-    padding:0 25%;
+    padding:0 15%;
   }
   .room-table{
     height:auto;
@@ -526,7 +531,7 @@ html{
 }
 @media (min-width:992px) and (max-width: 1199px) {
   .container-small{
-    padding:0 32%;
+    padding:0 20%;
   }
   .room-table{
     height:auto;
@@ -534,7 +539,7 @@ html{
 }
 @media (min-width:1200px) and (max-width: 1399px) {
   .container-small{
-    padding:0 32%;
+    padding:0 25%;
   }
   .room-table{
     height:70vh;
@@ -542,7 +547,7 @@ html{
 }
 @media (min-width: 1400px) {
   .container-small{
-    padding:0 32%;
+    padding:0 35%;
   }
   .room-table{
     height:80vh;

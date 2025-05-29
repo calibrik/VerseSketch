@@ -136,7 +136,7 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
                         <Input showCount maxLength={30} className="input-field" placeholder="Enter room title"/>
                     </Form.Item>
                     </Col>
-                    <Col sm={14} md={8}>
+                    <Col sm={10} md={8}>
                     <Form.Item
                         name="maxPlayersCount"
                         label={<label className="input-field-label">Max. Players</label>}>
