@@ -91,4 +91,5 @@ export default App;
 //TODO: random error with errorDisplayProvider (probably hot reload issue only)
 //TODO: Random WS handshake issue on devices (if connecting by wifi on the phone, still random tho)
 //TODO: onInvite clipboard bug when accessing by local (api doesn't work on http)
-//TODO: Think about make responsive stuff in react itself
+//TODO: Fix some design using responsive stuff in react itself (create page)
+//TODO: Ban album orientation

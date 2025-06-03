@@ -7,15 +7,15 @@ interface IInsertLyricsPageProps {};
 
 export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     return (
-        <div>
+        <>
             <StepCounter/>
             <div className="container-small">
-                <PageTitle style={{marginTop:"2vh"}}>Past n lines of lyrics of your song!</PageTitle>
+                <PageTitle style={{marginTop:"3vh"}}>Past n lines of lyrics of your song!</PageTitle>
 
 
                 <TextArea style={{marginTop:"5vh"}} className="text-area" autoSize={{minRows:10,maxRows:20}} placeholder="Insert your lyrics here..."/>
                 <SubmitButton style={{marginTop:"2vh"}}/>
             </div>
-        </div>
+        </>
     );
 }

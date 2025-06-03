@@ -19,3 +19,33 @@ export async function leave(connection?:React.RefObject<HubConnection | null>)
         });
     }
 }
+
+export function getWidthLevel():"xs" | "sm" | "md" | "lg" | "xl"
+{
+    const width = window.innerWidth;
+    if (width < 576) {
+        return "xs";
+    } else if (width < 768) {
+        return "sm";
+    } else if (width < 992) {
+        return "md";
+    } else if (width < 1200) {
+        return "lg";
+    } else {
+        return "xl";
+    }
+}
+
+export function getHeightLevel():"xs" | "sm" | "md" | "lg"
+{
+    const height = window.innerHeight;
+    if (height < 700) {
+        return "xs";
+    } else if (height < 1001) {
+        return "sm";
+    } else if (height < 1230) {
+        return "md";
+    } else {
+        return "lg";
+    }
+}
