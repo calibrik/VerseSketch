@@ -20,32 +20,40 @@ export async function leave(connection?:React.RefObject<HubConnection | null>)
     }
 }
 
-export function getWidthLevel():"xs" | "sm" | "md" | "lg" | "xl"
+export enum WindowLevel{
+    XS = 0,
+    SM = 1,
+    MD = 3,
+    LG = 4,
+    XL = 5
+}
+
+export function getWidthLevel():WindowLevel
 {
     const width = window.innerWidth;
     if (width < 576) {
-        return "xs";
+        return WindowLevel.XS;
     } else if (width < 768) {
-        return "sm";
+        return WindowLevel.SM;
     } else if (width < 992) {
-        return "md";
+        return WindowLevel.MD;
     } else if (width < 1200) {
-        return "lg";
+        return WindowLevel.LG;
     } else {
-        return "xl";
+        return WindowLevel.XL;
     }
 }
 
-export function getHeightLevel():"xs" | "sm" | "md" | "lg"
+export function getHeightLevel():WindowLevel
 {
     const height = window.innerHeight;
     if (height < 700) {
-        return "xs";
+        return WindowLevel.XS;
     } else if (height < 1001) {
-        return "sm";
+        return WindowLevel.SM;
     } else if (height < 1230) {
-        return "md";
+        return WindowLevel.MD;
     } else {
-        return "lg";
+        return WindowLevel.LG;
     }
 }

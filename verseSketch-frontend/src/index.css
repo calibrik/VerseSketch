@@ -6,7 +6,7 @@ html{
   line-height: 1.5;
   font-weight: 400;
   margin: 0;
-  overflow: hidden;
+  /* overflow: hidden; */
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
@@ -149,6 +149,36 @@ html{
   padding: 10px;
 }
 
+.palette-mobile,
+.palette{
+  background-color: #F8DCFF;
+  color: #7C009B;
+  border: 2px solid #7C009B !important;
+  border-radius: 4px;
+  height:100%;
+  width:100%;
+}
+
+.palette-mobile{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.palette-divider .ant-divider-inner-text{
+  color: #7C009B !important;
+}
+.palette-divider .ant-divider-with-text{
+  color: #7C009B !important;
+}
+.palette-divider {
+  border-color: #7c009b71 !important;
+}
+.palette-current{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .navbar-title{
   color: white;
   font-size: clamp(1.3rem,4vh,2.3rem);
@@ -526,6 +556,7 @@ html{
 
 .canvas-container .wrapper{
   background-color: rgb(255, 255, 255);
+    border: 2px solid #7C009B !important;
   display: inline-block;
 }
 

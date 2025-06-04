@@ -3,7 +3,8 @@ import { CSSProperties, useEffect, useRef } from "react";
 import { FC, useState } from "react";
 import { Stage, Layer, Line } from "react-konva";
 interface ICanvasProps {
-  style:CSSProperties
+  color:string;
+  style?:CSSProperties
 };
 interface ILine {
     tool: string;
@@ -100,7 +101,7 @@ export const Canvas: FC<ICanvasProps> = (props) => {
             <Line
               key={i}
               points={line.points}
-              stroke="#df4b26"
+              stroke={props.color}
               strokeWidth={5}
               tension={0.5}
               lineCap="round"
