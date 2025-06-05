@@ -23,9 +23,9 @@ export async function leave(connection?:React.RefObject<HubConnection | null>)
 export enum WindowLevel{
     XS = 0,
     SM = 1,
-    MD = 3,
-    LG = 4,
-    XL = 5
+    MD = 2,
+    LG = 3,
+    XL = 4
 }
 
 export function getWidthLevel():WindowLevel
