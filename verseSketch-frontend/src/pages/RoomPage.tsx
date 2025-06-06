@@ -1,7 +1,6 @@
-import { Card, Col, Divider, Flex, List, Row, Select, Switch } from "antd";
-import { FC, ReactNode, useEffect, useRef, useState } from "react";
+import { Card, Col, Divider, Flex, Row, Select, Switch } from "antd";
+import { FC, useEffect, useRef, useState } from "react";
 import { Color } from "../misc/colors";
-import { Spinner } from "../components/Spinner";
 import { StartGameButton } from "../components/buttons/StartGameButton";
 import Title from "antd/es/typography/Title";
 import { useNavigate, useParams } from "react-router";
@@ -13,11 +12,10 @@ import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import '../index.css';
 import { LeaveRoomButton } from "../components/buttons/LeaveRoomButton";
 import { leave } from "../misc/MiscFunctions";
-import { StarFilled } from "@ant-design/icons";
-import { KickButton } from "../components/buttons/KickButton";
+import { PlayersList } from "../components/PlayersList";
 
 interface IRoomPageProps {};
-interface IPlayerModel{
+export interface IPlayerModel{
     nickname:string;
     id:string;
     isAdmin:boolean;
@@ -285,51 +283,18 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 <LeaveRoomButton onClick={onLeave}/>
             </div>
             <Row className="room-table" style={{marginTop:"1vh"}} gutter={[{ xs: 8, sm: 16, md: 24, lg: 50 }, { xs: 8, sm: 16, md: 24, lg: 46 }]}>
-                <Col xs={24} md={8}>
-                <List
-                    className="player-list"
-                    header={
-                        <div style={{width:"100%",display:"flex",marginBottom:10}}>
-                            <div style={{ width: "50%" }}>
-                                <span className="room-title">
-                                    {roomTitle}
-                                </span>
-                            </div>
-
-                            <div style={{width:"50%",display:"flex",justifyContent:"flex-end"}}>
-                                <span className="placeholder-text">
-                                    Players {model?.playersCount ?? 0}/{model?.maxPlayersCount ?? 0}
-                                </span>
-                            </div>
-                        </div>
-                    }
-                    loadMore={loading ? <Spinner style={{ margin: '15px' }} /> : ""}
-                    locale={{ emptyText: <span className="placeholder-text">Loading...</span>}}
-                    dataSource={model?.players ?? []}
-                    renderItem={(player) => {
-                        let suffix:ReactNode|null=null;
-                        if (player.isAdmin)
-                            suffix=<StarFilled className="button-icon" style={{marginRight:10}}/>;
-                        else if (model?.isPlayerAdmin)
-                            suffix=<KickButton style={{marginRight:10}} playerId={player.id} roomTitle={roomTitle}/>
-                        if (player.id === "")
-                            return(
-                                <List.Item className="player-field">
-                                <span className="player-placeholder-text">
-                                    Player slot
-                                </span>
-                                </List.Item>);
-                        return (
-                        <List.Item className={model?.playerId==player.id?"player-selected-field":"player-field"}>
-                        <span className="player-nickname-text">
-                            {player.nickname}
-                        </span>
-                        {suffix}
-                        </List.Item>);
-                    }}
-                    />
+                <Col xs={24} md={6} xxl={4}>
+                    <PlayersList 
+                        isPlayerAdmin={model?.isPlayerAdmin ?? false}
+                        roomTitle={model?.title ?? ""}
+                        players={model?.players ?? []}
+                        loading={loading}
+                        playersCount={model?.playersCount ?? 0}
+                        maxPlayersCount={model?.maxPlayersCount ?? 0}
+                        selectedPlayerId={model?.playerId ?? ""}
+                        showKickButton/>
                 </Col>
-                <Col xs={24} md={16}>
+                <Col xs={24} md={18} xxl={20}>
                     <Card className="room-card" title={<Title className="card-title">Rules:</Title>}>
                         <div className="card-content">
                             <p className="card-text">Each player picks a song they love and selects 2 × (n - 1) lines from the lyrics, where n is the number of players. Then, everyone takes turns drawing pictures based on two lines from each other’s songs.</p>
@@ -368,7 +333,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     </Card>
                 </Col>
             </Row>
-            <StartGameButton style={{marginTop:"3vh"}}/>
+            <StartGameButton style={{marginTop:"2vh"}}/>
         </div>
     );
 }

@@ -11,7 +11,7 @@ import { SubmitButton } from "../components/buttons/SubmitButton";
 interface IDrawingPageProps {};
 
 export const DrawingPage: FC<IDrawingPageProps> = (_) => {
-    const [color, setColor] = useState("#7C009B");
+    const [color, setColor] = useState("#000000");
     const [widthLevel,setWidthLevel] = useState<WindowLevel>(WindowLevel.XS);
     const [brushSize, setBrushSize] = useState(3);
     
@@ -44,7 +44,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                         <div className={widthLevel<=WindowLevel.SM?"palette-mobile":"palette"}>
                             <Divider type={widthLevel<=WindowLevel.SM?"vertical":"horizontal"} className="palette-divider">Color</Divider>
                             <div className="palette-current">
-                                <ColorPicker value={color} onChangeComplete={(value: AggregationColor)=>setColor(value.toCssString())} trigger="hover" disabledAlpha />
+                                <ColorPicker className="current-color" value={color} onChangeComplete={(value: AggregationColor)=>setColor(value.toCssString())} trigger="hover" disabledAlpha />
                             </div>
                             <Divider type={widthLevel<=WindowLevel.SM?"vertical":"horizontal"} className="palette-divider">Recently used</Divider>
                             <div className="palette-recent">

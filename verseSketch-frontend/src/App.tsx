@@ -11,6 +11,7 @@ import { useSignalRConnectionContext } from './components/SignalRProvider';
 import { ErrorPage } from './pages/ErrorPage';
 import { InsertLyricsPage } from './pages/InsertLyricsPage';
 import { DrawingPage } from './pages/DrawingPage';
+import { ShowcasePage } from './pages/ShowcasePage';
 
 const router=createBrowserRouter([
   {
@@ -49,6 +50,10 @@ const router=createBrowserRouter([
       {
         path:'/draw',
         Component:DrawingPage
+      },
+      {
+        path:'/showcase',
+        Component: ShowcasePage
       }
     ]
   }
@@ -93,3 +98,7 @@ export default App;
 //TODO: onInvite clipboard bug when accessing by local (api doesn't work on http)
 //TODO: Fix some design using responsive stuff in react itself (create page)
 //TODO: Ban album orientation
+//TODO: Width slider on drawing canvas
+//TODO: Design color pickers
+//TODO: Tinker with showcase canvas size 
+//TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)

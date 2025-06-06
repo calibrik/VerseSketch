@@ -96,7 +96,7 @@ export const Canvas: FC<ICanvasProps> = (props) => {
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
       >
-        <Layer >
+        <Layer>
           {lines.map((line, i) => (
             <Line
               key={i}

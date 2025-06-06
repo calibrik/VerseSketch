@@ -8,7 +8,7 @@ interface IDisabledColorPickerProps {
 export const DisabledColorPicker: FC<IDisabledColorPickerProps> = (props) => {
     return (
         <div style={{display:'flex',justifyContent:'center'}} onClick={props.onClick}>
-            <ColorPicker disabled defaultValue={props.color} />
+            <ColorPicker className="recent-color" disabled defaultValue={props.color} />
         </div>
     );
 }
