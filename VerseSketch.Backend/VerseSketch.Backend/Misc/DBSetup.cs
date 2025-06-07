@@ -31,5 +31,9 @@ public static class DBSetup
             CreateIndexOn<Player>(p => p.CreatedTime)
         ];
         await players.Indexes.CreateManyAsync(playerIndexes);
+        IMongoCollection<Instruction> instructions = client.GetDatabase(settings.Value.DatabaseName).GetCollection<Instruction>("instructions");
+        await instructions.Indexes.CreateOneAsync(CreateIndexOn<Instruction>(i=>i.PlayerId,new CreateIndexOptions { Unique = true }));
+        IMongoCollection<Storyline> storylines = client.GetDatabase(settings.Value.DatabaseName).GetCollection<Storyline>("storylines");
+        await storylines.Indexes.CreateOneAsync(CreateIndexOn<Storyline>(s=>s.PlayerId,new CreateIndexOptions { Unique = true }));
     }
 }

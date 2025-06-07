@@ -187,6 +187,23 @@ public class RoomHub:Hub<IRoomHub>
         return joinToken;
     }
 
+    public async Task StartGame(string roomTitle)
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+            throw new HubException("You are not an admin in this room.");
+        Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
+        if (room == null)
+            throw new HubException("Room not found.");
+        string playerId = Context.User.FindFirst("PlayerId").Value;
+        if (room.AdminId!=playerId)
+            throw new HubException("You are not an admin in this room.");
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
+        if (player == null)
+            throw new HubException("You are not an admin in this room.");
+        
+        
+    }
+
     public async Task Leave()
     {
         if (!Context.User.Identity.IsAuthenticated)

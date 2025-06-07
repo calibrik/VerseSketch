@@ -23,4 +23,6 @@ public class Room
     public required string AdminId { get; set; }
     [BsonElement("currentJoinToken")]
     public string? CurrentJoinToken { get; set; }
+    [BsonElement("stage")] 
+    public int Stage { get; set; }
 }

@@ -182,6 +182,7 @@ public class RoomsController:ControllerBase
             AdminId = admin._Id,
             IsPublic = model.IsPublic,
             TimeToDraw = 10,
+            Stage = -1
         };
         string joinToken = CreateJoinLinkToken(room);
         try

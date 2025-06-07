@@ -33,7 +33,7 @@ public class RoomsRepository
 
     public async Task<List<Room>> SearchRoomsAsync(int page, int pageSize,string roomTitle="",CancellationToken cancelToken=default)
     {
-        return await _rooms.Find(r => r.IsPublic && r.Title.Contains(roomTitle) && r.PlayersCount>0).SortBy(r=>r.Title).Skip(page * pageSize).Limit(pageSize).ToListAsync(cancelToken);
+        return await _rooms.Find(r => r.IsPublic && r.Title.Contains(roomTitle) && r.PlayersCount>0 && r.Stage==-1).SortBy(r=>r.Title).Skip(page * pageSize).Limit(pageSize).ToListAsync(cancelToken);
     }
 
     public async Task IncrementPlayersCountAsync(string roomTitle,int amount)
