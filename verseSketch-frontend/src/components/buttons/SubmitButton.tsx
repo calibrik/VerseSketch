@@ -10,7 +10,8 @@ export const SubmitButton: FC<ISubmitButtonProps> = (props) => {
         <BaseButton
             icon={<CheckCircleOutlined className="button-icon"/>}
             className="secondary-button"
-            style={props.style}>
+            style={props.style}
+            htmlType={"submit"}>
                 SUBMIT
         </BaseButton>
     );

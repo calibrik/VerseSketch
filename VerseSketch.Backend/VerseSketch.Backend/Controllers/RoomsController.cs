@@ -112,6 +112,8 @@ public class RoomsController:ControllerBase
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
             return NotFound(new {message = $"The room {roomTitle} is not found."});
+        if (room.Stage!=-1)
+            return Unauthorized(new  {message = $"Game has already started in this room."});
         if (currPlayer == null)
             return StatusCode(500,new {message = "Something went wrong, please try again later."});
         if (currPlayer.RoomTitle!=room.Title)
@@ -121,7 +123,7 @@ public class RoomsController:ControllerBase
 
     [HttpGet("/api/rooms/validateJoinLink")]
     [ResponseCache(NoStore = true)]
-    public async Task<IActionResult> ValidateJoinLink([FromQuery] string? roomTitle, [FromQuery] string? joinToken)
+    public async Task<IActionResult> ValidateJoinLink([FromQuery] string? roomTitle, [FromQuery] string? joinToken)//this function is dumpster fire
     {
         if (roomTitle == null && joinToken == null)
             return BadRequest(new {message = "At least one argument is required"});
@@ -130,6 +132,8 @@ public class RoomsController:ControllerBase
             Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
             if (room == null)
                 return NotFound(new {message = $"Sorry, room called {roomTitle} is not found"});
+            if (room.Stage!=-1)
+                return Unauthorized(new  {message = $"Game has already started in this room."});
             if (room.PlayersCount==0||!room.IsPublic)
                 return BadRequest(new {message = $"Sorry, room {roomTitle} is private"});
             return Ok();
@@ -254,6 +258,8 @@ public class RoomsController:ControllerBase
             return BadRequest(new {message="Room you trying to join doesn't exist"});//check if room exists
         if ((room.PlayersCount==0||!room.IsPublic)&&model.JoinToken==null)
             return BadRequest(new {message="You can't join private room."});//check user provides join token for rooms with 0 players or private
+        if (room.Stage!=-1)
+            return Unauthorized(new  {message = $"Game has already started in this room."});
         if (User.Identity.IsAuthenticated)
         {
             string playerId=User.FindFirst("PlayerId").Value;

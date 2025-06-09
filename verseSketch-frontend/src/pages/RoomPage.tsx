@@ -226,6 +226,14 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         errorModals.statusModal.current?.close();
     }
 
+    function onStageSet(stage:number){
+        if (stage==0){
+            navigate("/insert-lyrics",{replace:true});
+            return;
+        }
+        navigate("/draw",{replace:true});
+    }
+
     // useEffect(() => {
     //     console.log("rerender",model);
     // });
@@ -256,13 +264,14 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 connection.current.on("PlayerLeft", onPlayerLeft);
                 connection.current.on("RoomDeleted",onRoomDeleted);
                 connection.current.on("PlayerKicked",onPlayerKicked);
+                connection.current.on("StageSet",onStageSet);
                 connection.current.onreconnecting(onRecconnect);
                 connection.current.onreconnected(onRecconnected);
                 connection.current.onclose(onConnectionClose);
 
                 try{
                     await connection.current.start();
-                    connection.current.invoke("Join", roomTitle);
+                    await connection.current.invoke("Join", roomTitle);
                 }
                 catch(_){
                     await leave(connection);

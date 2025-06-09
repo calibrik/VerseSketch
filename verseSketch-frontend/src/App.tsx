@@ -99,6 +99,7 @@ export default App;
 //TODO: Fix some design using responsive stuff in react itself (create page)
 //TODO: Ban album orientation
 //TODO: Width slider on drawing canvas
-//TODO: Design color pickers
 //TODO: Tinker with showcase canvas size 
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
+//TODO: Complete check counter
+//TODO: Edit after submit on game pages

@@ -102,7 +102,6 @@ html{
 }
 
 .page-title{
-  text-align: center !important;
   font-size:clamp(1.7rem,5vmin,4rem) !important;
 }
 
@@ -112,15 +111,19 @@ html{
 }
 
 .lyrics-2line{
-  text-align:center !important;
   font-size:clamp(1rem,3.5vmin,2.7rem) !important;
+}
+
+.page-title,
+.lyrics-2line{
+  text-align:center !important;
+  width:100%;
 }
 
 .lyrics-2line,
 .step-counter,
 .page-title{
   color:#7C009B !important;
-  width:100%;
   margin:0;
 }
 

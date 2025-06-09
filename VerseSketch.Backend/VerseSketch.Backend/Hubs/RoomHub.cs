@@ -18,6 +18,8 @@ public interface IRoomHub
     Task PlayerLeft(string playerId);
     Task PlayerKicked(string playerId);
     Task PlayerJoined(PlayerViewModel player);
+    Task SetStage(int stage);
+    Task PlayerCompletedTask();
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -201,7 +203,30 @@ public class RoomHub:Hub<IRoomHub>
         if (player == null)
             throw new HubException("You are not an admin in this room.");
         
-        
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage, 0);
+        await _roomsRepository.UpdateRoomAsync(roomTitle,update);
+        await Clients.Group(roomTitle).SetStage(0);
+    }
+
+    public async Task SendLyrics(string lyrics)
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+            throw new HubException("You are not in this room.");
+        Player? player = await _playerRepository.GetPlayerAsync(Context.User.FindFirst("PlayerId").Value);
+        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (room == null)
+            throw new HubException("Room not found.");
+        List<string> lyricsSubmitted=lyrics.Split('\n').ToList();
+        if  (lyricsSubmitted.Count!=6)
+            throw new HubException("Wrong amount of lines.");
+        foreach (string line in lyricsSubmitted)
+        {
+            if (line.Length>95)
+                throw new HubException("Line is too long.");
+        }
+        UpdateDefinition<Player> update = Builders<Player>.Update.Set(p=>p.LyricsSubmitted,lyricsSubmitted);
+        await _playerRepository.UpdatePlayerAsync(player,update,false);
+        await Clients.Group(room.Title).PlayerCompletedTask();
     }
 
     public async Task Leave()

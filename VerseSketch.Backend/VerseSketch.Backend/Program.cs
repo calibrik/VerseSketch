@@ -20,6 +20,8 @@ builder.Services.AddSignalR(options =>
 });
 builder.Services.AddScoped<RoomsRepository>();
 builder.Services.AddScoped<PlayerRepository>();
+builder.Services.AddScoped<InstructionRepository>();
+builder.Services.AddScoped<StorylineRepository>();
 
 #if DEBUG
 builder.Services.AddCors(options =>
@@ -154,3 +156,5 @@ app.Run();
 //TODO test dat shit
 //TODO Figure out how to pass errors to client from room hub (tbf, not that important?)
 //TODO Bg service to delete empty rooms and unused players
+//TODO Timer for game
+//TODO ValidationLink function????
