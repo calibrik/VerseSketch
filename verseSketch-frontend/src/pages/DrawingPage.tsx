@@ -7,6 +7,8 @@ import { DisabledColorPicker } from "../components/DisabledColorPicker";
 import { getWidthLevel, WindowLevel } from "../misc/MiscFunctions";
 import { BrushIcon, BucketIcon, EraserIcon, EyedropperIcon } from "../components/Icons";
 import { SubmitButton } from "../components/buttons/SubmitButton";
+import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
+import { Timer } from "../components/Timer";
 
 interface IDrawingPageProps {};
 
@@ -27,16 +29,17 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         }
     }
     , []);
-    
     return (
         <>
-            <StepCounter/>
+            <Timer time={30}/>
+            <StepCounter step={1} totalSteps={5}/>
+            <PlayerCompleteCounter totalPlayers={7} completedPlayers={2}/>
             <div className="container-mid">
-                <div style={{marginTop:"2vh"}} className="lyrics-container">
+                <div style={{marginTop:"3vh"}} className="lyrics-container">
                     <h1 className="lyrics-2line">Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love</h1>
                     <h1 className="lyrics-2line">Fuck apologies, I wanna see y'all geeked up</h1>
                 </div>
-                <Row gutter={[20,10]} style={{width:"100%",marginTop:"2vh"}}>
+                <Row gutter={[20,10]} style={{width:"100%",marginTop:"3vh"}}>
                     <Col xs={24} md={20} xxl={22}>
                         <Canvas color={color}/>
                     </Col>

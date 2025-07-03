@@ -32,7 +32,7 @@ public class GameController:ControllerBase
             return Unauthorized(new { message = $"Room not found." });
         if (room.Stage != 0)
             return Unauthorized(new { message = $"Game is not in the right stage for this request." });
-        return Ok(new { linesAmount = room.PlayersCount });
+        return Ok(new { linesAmount = room.PlayersCount, totalPlayers=room.PlayersCount });
     }
     
     

@@ -18,7 +18,7 @@ public interface IRoomHub
     Task PlayerLeft(string playerId);
     Task PlayerKicked(string playerId);
     Task PlayerJoined(PlayerViewModel player);
-    Task SetStage(int stage);
+    Task StageSet(int stage);
     Task PlayerCompletedTask();
 }
 
@@ -189,23 +189,24 @@ public class RoomHub:Hub<IRoomHub>
         return joinToken;
     }
 
-    public async Task StartGame(string roomTitle)
+    public async Task StartGame()
     {
         if (!Context.User.Identity.IsAuthenticated)
             throw new HubException("You are not an admin in this room.");
-        Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
-        if (room == null)
-            throw new HubException("Room not found.");
         string playerId = Context.User.FindFirst("PlayerId").Value;
-        if (room.AdminId!=playerId)
-            throw new HubException("You are not an admin in this room.");
         Player? player = await _playerRepository.GetPlayerAsync(playerId);
         if (player == null)
             throw new HubException("You are not an admin in this room.");
+        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (room == null)
+            throw new HubException("Room not found.");
+        if (room.AdminId!=playerId)
+            throw new HubException("You are not an admin in this room.");
+
         
         UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage, 0);
-        await _roomsRepository.UpdateRoomAsync(roomTitle,update);
-        await Clients.Group(roomTitle).SetStage(0);
+        await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
+        await Clients.Group(player.RoomTitle).StageSet(0);
     }
 
     public async Task SendLyrics(string lyrics)
@@ -216,6 +217,11 @@ public class RoomHub:Hub<IRoomHub>
         Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
         if (room == null)
             throw new HubException("Room not found.");
+        if (lyrics == "")
+        {
+            await Clients.Group(room.Title).PlayerKicked(player._Id);
+            return;
+        }
         List<string> lyricsSubmitted=lyrics.Split('\n').ToList();
         if  (lyricsSubmitted.Count!=6)
             throw new HubException("Wrong amount of lines.");

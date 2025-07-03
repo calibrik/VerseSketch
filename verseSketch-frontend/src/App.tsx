@@ -103,3 +103,6 @@ export default App;
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
 //TODO: Complete check counter
 //TODO: Edit after submit on game pages
+//TODO: Timer
+//TODO: Stage counter
+//TODO: Wire insert lyrics into the game flow

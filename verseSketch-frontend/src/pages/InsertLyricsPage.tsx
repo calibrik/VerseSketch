@@ -8,6 +8,9 @@ import { RuleObject } from "antd/es/form";
 import { Spinner } from "../components/Spinner";
 import { useSignalRConnectionContext } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+import { Timer } from "../components/Timer";
+import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
+import { ConnectionConfig } from "../misc/ConnectionConfig";
 interface IInsertLyricsPageProps {};
 
 interface IInsertLyricsFormModel {
@@ -15,7 +18,9 @@ interface IInsertLyricsFormModel {
 }
 
 interface IInsertLyricsModel{
-    linesAmount:number
+    linesAmount:number,
+    time:number;
+    totalPlayers:number;
 }
 
 export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
@@ -55,8 +60,8 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     async function initLoad(){
         let response:Response|null=null;
         try {
-            response=await fetch(`${connection.current?.baseUrl}/game/getLinesAmount`, {
-                method:"POST",
+            response=await fetch(`${ConnectionConfig.Api}/game/getLinesAmount`, {
+                method:"GET",
                 headers:{
                     "Content-Type":"application/json",
                     "Authorization":`Bearer ${sessionStorage.getItem("player")}`
@@ -90,7 +95,9 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
 
     return (
         <>
-            <StepCounter/>
+            <Timer time={30}/>
+            <StepCounter step={1} totalSteps={model.totalPlayers}/>
+            <PlayerCompleteCounter totalPlayers={model.totalPlayers} completedPlayers={0}/>
             <div className="container-small">
                 <PageTitle style={{marginTop:"3vh"}}>Past lines of lyrics of your song!</PageTitle>
                 <Form

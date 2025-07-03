@@ -234,6 +234,10 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         navigate("/draw",{replace:true});
     }
 
+    async function StartGame(){
+        await connection.current?.invoke("StartGame");
+    }
+
     // useEffect(() => {
     //     console.log("rerender",model);
     // });
@@ -284,6 +288,12 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                 setLoading(false);
                 errorModals.errorModal.current?.show(error);
             });
+            return () => {
+                connection.current?.off("ReceiveRoom", onRoomReceive);
+                connection.current?.off("ReceiveParams", onReceiveParams);
+                connection.current?.off("PlayerJoined", onPlayerJoined);
+                connection.current?.off("PlayerLeft", onPlayerLeft);
+            }
     }, []);
 
     return (
@@ -342,7 +352,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     </Card>
                 </Col>
             </Row>
-            <StartGameButton style={{marginTop:"2vh"}}/>
+            <StartGameButton onClick={StartGame} style={{marginTop:"2vh"}}/>
         </div>
     );
 }
