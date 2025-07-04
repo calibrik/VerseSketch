@@ -104,5 +104,6 @@ export default App;
 //TODO: Complete check counter
 //TODO: Edit after submit on game pages
 //TODO: Timer
-//TODO: Stage counter
 //TODO: Wire insert lyrics into the game flow
+//TODO: Escalate some methods for SignalR to provider level, cause they are shared across the pages
+//TODO: Refs instead of states in complete counter

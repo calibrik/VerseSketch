@@ -3,7 +3,7 @@ import { PageTitle } from "../components/PageTitle";
 import TextArea from "antd/es/input/TextArea";
 import { SubmitButton } from "../components/buttons/SubmitButton";
 import { StepCounter } from "../components/StepCounter";
-import { Form, Spin } from "antd";
+import { Form } from "antd";
 import { RuleObject } from "antd/es/form";
 import { Spinner } from "../components/Spinner";
 import { useSignalRConnectionContext } from "../components/SignalRProvider";
@@ -18,14 +18,16 @@ interface IInsertLyricsFormModel {
 }
 
 interface IInsertLyricsModel{
-    linesAmount:number,
     time:number;
     totalPlayers:number;
+    roomTitle:string;
+    isAdmin:boolean;
 }
 
 export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     const [model,setModel]=useState<IInsertLyricsModel|null>(null);
-    const [lodaing,setLoading]=useState<boolean>(false);
+    const [submitLoading,setSubmitLoading]=useState<boolean>(false);
+    const [isSubmitted,setIsSubmitted]=useState<boolean>(false);
     const connection=useSignalRConnectionContext();
     const errorModals=useErrorDisplayContext();
 
@@ -35,8 +37,8 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         }
         console.log("Lyrics submitted:", value);
         let lines:string[] = value.split("\n").filter(line => line.trim() !== "");
-        if (lines.length != 6) {
-            return Promise.reject(`Please enter exactly 6 lines of lyrics. (You have ${lines.length} ${lines.length==1?"line":"lines"}.)`);
+        if (lines.length != ((model?.totalPlayers??2)-1)*2) {
+            return Promise.reject(`Please enter exactly ${((model?.totalPlayers??2)-1)*2} lines of lyrics. (You have ${lines.length} ${lines.length==1?"line":"lines"}.)`);
         }
         for (let i=0;i<lines.length;i++) {
             if (lines[i].length > 95) {
@@ -47,14 +49,29 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     }
 
     async function onSubmit(value:IInsertLyricsFormModel){
-        setLoading(true);
-        try {
-            await connection.current?.invoke("SendLyrics", value.lyrics)
+        setSubmitLoading(true);
+        let isGood:boolean=true;
+        if (!isSubmitted) {
+            try {
+                await connection.current?.invoke("SendLyrics", value.lyrics)
+            }
+            catch (e:any) {
+                errorModals.errorModalClosable.current?.show("Failed to send lyrics to the server.");
+                isGood=false;
+            }
         }
-        catch (e:any) {
-            errorModals.errorModalClosable.current?.show("Failed to send lyrics to the server.");
+        else {
+            try {
+                await connection.current?.invoke("PlayerCanceledTask", model?.roomTitle)
+            }
+            catch (e:any) {
+                errorModals.errorModalClosable.current?.show("Failed to cancel submission.");
+                isGood=false;
+            }
         }
-        setLoading(false);
+        setSubmitLoading(false);
+        if (isGood)
+            setIsSubmitted(prev=>(!prev));
     }
 
     async function initLoad(){
@@ -74,6 +91,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         }
         let data=await response?.json();
         if (response?.ok) {
+            console.log(data);
             setModel(data);
         }
         else {
@@ -97,9 +115,9 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         <>
             <Timer time={30}/>
             <StepCounter step={1} totalSteps={model.totalPlayers}/>
-            <PlayerCompleteCounter totalPlayers={model.totalPlayers} completedPlayers={0}/>
+            <PlayerCompleteCounter totalPlayers={model.totalPlayers} completedPlayers={0} isAdmin={model.isAdmin}/>
             <div className="container-small">
-                <PageTitle style={{marginTop:"3vh"}}>Past lines of lyrics of your song!</PageTitle>
+                <PageTitle style={{marginTop:"3vh"}}>Past {(model.totalPlayers-1)*2} lines of lyrics of your song!</PageTitle>
                 <Form
                     onFinish={onSubmit} 
                     style={{width:"100%",display:"flex", flexDirection: "column", alignItems: "center"}}
@@ -107,10 +125,10 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
                     initialValues={{lyrics:""}}
                     >
                     <Form.Item style={{width:"100%"}} name="lyrics" rules={[{validator:validateLyrics}]}>
-                        <TextArea style={{marginTop:"5vh"}} className="text-area" autoSize={{minRows:10,maxRows:20}} placeholder="Insert your lyrics here..."/>
+                        <TextArea disabled={isSubmitted} style={{marginTop:"5vh"}} className="text-area" autoSize={{minRows:10,maxRows:20}} placeholder="Insert your lyrics here..."/>
                     </Form.Item>
                     <Form.Item>
-                        <SubmitButton style={{marginTop:"2vh"}}/>
+                        <SubmitButton loading={submitLoading} isSubmitted={isSubmitted}/>
                     </Form.Item>
                 </Form>
             </div>

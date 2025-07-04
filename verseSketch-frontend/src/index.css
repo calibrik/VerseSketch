@@ -267,6 +267,11 @@ html{
   color:#7C009B !important;
 }
 
+.text-area:disabled,
+.input-field:disabled{
+  background-color: #f0b3ff !important;
+}
+
 .text-area:hover,
 .input-field:hover{
   background-color: #f0c6fa !important;
@@ -496,10 +501,10 @@ html{
   width: clamp(40px,10vmin,60px) !important;
   height:clamp(40px,10vmin,60px) !important;
 }
-
+/* 
 .status-modal .ant-modal-content{
   width:400px !important;
-}
+} */
 
 .status-modal .ant-modal-body,
 .error-modal .ant-modal-body{

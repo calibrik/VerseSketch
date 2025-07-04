@@ -11,6 +11,7 @@ public class RoomViewModel
     public bool isPublic { get; set; }
     public bool isPlayerAdmin { get; set; }
     public string PlayerId { get; set; }
+    public int Stage { get; set; }
 
     public List<PlayerViewModel> Players { get; set; } = new();
 }

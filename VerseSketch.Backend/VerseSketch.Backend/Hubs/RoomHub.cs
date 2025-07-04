@@ -20,6 +20,7 @@ public interface IRoomHub
     Task PlayerJoined(PlayerViewModel player);
     Task StageSet(int stage);
     Task PlayerCompletedTask();
+    Task PlayerCanceledTask();
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -67,6 +68,7 @@ public class RoomHub:Hub<IRoomHub>
             TimeToDraw = room.TimeToDraw,
             isPlayerAdmin = playerId==room.AdminId,
             PlayerId = player._Id,
+            Stage = room.Stage,
         };
         List<Player> players = await _playerRepository.GetPlayersInRoomAsync(room.Title);
         foreach (Player p in players)
@@ -108,6 +110,34 @@ public class RoomHub:Hub<IRoomHub>
         });
     }
 
+    public async Task PlayerCanceledTask(string roomTitle)
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+        {
+            throw new HubException("You are not in this room.");
+        }
+        await Clients.Groups(roomTitle).PlayerCanceledTask();
+    }
+
+    public async Task PlayersDoneWithTask()
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+            throw new HubException("You are not an admin in this room.");
+        string playerId = Context.User.FindFirst("PlayerId").Value;
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
+        if (player == null)
+            throw new HubException("You are not an admin in this room.");
+        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (room == null)
+            throw new HubException("Room not found.");
+        if (room.AdminId!=playerId)
+            throw new HubException("You are not an admin in this room.");
+        
+        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r => r.Stage,1);
+        await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
+        await Clients.Group(player.RoomTitle).StageSet(room.Stage+1);
+    }
+    
     public async Task SendParams(SetParamsViewModel model)
     {
         Room? room = await _roomsRepository.GetRoomAsync(model.RoomTitle);
@@ -202,6 +232,8 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("Room not found.");
         if (room.AdminId!=playerId)
             throw new HubException("You are not an admin in this room.");
+        if (room.PlayersCount <2)
+            throw new HubException("Room players count must be greater than 2 to start the game.");
 
         
         UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage, 0);
@@ -223,7 +255,14 @@ public class RoomHub:Hub<IRoomHub>
             return;
         }
         List<string> lyricsSubmitted=lyrics.Split('\n').ToList();
-        if  (lyricsSubmitted.Count!=6)
+        int count = 0;
+        foreach (string lyric in lyricsSubmitted)
+        {
+            if (lyric=="")
+                continue;
+            count++;
+        }
+        if  (count!=(room.PlayersCount-1)*2)
             throw new HubException("Wrong amount of lines.");
         foreach (string line in lyricsSubmitted)
         {

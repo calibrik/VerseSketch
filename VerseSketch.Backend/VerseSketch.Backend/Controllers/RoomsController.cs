@@ -87,6 +87,7 @@ public class RoomsController:ControllerBase
             TimeToDraw = room.TimeToDraw,
             isPlayerAdmin = playerId==room.AdminId,
             PlayerId = currPlayer.Nickname,
+            Stage = room.Stage,
         };
         List<Player> players = await _playerRepository.GetPlayersInRoomAsync(roomTitle);
         foreach (Player player in players)

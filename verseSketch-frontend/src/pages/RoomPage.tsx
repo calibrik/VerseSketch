@@ -29,6 +29,7 @@ interface IRoomModel{
     isPublic:boolean;
     isPlayerAdmin:boolean;
     playerId:string;
+    stage:number;
 }
 interface ISetParamsModel{
     maxPlayersCount?:number;
@@ -56,6 +57,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         for (let i=0;i<data.maxPlayersCount-data.playersCount;i++) {
             data.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
         }
+        console.log("Room received",data);
         setModel(data);
     }
 
@@ -224,9 +226,14 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         console.log("Reconnected to the server.");
         isRecconecting.current=false;
         errorModals.statusModal.current?.close();
+        onStageSet(model?.stage ?? -1);
     }
 
     function onStageSet(stage:number){
+        if (stage==-1) {
+            navigate(`/room/${roomTitle}`,{replace:true});
+            return;
+        }
         if (stage==0){
             navigate("/insert-lyrics",{replace:true});
             return;
@@ -235,7 +242,20 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     }
 
     async function StartGame(){
-        await connection.current?.invoke("StartGame");
+        if (model==null) {
+            errorModals.errorModalClosable.current?.show("Room is not loaded yet.");
+            return;
+        }
+        if (model?.playersCount<2) {
+            errorModals.errorModalClosable.current?.show("You need at least 2 players to start the game.");
+            return;
+        }
+        try {
+            await connection.current?.invoke("StartGame");
+        }
+        catch (e:any) {
+            errorModals.errorModalClosable.current?.show("An error occurred while trying to start the game.");
+        }
     }
 
     // useEffect(() => {
@@ -250,50 +270,60 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     useEffect(() => {
         document.title = roomTitle ?? "Room";
         console.log("remount")
-        setLoading(true);
-        initLoad()
-            .then(async () => {
-                connection.current = new signalR.HubConnectionBuilder()
-                    .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${sessionStorage.getItem("player")}`)
-                    // .configureLogging("none")
-                    .withAutomaticReconnect([0,5000,10000,10000])
-                    .build();
-                
-                connection.current.keepAliveIntervalInMilliseconds=3000;
-                connection.current.serverTimeoutInMilliseconds=5000;
+        if (!connection.current) {
+            setLoading(true);
+            initLoad()
+                .then(async () => {
+                    connection.current = new signalR.HubConnectionBuilder()
+                        .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${sessionStorage.getItem("player")}`)
+                        // .configureLogging("none")
+                        .withAutomaticReconnect([0,5000,10000,10000])
+                        .build();
+                    
+                    connection.current.keepAliveIntervalInMilliseconds=3000;
+                    connection.current.serverTimeoutInMilliseconds=5000;
 
-                connection.current.on("ReceiveRoom", onRoomReceive);
-                connection.current.on("ReceiveParams", onReceiveParams);
-                connection.current.on("PlayerJoined", onPlayerJoined);
-                connection.current.on("PlayerLeft", onPlayerLeft);
-                connection.current.on("RoomDeleted",onRoomDeleted);
-                connection.current.on("PlayerKicked",onPlayerKicked);
-                connection.current.on("StageSet",onStageSet);
-                connection.current.onreconnecting(onRecconnect);
-                connection.current.onreconnected(onRecconnected);
-                connection.current.onclose(onConnectionClose);
+                    connection.current.on("ReceiveRoom", onRoomReceive);
+                    connection.current.on("ReceiveParams", onReceiveParams);
+                    connection.current.on("PlayerJoined", onPlayerJoined);
+                    connection.current.on("PlayerLeft", onPlayerLeft);
+                    connection.current.on("RoomDeleted",onRoomDeleted);
+                    connection.current.on("PlayerKicked",onPlayerKicked);
+                    connection.current.on("StageSet",onStageSet);
+                    connection.current.onreconnecting(onRecconnect);
+                    connection.current.onreconnected(onRecconnected);
+                    connection.current.onclose(onConnectionClose);
 
-                try{
-                    await connection.current.start();
-                    await connection.current.invoke("Join", roomTitle);
-                }
-                catch(_){
+                    try{
+                        await connection.current.start();
+                        await connection.current.invoke("Join", roomTitle);
+                    }
+                    catch(_){
+                        await leave(connection);
+                        errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
+                    }
+                    setLoading(false);
+                })
+                .catch(async (error) => {
                     await leave(connection);
-                    errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
-                }
-                setLoading(false);
-            })
-            .catch(async (error) => {
-                await leave(connection);
-                setLoading(false);
-                errorModals.errorModal.current?.show(error);
-            });
-            return () => {
-                connection.current?.off("ReceiveRoom", onRoomReceive);
-                connection.current?.off("ReceiveParams", onReceiveParams);
-                connection.current?.off("PlayerJoined", onPlayerJoined);
-                connection.current?.off("PlayerLeft", onPlayerLeft);
-            }
+                    setLoading(false);
+                    errorModals.errorModal.current?.show(error);
+                });
+        }
+        else{
+            connection.current.on("ReceiveRoom", onRoomReceive);
+            connection.current.on("ReceiveParams", onReceiveParams);
+            connection.current.on("PlayerJoined", onPlayerJoined);
+            connection.current.on("PlayerLeft", onPlayerLeft);
+            connection.current.on("PlayerKicked",onPlayerKicked);
+        }
+        return () => {
+            connection.current?.off("ReceiveRoom", onRoomReceive);
+            connection.current?.off("ReceiveParams", onReceiveParams);
+            connection.current?.off("PlayerJoined", onPlayerJoined);
+            connection.current?.off("PlayerLeft", onPlayerLeft);
+            connection.current?.off("PlayerKicked",onRoomDeleted);
+        }
     }, []);
 
     return (
@@ -352,7 +382,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     </Card>
                 </Col>
             </Row>
-            <StartGameButton onClick={StartGame} style={{marginTop:"2vh"}}/>
+            <StartGameButton isAdmin={model?.isPlayerAdmin??false} onClick={StartGame} style={{marginTop:"2vh"}}/>
         </div>
     );
 }

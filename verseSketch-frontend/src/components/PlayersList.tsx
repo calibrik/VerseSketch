@@ -51,25 +51,25 @@ export const PlayersList: FC<IPlayersListProps> = (props) => {
             <div className="player-list-content">
                 {props.playersCount===0?<span className="placeholder-text">Loading...</span>:
                 props.players.map((player) => {
-                let suffix:ReactNode|null=null;
-                        if (player.isAdmin)
-                            suffix=<StarFilled style={{marginTop:"auto"}} className="button-icon"/>;
-                        else if (props.showKickButton&&props.isPlayerAdmin)
-                            suffix=<KickButton style={{marginTop:"auto"}} playerId={player.id} roomTitle={props.roomTitle}/>
-                        if (player.id === "")
-                            return(
-                                <div className="list-item player-field">
-                                <span className="player-placeholder-text">
-                                    Player slot
-                                </span>
-                                </div>);
-                        return (
-                        <div className={`list-item ${props.selectedPlayerId==player.id ? "player-selected-field" : "player-field"}`}>
-                        <span className="player-nickname-text" style={{marginTop:"auto"}}>
-                            {player.nickname}
-                        </span>
-                        {suffix}
-                        </div>);
+                    let suffix:ReactNode|null=null;
+                    if (player.isAdmin)
+                        suffix=<StarFilled style={{marginTop:"auto"}} className="button-icon"/>;
+                    else if (props.showKickButton&&props.isPlayerAdmin)
+                        suffix=<KickButton style={{marginTop:"auto"}} playerId={player.id} roomTitle={props.roomTitle}/>
+                    if (player.id === "")
+                        return(
+                            <div className="list-item player-field">
+                            <span className="player-placeholder-text">
+                                Player slot
+                            </span>
+                            </div>);
+                    return (
+                    <div className={`list-item ${props.selectedPlayerId==player.id ? "player-selected-field" : "player-field"}`}>
+                    <span className="player-nickname-text">
+                        {player.nickname}
+                    </span>
+                    {suffix}
+                    </div>);
                 
                 })}
             </div>

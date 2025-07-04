@@ -158,3 +158,4 @@ app.Run();
 //TODO Bg service to delete empty rooms and unused players
 //TODO Timer for game
 //TODO ValidationLink function????
+//TODO Don't delete the player if he disconnected during the game
