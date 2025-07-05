@@ -21,19 +21,19 @@ public class GameController:ControllerBase
         _playerRepository = playerRepository;
     }
 
-    [HttpGet("/api/game/getLinesAmount")]
-    public async Task<IActionResult> GetLinesAmount()
-    {
-        if (!User.Identity.IsAuthenticated)
-            return Unauthorized(new { message = $"You are not part of this game." });
-        Player? player = await _playerRepository.GetPlayerAsync(User.FindFirst("PlayerId").Value);
-        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
-        if (room == null)
-            return Unauthorized(new { message = $"Room not found." });
-        if (room.Stage != 0)
-            return Unauthorized(new { message = $"Game is not in the right stage for this request." });
-        return Ok(new { totalPlayers=room.PlayersCount,roomTitle=room.Title,time=room.TimeToDraw, isAdmin=room.AdminId==player._Id });
-    }
+    // [HttpGet("/api/game/getLinesAmount")]
+    // public async Task<IActionResult> GetLinesAmount()
+    // {
+    //     if (!User.Identity.IsAuthenticated)
+    //         return Unauthorized(new { message = $"You are not part of this game." });
+    //     Player? player = await _playerRepository.GetPlayerAsync(User.FindFirst("PlayerId").Value);
+    //     Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+    //     if (room == null)
+    //         return Unauthorized(new { message = $"Room not found." });
+    //     if (room.Stage != 0)
+    //         return Unauthorized(new { message = $"Game is not in the right stage for this request." });
+    //     return Ok(new { totalPlayers=room.PlayersCount,roomTitle=room.Title,time=room.TimeToDraw, isAdmin=room.AdminId==player._Id });
+    // }
     
     
     

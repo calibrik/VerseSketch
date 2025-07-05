@@ -5,7 +5,7 @@ import { IStatusModalHandle, StatusModal } from "./ReconnectionModal";
 interface IErrorDisplayProviderProps {
     children?:ReactNode
 };
-interface IErrorDisplayContextType{
+export interface IErrorDisplayContextType{
     errorModal:RefObject<IErrorDisplayHandle | null>;
     errorModalClosable:RefObject<IErrorDisplayClosableHandle | null>;
     statusModal:RefObject<IStatusModalHandle | null>;

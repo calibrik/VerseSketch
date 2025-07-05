@@ -5,22 +5,19 @@ import { JoinRoomPage } from './pages/JoinRoomPage';
 import { CreateRoomPage } from './pages/CreateRoomPage';
 import { RoomPage } from './pages/RoomPage';
 import { CreatePlayerPage } from './pages/CreatePlayerPage';
-import { useEffect } from 'react';
-import { leave } from './misc/MiscFunctions';
-import { useSignalRConnectionContext } from './components/SignalRProvider';
 import { ErrorPage } from './pages/ErrorPage';
 import { InsertLyricsPage } from './pages/InsertLyricsPage';
 import { DrawingPage } from './pages/DrawingPage';
 import { ShowcasePage } from './pages/ShowcasePage';
 
-const router=createBrowserRouter([
+const router = createBrowserRouter([
   {
     path: "/",
     Component: MainLayout,
     // errorElement: <ErrorPage/>,
     children: [
       {
-        index:true,
+        index: true,
         Component: WelcomePage,
       },
       {
@@ -48,11 +45,11 @@ const router=createBrowserRouter([
         Component: InsertLyricsPage
       },
       {
-        path:'/draw',
-        Component:DrawingPage
+        path: '/draw',
+        Component: DrawingPage
       },
       {
-        path:'/showcase',
+        path: '/showcase',
         Component: ShowcasePage
       }
     ]
@@ -63,31 +60,8 @@ const router=createBrowserRouter([
 
 function App() {
 
-  const connection=useSignalRConnectionContext();
-
-  async function onUnload()
-  {
-    await leave(connection);
-  }
-
-  function onPageShow(e:any)
-  {
-    if (e.persisted) 
-      window.location.reload();
-  }
-
-  useEffect(()=>{
-    window.addEventListener("beforeunload",onUnload)
-    window.addEventListener("pageshow",onPageShow);
-    console.log(location.pathname);
-    return ()=> {
-      window.removeEventListener("beforeunload",onUnload);
-      window.removeEventListener("pageshow",onPageShow);
-    }
-  },[])
-
   return (
-      <RouterProvider router={router}/>
+    <RouterProvider router={router} />
   )
 }
 
@@ -99,11 +73,11 @@ export default App;
 //TODO: Fix some design using responsive stuff in react itself (create page)
 //TODO: Ban album orientation
 //TODO: Width slider on drawing canvas
-//TODO: Tinker with showcase canvas size 
+//TODO: Tinker with showcase canvas size
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
 //TODO: Complete check counter
 //TODO: Edit after submit on game pages
 //TODO: Timer
 //TODO: Wire insert lyrics into the game flow
 //TODO: Escalate some methods for SignalR to provider level, cause they are shared across the pages
-//TODO: Refs instead of states in complete counter
+//TODO: Purify components

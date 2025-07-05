@@ -19,7 +19,7 @@ html{
 }
 .button-text{
   color:white;
-  font-size: clamp(0.7rem,2.7vmin,1.5rem);
+  font-size: clamp(0.7rem,2.7vmin,1.3rem);
   text-align: center;
   text-wrap-mode: wrap;
   line-height: clamp(0.7rem,2.7vmin,1.5rem);

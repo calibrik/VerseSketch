@@ -5,9 +5,8 @@ import { StartGameButton } from "../components/buttons/StartGameButton";
 import Title from "antd/es/typography/Title";
 import { useNavigate, useParams } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
-import * as signalR from "@microsoft/signalr";
 import { InviteButton } from "../components/buttons/InviteButton";
-import { useSignalRConnectionContext } from "../components/SignalRProvider";
+import { IPlayerModel, IRoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import '../index.css';
 import { LeaveRoomButton } from "../components/buttons/LeaveRoomButton";
@@ -15,22 +14,8 @@ import { leave } from "../misc/MiscFunctions";
 import { PlayersList } from "../components/PlayersList";
 
 interface IRoomPageProps {};
-export interface IPlayerModel{
-    nickname:string;
-    id:string;
-    isAdmin:boolean;
-}
-interface IRoomModel{
-    title:string;
-    playersCount:number;
-    maxPlayersCount:number;
-    players:IPlayerModel[];
-    timeToDraw:number;
-    isPublic:boolean;
-    isPlayerAdmin:boolean;
-    playerId:string;
-    stage:number;
-}
+
+
 interface ISetParamsModel{
     maxPlayersCount?:number;
     timeToDraw?:number;
@@ -38,65 +23,17 @@ interface ISetParamsModel{
     roomTitle?:string;
 }
 export const RoomPage: FC<IRoomPageProps> = () => {
-    const [model, setModel] = useState<IRoomModel|null>(null);
-    const modelRef=useRef<IRoomModel|null>(null);
+    const [model, setModel] = useState<IRoomModel | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
-    const connection=useSignalRConnectionContext();
+    const signalRModel=useSignalRConnectionContext();
     const errorModals=useErrorDisplayContext();
     const navigate=useNavigate();
-    const isRecconecting=useRef<boolean>(false);
 
     let selectionItems=[];
     for (let i=2;i<=10;i++){
         selectionItems.push({label:`${i} Players`,value:i});
-    }
-
-    function onRoomReceive(data:IRoomModel) {
-        for (let i=0;i<data.maxPlayersCount-data.playersCount;i++) {
-            data.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
-        }
-        console.log("Room received",data);
-        setModel(data);
-    }
-
-    function onPlayerJoined(data:IPlayerModel) {
-        if (!modelRef.current||modelRef.current.playerId==data.id)
-            return;
-        let newModel={...modelRef.current};
-        let i=0;
-        for (;i<newModel?.players.length;i++)
-        {
-            if (newModel.players[i].id=="")
-                break;
-        }
-        newModel.playersCount++;
-        newModel.players[i]=data;
-        setModel(newModel);
-    }
-
-    function onPlayerKicked(playerId:string) {
-        if (!modelRef.current||playerId!=modelRef.current.playerId)
-            return;
-        leave(connection);
-        errorModals.errorModal.current?.show("You have been kicked out of room.");
-    }
-
-    function onPlayerLeft(playerId:string){
-        if (!modelRef.current)
-            return;
-        let newModel={...modelRef.current};
-        let i=0;
-        for (;i<newModel?.players.length;i++)
-        {
-            if (newModel.players[i].id==playerId)
-                break;
-        }
-        newModel.playersCount--;
-        newModel.players.splice(i,1);
-        newModel.players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
-        setModel(newModel);
     }
 
     async function initLoad()
@@ -124,13 +61,13 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     }
 
     function applyParams(data:ISetParamsModel) {
-        if (!modelRef.current) return;
+        if (!signalRModel.roomModelRef.current) return;
 
-        if (data.maxPlayersCount && data.maxPlayersCount!=modelRef.current.maxPlayersCount) {
-            if (modelRef.current.playersCount>data.maxPlayersCount) {
+        if (data.maxPlayersCount && data.maxPlayersCount!=signalRModel.roomModelRef.current.maxPlayersCount) {
+            if (signalRModel.roomModelRef.current.playersCount>data.maxPlayersCount) {
                 throw ("Cannot set max players count lower than current players count!"); 
             }
-            let players=modelRef.current.players;
+            let players=signalRModel.roomModelRef.current.players;
             while (players.length < data.maxPlayersCount) {
                 players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
             }
@@ -139,11 +76,13 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             }
         }
 
-        let newModel:IRoomModel={...modelRef.current};
-        newModel.maxPlayersCount=data.maxPlayersCount??modelRef.current.maxPlayersCount;
-        newModel.isPublic=data.isPublic??modelRef.current.isPublic;
-        newModel.timeToDraw=data.timeToDraw??modelRef.current.timeToDraw;
-        setModel(newModel);
+        if (data.maxPlayersCount!=null)
+            signalRModel.roomModelRef.current.maxPlayersCount=data.maxPlayersCount;
+        if (data.isPublic!=null)
+            signalRModel.roomModelRef.current.isPublic=data.isPublic;
+        if (data.timeToDraw!=null)
+            signalRModel.roomModelRef.current.timeToDraw=data.timeToDraw;
+        setModel({...signalRModel.roomModelRef.current});
     }
 
     function onReceiveParams(data:ISetParamsModel) {
@@ -156,10 +95,10 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     }
 
     function onChangeParams(params:ISetParamsModel) {
-        if (!model||!model.isPlayerAdmin) return;
+        if (!signalRModel.roomModelRef.current||!signalRModel.roomModelRef.current.isPlayerAdmin) return;
 
         params.roomTitle=roomTitle;
-        let oldModel:IRoomModel=model;
+        let oldModel:IRoomModel=signalRModel.roomModelRef.current;
         try{
             applyParams(params);
         }
@@ -169,7 +108,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             return;
         }
         // if (connection.current?.state!="Connected") return;
-        connection.current?.invoke("SendParams", params)
+        signalRModel.connection.current?.invoke("SendParams", params)
             .catch((_) => {
                 errorModals.errorModalClosable.current?.show("An error occurred while trying to proccess request on server.");
                 setModel(oldModel);
@@ -177,10 +116,10 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     }
     async function onInvite()
     {
-        if (!model||!model.isPlayerAdmin)
+        if (!signalRModel.roomModelRef.current||!signalRModel.roomModelRef.current.isPlayerAdmin)
             return;
         try {
-            let data=await connection.current?.invoke<string>("GenerateJoinToken", roomTitle);
+            let data=await signalRModel.connection.current?.invoke<string>("GenerateJoinToken", roomTitle);
             await navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data}`);
         }
         catch (error:any) {
@@ -191,7 +130,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
 
     async function onLeave()
     {
-        leave(connection);
+        leave(signalRModel);
         navigate("/",{replace:true});
     }
     
@@ -204,125 +143,70 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     function onSwitchChange(checked:boolean) {
         onChangeParams({isPublic:checked});
     }
-    async function onRoomDeleted()
-    {
-        leave(connection);
-        errorModals.errorModal.current?.show("Admin has left the room.");
-    }
-    function onConnectionClose(error?:any)
-    {
-        console.log("Connection closed",error);
-        errorModals.statusModal.current?.close();
-        if (error||isRecconecting.current)
-            errorModals.errorModal.current?.show("Lost connection to the server.");
-        sessionStorage.removeItem("player")
-    }
-    function onRecconnect(){
-        console.log("Reconnecting to the server...");
-        isRecconecting.current=true;
-        errorModals.statusModal.current?.show("Reconnecting to the server...");
-    }
-    function onRecconnected(){
-        console.log("Reconnected to the server.");
-        isRecconecting.current=false;
-        errorModals.statusModal.current?.close();
-        onStageSet(model?.stage ?? -1);
-    }
-
-    function onStageSet(stage:number){
-        if (stage==-1) {
-            navigate(`/room/${roomTitle}`,{replace:true});
-            return;
-        }
-        if (stage==0){
-            navigate("/insert-lyrics",{replace:true});
-            return;
-        }
-        navigate("/draw",{replace:true});
-    }
 
     async function StartGame(){
-        if (model==null) {
+        if (signalRModel.roomModelRef.current==null) {
             errorModals.errorModalClosable.current?.show("Room is not loaded yet.");
             return;
         }
-        if (model?.playersCount<2) {
+        if (signalRModel.roomModelRef.current?.playersCount<2) {
             errorModals.errorModalClosable.current?.show("You need at least 2 players to start the game.");
             return;
         }
         try {
-            await connection.current?.invoke("StartGame");
+            await signalRModel.connection.current?.invoke("StartGame");
         }
         catch (e:any) {
             errorModals.errorModalClosable.current?.show("An error occurred while trying to start the game.");
         }
     }
 
-    // useEffect(() => {
-    //     console.log("rerender",model);
-    // });
-
     useEffect(() => {
-        modelRef.current=model;
-    }, [model]);
+        console.log("rerender",signalRModel.roomModelRef.current);
+    });
 
+    function triggerUpdate(data:IRoomModel) {
+        console.log("trigger update from upstairs",data,signalRModel.roomModelRef.current);
+        setModel({...data});
+    }
 
     useEffect(() => {
         document.title = roomTitle ?? "Room";
+        signalRModel.updateTrigger.current.on(triggerUpdate);
         console.log("remount")
-        if (!connection.current) {
+        if (!signalRModel.connection.current || signalRModel.roomModelRef.current?.title !== roomTitle) {
             setLoading(true);
             initLoad()
                 .then(async () => {
-                    connection.current = new signalR.HubConnectionBuilder()
-                        .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${sessionStorage.getItem("player")}`)
-                        // .configureLogging("none")
-                        .withAutomaticReconnect([0,5000,10000,10000])
-                        .build();
+                    signalRModel.createConnection(sessionStorage.getItem("player") ?? "",roomTitle ?? "");
                     
-                    connection.current.keepAliveIntervalInMilliseconds=3000;
-                    connection.current.serverTimeoutInMilliseconds=5000;
-
-                    connection.current.on("ReceiveRoom", onRoomReceive);
-                    connection.current.on("ReceiveParams", onReceiveParams);
-                    connection.current.on("PlayerJoined", onPlayerJoined);
-                    connection.current.on("PlayerLeft", onPlayerLeft);
-                    connection.current.on("RoomDeleted",onRoomDeleted);
-                    connection.current.on("PlayerKicked",onPlayerKicked);
-                    connection.current.on("StageSet",onStageSet);
-                    connection.current.onreconnecting(onRecconnect);
-                    connection.current.onreconnected(onRecconnected);
-                    connection.current.onclose(onConnectionClose);
-
+                    if (!signalRModel.connection.current)
+                        return;
+                    signalRModel.connection.current.keepAliveIntervalInMilliseconds=3000;
+                    signalRModel.connection.current.serverTimeoutInMilliseconds=5000;
+                    signalRModel.connection.current?.on("ReceiveParams", onReceiveParams);
                     try{
-                        await connection.current.start();
-                        await connection.current.invoke("Join", roomTitle);
+                        await signalRModel.connection.current.start();
+                        await signalRModel.connection.current.invoke("Join", roomTitle);
                     }
                     catch(_){
-                        await leave(connection);
+                        await leave(signalRModel);
                         errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
                     }
                     setLoading(false);
                 })
                 .catch(async (error) => {
-                    await leave(connection);
+                    await leave(signalRModel);
                     setLoading(false);
                     errorModals.errorModal.current?.show(error);
                 });
         }
         else{
-            connection.current.on("ReceiveRoom", onRoomReceive);
-            connection.current.on("ReceiveParams", onReceiveParams);
-            connection.current.on("PlayerJoined", onPlayerJoined);
-            connection.current.on("PlayerLeft", onPlayerLeft);
-            connection.current.on("PlayerKicked",onPlayerKicked);
+            signalRModel.connection.current.on("ReceiveParams", onReceiveParams);
         }
         return () => {
-            connection.current?.off("ReceiveRoom", onRoomReceive);
-            connection.current?.off("ReceiveParams", onReceiveParams);
-            connection.current?.off("PlayerJoined", onPlayerJoined);
-            connection.current?.off("PlayerLeft", onPlayerLeft);
-            connection.current?.off("PlayerKicked",onRoomDeleted);
+            signalRModel.connection.current?.off("ReceiveParams", onReceiveParams);
+            signalRModel.updateTrigger.current.off(triggerUpdate);
         }
     }, []);
 

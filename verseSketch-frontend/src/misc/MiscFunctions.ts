@@ -1,13 +1,12 @@
-import { HubConnection } from "@microsoft/signalr";
 import { ConnectionConfig } from "./ConnectionConfig";
+import { ISignalRProviderModel } from "../components/SignalRProvider";
 
-export async function leave(connection?:React.RefObject<HubConnection | null>)
+export async function leave(signalRModel?:ISignalRProviderModel)
 {
     const token=sessionStorage.getItem("player");
     sessionStorage.removeItem("player");
-    if (connection&&connection.current){
-        connection.current?.invoke("Leave");
-        connection.current=null;
+    if (signalRModel) {
+        signalRModel.stopConnection();
     }
     else if (token!=null){
         fetch(`${ConnectionConfig.Api}/rooms/leave`,{

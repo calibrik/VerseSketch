@@ -1,43 +1,43 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import { useSignalRConnectionContext } from "./SignalRProvider";
 interface IPlayerCompleteCounterProps {
     style?: React.CSSProperties;
-    totalPlayers: number;
-    completedPlayers: number;
-    isAdmin: boolean;
 };
 
 export const PlayerCompleteCounter: FC<IPlayerCompleteCounterProps> = (props) => {
 
-    const connection=useSignalRConnectionContext();
-    const [completedPlayers, setCompletedPlayers] = useState(props.completedPlayers);
-    const [totalPlayers, setTotalPlayers] = useState(props.totalPlayers);
+    const signalRModel=useSignalRConnectionContext();
+    const [completedPlayers, setCompletedPlayers] = useState(0);
+    const [totalPlayers, setTotalPlayers] = useState(signalRModel.roomModelRef.current?.playersCount ?? 0);
+    const completedPlayersRef=useRef<number>(0);
+    const totalPlayersRef=useRef<number>(signalRModel.roomModelRef.current?.playersCount ?? 0);
 
     useEffect(() => {
-        connection.current?.on("PlayerCompletedTask", () => {
-            console.log(`Player completed task ${completedPlayers+1}/${totalPlayers}`);
-            if (completedPlayers+1==totalPlayers&& props.isAdmin) {
-                connection.current?.invoke("PlayersDoneWithTask");
+        signalRModel.connection.current?.on("PlayerCompletedTask", () => {
+            if (completedPlayers+1==totalPlayersRef.current&& signalRModel.roomModelRef.current?.isPlayerAdmin) {
+                signalRModel.connection.current?.invoke("PlayersDoneWithTask");
                 return;
             }
-            setCompletedPlayers(prev => prev + 1);
+            completedPlayersRef.current++;
+            setCompletedPlayers(completedPlayersRef.current);
         });
-        connection.current?.on("PlayerCanceledTask", () => {
-            console.log(`Player completed task ${completedPlayers-1}/${totalPlayers}`);
-            setCompletedPlayers(prev => prev - 1);
+        signalRModel.connection.current?.on("PlayerCanceledTask", () => {
+            completedPlayersRef.current--;
+            setCompletedPlayers(completedPlayersRef.current);
         });
-        connection.current?.on("PlayerLeft",(_)=>{
-            setTotalPlayers(prev => prev - 1);
+        signalRModel.connection.current?.on("PlayerLeft",(_)=>{
+            totalPlayersRef.current--;
+            setTotalPlayers(totalPlayersRef.current);
         })
         return () => {
-            connection.current?.off("PlayerCompletedTask");
-            connection.current?.off("PlayerCanceledTask");
-            connection.current?.off("PlayerLeft");
+            signalRModel.connection.current?.off("PlayerCompletedTask");
+            signalRModel.connection.current?.off("PlayerCanceledTask");
+            signalRModel.connection.current?.off("PlayerLeft");
         }
 },[]);
 
-    if (completedPlayers === 0) {
+    if (completedPlayersRef.current === 0) {
         return null;
     }
     return (
