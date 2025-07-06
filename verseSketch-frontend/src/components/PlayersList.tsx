@@ -25,16 +25,17 @@ export const PlayersList: FC<IPlayersListProps> = (props) => {
 
     useEffect(() => {
         onResize();
-        console.log(props.players.length,props.maxPlayersCount);
-        for (let i=props.players.length;i<props.maxPlayersCount;i++) {
-            props.players.push({nickname:"",id:"",isAdmin:false});
-        }
         window.addEventListener("resize", onResize);
         return () => {
             window.removeEventListener("resize", onResize);
         }
     }
-    , []);   
+    , []);
+
+    let players=[...props.players];
+    for (let i=players.length;i<props.maxPlayersCount;i++) {
+        players.push({nickname:"",id:"",isAdmin:false});
+    }
 
     if (widthLevel <= WindowLevel.SM) 
         return(
@@ -55,7 +56,7 @@ export const PlayersList: FC<IPlayersListProps> = (props) => {
             <div className="player-list-content">
                 {
                     props.playersCount===0?<span className="placeholder-text">Loading...</span>:
-                    props.players.map((player) => {
+                    players.map((player) => {
                         let suffix:ReactNode|null=null;
                         if (player.isAdmin)
                             suffix=<StarFilled style={{marginTop:"auto"}} className="button-icon"/>;
@@ -102,7 +103,7 @@ export const PlayersList: FC<IPlayersListProps> = (props) => {
             }
             loadMore={props.loading ? <Spinner style={{ margin: '15px' }} /> : ""}
             locale={{ emptyText: <span className="placeholder-text">Loading...</span>}}
-            dataSource={props.players}
+            dataSource={players}
             renderItem={(player) => {
                 let suffix:ReactNode|null=null;
                 if (player.isAdmin)

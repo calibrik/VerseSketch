@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Protocol;
 using MongoDB.Driver;
 using VerseSketch.Backend.Controllers;
+using VerseSketch.Backend.Misc;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
 using VerseSketch.Backend.ViewModels;
@@ -27,11 +28,15 @@ public class RoomHub:Hub<IRoomHub>
 {
     private readonly PlayerRepository _playerRepository;
     private readonly RoomsRepository _roomsRepository;
+    private readonly InstructionRepository _instructionRepository;
+    private readonly StorylineRepository _storylineRepository;
 
-    public RoomHub(PlayerRepository playerRepository,RoomsRepository roomsRepository)
+    public RoomHub(PlayerRepository playerRepository,RoomsRepository roomsRepository,InstructionRepository instructionRepository,StorylineRepository storylineRepository)
     {
         _playerRepository = playerRepository;
         _roomsRepository = roomsRepository;
+        _instructionRepository = instructionRepository;
+        _storylineRepository = storylineRepository;
     }
     public override async Task OnConnectedAsync()
     {
@@ -236,8 +241,19 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("Room players count must be greater than 2 to start the game.");
 
         
-        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage, 0);
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage, 0).Set(r=>r.RandomOrderSeed,Random.Shared.Next());
         await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
+        List<string> playerIds = await _playerRepository.GetPlayersIdsInRoomAsync(room.Title);
+        List<Instruction> instructions = new List<Instruction>();
+        foreach (string id in playerIds)
+        {
+            instructions.Add(new Instruction
+            {
+                PlayerId = id,
+                LyrycsToDraw = Enumerable.Repeat<List<string>>(["", ""], room.PlayersCount - 1).ToList(),
+            });
+        }
+        await _instructionRepository.CreateManyAsync(instructions);
         await Clients.Group(player.RoomTitle).StageSet(0);
     }
 
@@ -269,8 +285,18 @@ public class RoomHub:Hub<IRoomHub>
             if (line.Length>95)
                 throw new HubException("Line is too long.");
         }
-        UpdateDefinition<Player> update = Builders<Player>.Update.Set(p=>p.LyricsSubmitted,lyricsSubmitted);
-        await _playerRepository.UpdatePlayerAsync(player,update,false);
+        List<string> players=await _playerRepository.GetPlayersIdsInRoomAsync(room.Title);
+        players.Shuffle(room.RandomOrderSeed);
+        int i = players.FindIndex(s => s == player._Id);
+        int lyricsI = 0;
+        for (int j = 1; players.Count > j; j++)
+        {
+            if (++i >= players.Count)
+                i = 0;
+            await _instructionRepository.UpdatePlayersLyricsAsync(players[i],[lyricsSubmitted[lyricsI],lyricsSubmitted[lyricsI+1]],j-1);
+            lyricsI+=2;
+        }
+        
         await Clients.Group(room.Title).PlayerCompletedTask();
     }
 

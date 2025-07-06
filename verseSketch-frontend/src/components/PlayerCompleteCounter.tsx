@@ -15,11 +15,12 @@ export const PlayerCompleteCounter: FC<IPlayerCompleteCounterProps> = (props) =>
 
     useEffect(() => {
         signalRModel.connection.current?.on("PlayerCompletedTask", () => {
-            if (completedPlayers+1==totalPlayersRef.current&& signalRModel.roomModelRef.current?.isPlayerAdmin) {
+            if (completedPlayersRef.current+1==totalPlayersRef.current&& signalRModel.roomModelRef.current?.isPlayerAdmin) {
                 signalRModel.connection.current?.invoke("PlayersDoneWithTask");
                 return;
             }
             completedPlayersRef.current++;
+            console.log(`Player completed task ${completedPlayersRef.current}/${totalPlayersRef.current}`);
             setCompletedPlayers(completedPlayersRef.current);
         });
         signalRModel.connection.current?.on("PlayerCanceledTask", () => {

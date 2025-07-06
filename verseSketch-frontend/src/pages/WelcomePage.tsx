@@ -13,6 +13,7 @@ export const WelcomePage: FC<IWelcomePageProps> = () => {
     },[]);
 
     return (
+        <>
         <div style={{marginTop:"20vh"}} className="container-small">
             {/* <PageTitle>{`${width ?? 0} ${height ?? 0}`}</PageTitle> */}
             <PageTitle style={{width:"80%"}}>Welcome to the VerseSketch!</PageTitle>
@@ -25,5 +26,6 @@ export const WelcomePage: FC<IWelcomePageProps> = () => {
                 </Col>
             </Row>
         </div>
+        </>
     );
 }

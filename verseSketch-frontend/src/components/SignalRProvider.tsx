@@ -29,7 +29,7 @@ export interface ISignalRProviderModel {
     connection:React.RefObject<signalR.HubConnection | null>;
     createConnection: (accessToken: string, roomTitle: string) => void;
     stopConnection: () => void;
-    updateTrigger: React.RefObject<Event<[IRoomModel]>>;
+    updateTrigger: React.RefObject<Event>;
     roomModelRef: React.RefObject<IRoomModel | null>;
 }
 
@@ -39,7 +39,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
 
     const connection = useRef<signalR.HubConnection | null>(null);
     const errorModals=useErrorDisplayContext();
-    const updateTrigger = useRef<Event<[IRoomModel]>>(new Event<[IRoomModel]>());
+    const updateTrigger = useRef<Event>(new Event());
     const isRecconecting=useRef<boolean>(false);
     const roomModelRef = useRef<IRoomModel | null>(null);
     const navigate=useNavigate();
@@ -67,11 +67,13 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         if (connection.current) {
             connection.current?.invoke("Leave");
             connection.current=null;
+            roomModelRef.current=null;
         }
     }
     function onPlayerJoined(data:IPlayerModel) {
         if (!roomModelRef.current||roomModelRef.current.playerId==data.id)
             return;
+        console.log("Player joined",data);
         roomModelRef.current.players.push(data);
         roomModelRef.current.playersCount++;
         updateTrigger.current.invoke(roomModelRef.current);
@@ -129,7 +131,10 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         errorModals.statusModal.current?.close();
     }
     function onStageSet(stage:number){
+        if (!roomModelRef.current)
+            return;
       console.log("Stage set to", stage);
+      roomModelRef.current.stage=stage;
       if (stage==-1) {
           navigate(`/room/${roomModelRef.current?.title}`,{replace:true});
           return;

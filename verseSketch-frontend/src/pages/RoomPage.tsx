@@ -6,7 +6,7 @@ import Title from "antd/es/typography/Title";
 import { useNavigate, useParams } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { InviteButton } from "../components/buttons/InviteButton";
-import { IPlayerModel, IRoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
+import { IRoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import '../index.css';
 import { LeaveRoomButton } from "../components/buttons/LeaveRoomButton";
@@ -66,13 +66,6 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         if (data.maxPlayersCount && data.maxPlayersCount!=signalRModel.roomModelRef.current.maxPlayersCount) {
             if (signalRModel.roomModelRef.current.playersCount>data.maxPlayersCount) {
                 throw ("Cannot set max players count lower than current players count!"); 
-            }
-            let players=signalRModel.roomModelRef.current.players;
-            while (players.length < data.maxPlayersCount) {
-                players.push({nickname:"",id:"",isAdmin:false} as IPlayerModel);
-            }
-            if (players.length > data.maxPlayersCount) {
-                players.splice(data.maxPlayersCount, players.length - data.maxPlayersCount);
             }
         }
 
@@ -161,19 +154,22 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         }
     }
 
-    useEffect(() => {
-        console.log("rerender",signalRModel.roomModelRef.current);
-    });
+    // useEffect(() => {
+    //     console.log("rerender model",signalRModel.roomModelRef.current);
+    // },[model]);
 
-    function triggerUpdate(data:IRoomModel) {
-        console.log("trigger update from upstairs",data,signalRModel.roomModelRef.current);
-        setModel({...data});
+    function triggerUpdate() {
+        // console.log("trigger update from upstairs");
+        if (!signalRModel.roomModelRef.current)
+            setModel(null);
+        else
+            setModel({...signalRModel.roomModelRef.current});
     }
 
     useEffect(() => {
         document.title = roomTitle ?? "Room";
         signalRModel.updateTrigger.current.on(triggerUpdate);
-        console.log("remount")
+        // console.log("remount")
         if (!signalRModel.connection.current || signalRModel.roomModelRef.current?.title !== roomTitle) {
             setLoading(true);
             initLoad()

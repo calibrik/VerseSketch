@@ -159,3 +159,4 @@ app.Run();
 //TODO Timer for game
 //TODO ValidationLink function????
 //TODO Don't delete the player if he disconnected during the game
+//TODO Shuffle order of lyrics lines in future

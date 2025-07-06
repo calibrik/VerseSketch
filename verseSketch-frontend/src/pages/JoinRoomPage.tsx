@@ -53,9 +53,8 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
             });
         
         let newData = await response?.json();
-        console.log(newData);
         isMoreDataAvailable.current = newData.length >= pageSize;
-        setData((prevData) => [...prevData, ...newData]);
+        setData((prevData)=>[...prevData, ...newData]);
         pageNumber.current++;
     }
 
@@ -76,7 +75,6 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
             }
             return;
         }
-        console.log("search finished");
         setLoading(false);
         searchAbortController.current = null;
     }
@@ -84,6 +82,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
     async function loadMoreData() {
         if (loading) 
             return;
+        loadMoreAbortController.current?.abort();
         loadMoreAbortController.current=new AbortController();
         setLoading(true);
         try{

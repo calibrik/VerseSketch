@@ -8,11 +8,11 @@ interface IKickButtonProps {
 };
 
 export const KickButton: FC<IKickButtonProps> = (props) => {
-    const connection=useSignalRConnectionContext();
+    const signalRModel=useSignalRConnectionContext();
     const errorModals=useErrorDisplayContext();
 
     function onClick(){
-        connection.current?.invoke("KickPlayer",props.playerId,props.roomTitle)
+        signalRModel.connection.current?.invoke("KickPlayer",props.playerId,props.roomTitle)
             .catch((_)=>{
                 errorModals.errorModalClosable.current?.show("An error occurred while trying to proccess request on server.");
             });

@@ -2,13 +2,12 @@ import { FC, useEffect, useState } from "react";
 import { PageTitle } from "../components/PageTitle";
 import TextArea from "antd/es/input/TextArea";
 import { SubmitButton } from "../components/buttons/SubmitButton";
-import { StepCounter } from "../components/StepCounter";
+import { StageCounter } from "../components/StageCounter";
 import { Form } from "antd";
 import { RuleObject } from "antd/es/form";
 import { Spinner } from "../components/Spinner";
 import { IRoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
-import { Timer } from "../components/Timer";
 import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
 interface IInsertLyricsPageProps {};
 
@@ -87,8 +86,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
 
     return (
         <>
-            <Timer time={30}/>
-            <StepCounter step={1} totalSteps={model.playersCount}/>
+            <StageCounter/>
             <PlayerCompleteCounter/>
             <div className="container-small">
                 <PageTitle style={{marginTop:"3vh"}}>Past {(model.playersCount-1)*2} lines of lyrics of your song!</PageTitle>

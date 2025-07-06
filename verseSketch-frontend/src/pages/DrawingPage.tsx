@@ -1,7 +1,7 @@
 import { FC, useEffect, useState } from "react";
 import { Canvas } from "../components/Canvas";
 import { Col, ColorPicker, Divider, Row, Slider } from "antd";
-import { StepCounter } from "../components/StepCounter";
+import { StageCounter } from "../components/StageCounter";
 import { AggregationColor } from "antd/es/color-picker/color";
 import { DisabledColorPicker } from "../components/DisabledColorPicker";
 import { getWidthLevel, WindowLevel } from "../misc/MiscFunctions";
@@ -31,9 +31,9 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     , []);
     return (
         <>
-            <Timer time={30}/>
-            <StepCounter step={1} totalSteps={5}/>
-            <PlayerCompleteCounter totalPlayers={7} completedPlayers={2}/>
+            <Timer/>
+            <StageCounter/>
+            <PlayerCompleteCounter/>
             <div className="container-mid">
                 <div style={{marginTop:"3vh"}} className="lyrics-container">
                     <h1 className="lyrics-2line">Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love</h1>
@@ -85,13 +85,13 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                     </div>
                     {widthLevel>WindowLevel.SM?
                     <div style={{display:"flex",justifyContent:"end",width:"100%",position:"absolute",right:26,zIndex:1}}>
-                        <SubmitButton/>
+                        <SubmitButton loading={false} isSubmitted={false}/>
                     </div>
                     :""}
                 </div>
                 {widthLevel<=WindowLevel.SM?
                 <div style={{display:"flex",justifyContent:"end",width:"100%",marginTop:"2vh"}}>
-                    <SubmitButton/>
+                    <SubmitButton loading={false} isSubmitted={false}/>
                 </div>
                 :""}
             </div>

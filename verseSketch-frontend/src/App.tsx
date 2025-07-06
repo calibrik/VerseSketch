@@ -75,9 +75,5 @@ export default App;
 //TODO: Width slider on drawing canvas
 //TODO: Tinker with showcase canvas size
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
-//TODO: Complete check counter
-//TODO: Edit after submit on game pages
 //TODO: Timer
-//TODO: Wire insert lyrics into the game flow
-//TODO: Escalate some methods for SignalR to provider level, cause they are shared across the pages
-//TODO: Purify components
+//TODO: Player complete counter won't update after reconnecting

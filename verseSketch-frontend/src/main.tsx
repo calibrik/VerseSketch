@@ -8,8 +8,8 @@ import { StrictMode } from 'react'
 
 createRoot(document.getElementById('root')!).render(
   <HistoryProvider>
-    <StrictMode>
+    {/* <StrictMode> */}
       <App/>
-    </StrictMode>
+    {/* </StrictMode> */}
   </HistoryProvider>
 )

@@ -25,4 +25,6 @@ public class Room
     public string? CurrentJoinToken { get; set; }
     [BsonElement("stage")] 
     public int Stage { get; set; }
+    [BsonElement("roomId")] 
+    public int RandomOrderSeed { get; set; }
 }

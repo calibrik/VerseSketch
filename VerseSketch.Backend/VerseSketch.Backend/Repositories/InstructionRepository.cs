@@ -22,7 +22,13 @@ public class InstructionRepository
 
     public async Task<List<string>> GetLyricsToDrawForStageAsync(string playerId, int stage)
     {
-        return await _instructions.Find(i=>i.PlayerId==playerId).Project(i=>i.LyrycsToDraw[stage]).FirstOrDefaultAsync();
+        return await _instructions.Find(i=>i.PlayerId==playerId).Project(i=>i.LyrycsToDraw[stage-1]).FirstOrDefaultAsync();
+    }
+
+    public async Task UpdatePlayersLyricsAsync(string playerId, List<string> lyrics, int pos)
+    {
+        UpdateDefinition<Instruction> update = Builders<Instruction>.Update.Set(i => i.LyrycsToDraw[pos], lyrics);
+        await _instructions.UpdateOneAsync(i => i.PlayerId == playerId, update);
     }
 
     public async Task DeleteManyAsync(HashSet<string> playerIds)
