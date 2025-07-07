@@ -1,4 +1,4 @@
-import ColorPicker, { Color } from "antd/es/color-picker";
+import ColorPicker from "antd/es/color-picker";
 import { FC } from "react";
 interface IDisabledColorPickerProps {
     color:string
@@ -8,7 +8,7 @@ interface IDisabledColorPickerProps {
 export const DisabledColorPicker: FC<IDisabledColorPickerProps> = (props) => {
     return (
         <div style={{display:'flex',justifyContent:'center'}} onClick={props.onClick}>
-            <ColorPicker className="recent-color" disabled defaultValue={props.color} />
+            <ColorPicker className="recent-color" disabled value={props.color} />
         </div>
     );
 }

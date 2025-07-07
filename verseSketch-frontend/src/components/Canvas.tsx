@@ -1,13 +1,18 @@
 import { Vector2d } from "konva/lib/types";
-import { CSSProperties, useEffect, useRef } from "react";
+import { CSSProperties, RefObject, useEffect, useRef } from "react";
 import { FC, useState } from "react";
 import { Stage, Layer, Line } from "react-konva";
 interface ICanvasProps {
   color:string;
+  tool:string;
+  brushSize:number;
+  lines:RefObject<ILine[]>;
   style?:CSSProperties
 };
-interface ILine {
+export interface ILine {
     tool: string;
+    brushSize:number;
+    color:string;
     points: number[];
 }
 
@@ -15,7 +20,6 @@ const CANVAS_BASE_WIDTH=800;
 const CANVAS_BASE_HEIGHT=600;
 
 export const Canvas: FC<ICanvasProps> = (props) => {
-  const [tool, setTool] = useState('pen');
   const [lines, setLines] = useState<ILine[]>([]);
   const isDrawing = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,17 +28,18 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 
 
   const handleMouseDown = (e:any) => {
+    // e.preventDefault();
     isDrawing.current = true;
     const point = e.target.getStage().getPointerPosition();
     if (point) {
       point.x=point.x/scale.x;
       point.y=point.y/scale.y;
     }
-    setLines([...lines, { tool, points: [point.x, point.y] }]);
+    setLines((prevLines)=>[...prevLines, { tool: props.tool, color:props.color,brushSize:props.brushSize, points: [point.x, point.y] }]);
+    props.lines.current = [...lines, { tool: props.tool, color:props.color,brushSize:props.brushSize, points: [point.x, point.y] }];
   };
 
   const handleMouseMove = (e:any) => {
-    // no drawing - skipping
     if (!isDrawing.current) {
       return;
     }
@@ -45,16 +50,25 @@ export const Canvas: FC<ICanvasProps> = (props) => {
       point.y=point.y/scale.y;
     }
     let lastLine = lines[lines.length - 1];
-    // add point
     lastLine.points = [...lastLine.points,point?.x??0, point?.y??0];
-
-    // replace last
-    lines.splice(lines.length - 1, 1, lastLine);
-    setLines(lines.concat());
+    lines[lines.length - 1]= lastLine;
+    props.lines.current = lines;
+    setLines([...lines]);
   };
 
   const handleMouseUp = () => {
+    if (!isDrawing.current) {
+      return;
+    }
     isDrawing.current = false;
+    let lastLine = lines[lines.length - 1];
+    if (lastLine.points.length >2) 
+      return;
+
+    lastLine.points = [...lastLine.points,lastLine.points[0],lastLine.points[1]];
+    lines[lines.length - 1]= lastLine;
+    props.lines.current = lines;
+    setLines([...lines]);
   };
 
   function onResize() {
@@ -71,8 +85,16 @@ export const Canvas: FC<ICanvasProps> = (props) => {
   useEffect(() => {
     onResize();
     window.addEventListener("resize", onResize);
+    window.addEventListener("mouseup", (e:any)=>{e.preventDefault(); isDrawing.current = false;});
+    window.addEventListener("touchend", (_)=>{isDrawing.current = false;});
+    window.addEventListener("mousedown", (e:any)=>e.preventDefault());
+    // window.addEventListener("touchstart", (e:any)=>e.preventDefault());
     return () => {
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("mouseup", (e:any)=>{e.preventDefault(); isDrawing.current = false;});
+      window.removeEventListener("touchend", (_)=>{isDrawing.current = false;});
+      window.removeEventListener("mousedown", (e:any)=>e.preventDefault());
+      // window.removeEventListener("touchstart", (e:any)=>e.preventDefault());
     };
   }
   , []);
@@ -101,8 +123,8 @@ export const Canvas: FC<ICanvasProps> = (props) => {
             <Line
               key={i}
               points={line.points}
-              stroke={props.color}
-              strokeWidth={5}
+              stroke={line.color}
+              strokeWidth={line.brushSize}
               tension={0.5}
               lineCap="round"
               lineJoin="round"

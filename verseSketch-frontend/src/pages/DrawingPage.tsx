@@ -1,24 +1,47 @@
-import { FC, useEffect, useState } from "react";
-import { Canvas } from "../components/Canvas";
-import { Col, ColorPicker, Divider, Row, Slider } from "antd";
+import { FC, useEffect, useRef, useState } from "react";
+import { Canvas, ILine } from "../components/Canvas";
+import { Col, ColorPicker, Divider, Flex, Row, Slider } from "antd";
 import { StageCounter } from "../components/StageCounter";
-import { AggregationColor } from "antd/es/color-picker/color";
 import { DisabledColorPicker } from "../components/DisabledColorPicker";
 import { getWidthLevel, WindowLevel } from "../misc/MiscFunctions";
 import { BrushIcon, BucketIcon, EraserIcon, EyedropperIcon } from "../components/Icons";
 import { SubmitButton } from "../components/buttons/SubmitButton";
 import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
 import { Timer } from "../components/Timer";
+import { useRecentColorsContext } from "../components/RecentColorsProvider";
+import { ToolButton } from "../components/buttons/ToolButton";
 
 interface IDrawingPageProps {};
 
 export const DrawingPage: FC<IDrawingPageProps> = (_) => {
-    const [color, setColor] = useState("#000000");
+    const [color, setColor] = useState<string>("#000000");
+    const [tool, setTool] = useState<string>("pen");
     const [widthLevel,setWidthLevel] = useState<WindowLevel>(WindowLevel.XS);
-    const [brushSize, setBrushSize] = useState(3);
+    const [brushSize, setBrushSize] = useState<number>(3);
+    const recentColorsModel=useRecentColorsContext();
+    const [recentColors, setRecentColors] = useState<string[]>(recentColorsModel.recentColors.current);
+    const imageRef=useRef<ILine[]>([]);
+    const availableTools = ["pen", "eraser", "bucket", "eyedropper"];
+    const [activeToolButton, setActiveToolButton] = useState<boolean[]>([true, false, false, false]);
     
     function onResize() {
         setWidthLevel(getWidthLevel());
+    }
+
+    function handleColorChange(value: string) {
+        recentColorsModel.popColor(value);
+        recentColorsModel.pushColor(color);
+        setRecentColors([...recentColorsModel.recentColors.current]);
+        setColor(value)
+    }
+
+    function selectTool(index: number) {
+        if (index < 0 || index >= availableTools.length) {
+            return;
+        }
+        setTool(availableTools[index]);
+        const newActiveToolButton = activeToolButton.map((_, i) => i === index);
+        setActiveToolButton(newActiveToolButton);
     }
 
     useEffect(() => {
@@ -29,6 +52,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         }
     }
     , []);
+
     return (
         <>
             <Timer/>
@@ -41,47 +65,43 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                 </div>
                 <Row gutter={[20,10]} style={{width:"100%",marginTop:"3vh"}}>
                     <Col xs={24} md={20} xxl={22}>
-                        <Canvas color={color}/>
+                        <Canvas color={color} tool={tool} brushSize={brushSize} lines={imageRef}/>
                     </Col>
                     <Col xs={24} md={4} xxl={2}>
                         <div className={widthLevel<=WindowLevel.SM?"palette-mobile":"palette"}>
-                            <Divider type={widthLevel<=WindowLevel.SM?"vertical":"horizontal"} className="palette-divider">Color</Divider>
+                            {widthLevel<=WindowLevel.SM?"":<Divider type={"horizontal"} className="palette-divider">Color</Divider>}
                             <div className="palette-current">
-                                <ColorPicker className="current-color" value={color} onChangeComplete={(value: AggregationColor)=>setColor(value.toCssString())} trigger="hover" disabledAlpha />
+                                <ColorPicker className="current-color" value={color} onChangeComplete={(value)=>{handleColorChange(value.toHexString())}} trigger="hover" disabledAlpha />
                             </div>
                             <Divider type={widthLevel<=WindowLevel.SM?"vertical":"horizontal"} className="palette-divider">Recently used</Divider>
                             <div className="palette-recent">
-                                <Row gutter={[10,10]}>
-                                    <Col xs={4} md={8}>
-                                        <DisabledColorPicker color="#ffffff" onClick={() => setColor("#ffffff")}/>
-                                    </Col>
-                                    <Col xs={4} md={8}>
-                                        <DisabledColorPicker color="#7C000B" onClick={() => setColor("#7C000B")}/>
-                                    </Col>
-                                    <Col xs={4} md={8}>
-                                        <DisabledColorPicker color="#6C0001" onClick={() => setColor("#6C0001")}/>
-                                    </Col>
-                                    <Col xs={4} md={8}>
-                                        <DisabledColorPicker color="#7C000C" onClick={() => setColor("#7C000C")}/>
-                                    </Col>
-                                    <Col xs={4} md={8}>
-                                        <DisabledColorPicker color="#7C000D" onClick={() => setColor("#7C000D")}/>
-                                    </Col>
-                                </Row>
+                                {widthLevel<=WindowLevel.SM?
+                                <Flex gap={10}>
+                                    {recentColors.slice(0, 6).map((c, index) => (
+                                        <DisabledColorPicker key={index} color={c} onClick={() => handleColorChange(c)}/>
+                                    ))}
+                                </Flex>
+                                :<Row style={{width:"100%"}} gutter={[10,10]}>
+                                    {recentColors.map((c, index) => (
+                                        <Col key={index}  xs={4} md={8}>
+                                            <DisabledColorPicker key={index} color={c} onClick={() => handleColorChange(c)}/>
+                                        </Col>
+                                    ))}
+                                </Row>}
                             </div>
                         </div>
                     </Col>
                 </Row>
                 <div className="canvas-settings" style={widthLevel<=WindowLevel.SM?{marginTop:"1vh"}:{marginTop:"3vh"}}>
                     <div className="canvas-brush-size">
-                        <label className="input-field-label" style={{whiteSpace: "nowrap"}}>Brush size</label>
+                        <label className="brush-size-label">Brush size</label>
                         <Slider className="brush-slider" value={brushSize} onChange={(value)=>setBrushSize(value)} max={5} min={1} style={{flex: 1}} />
                     </div>
                     <div className="canvas-tools">
-                        <BrushIcon/>
-                        <EraserIcon/>
-                        <BucketIcon/>
-                        <EyedropperIcon/>
+                        <ToolButton icon={<BrushIcon/>} active={activeToolButton[0]} onClick={()=>{selectTool(0)}}/>
+                        <ToolButton icon={<EraserIcon/>} active={activeToolButton[1]} onClick={()=>{selectTool(1)}}/>
+                        <ToolButton icon={<BucketIcon/>} active={activeToolButton[2]} onClick={()=>{selectTool(2)}}/>
+                        <ToolButton icon={<EyedropperIcon/>} active={activeToolButton[3]} onClick={()=>{selectTool(3)}}/>                        
                     </div>
                     {widthLevel>WindowLevel.SM?
                     <div style={{display:"flex",justifyContent:"end",width:"100%",position:"absolute",right:26,zIndex:1}}>
