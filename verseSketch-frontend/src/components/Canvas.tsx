@@ -25,10 +25,13 @@ export const Canvas: FC<ICanvasProps> = (props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size,setSize]=useState<{width:number,height:number}>({width:0,height:0});
   const [scale,setScale]=useState<{x:number,y:number}>({x:0,y:0});
+  const baseBrushSize=3;
+  const baseEraserSize=10;
 
 
   const handleMouseDown = (e:any) => {
-    // e.preventDefault();
+    if (props.tool!="eraser"&&props.tool!="pen")
+      return;
     isDrawing.current = true;
     const point = e.target.getStage().getPointerPosition();
     if (point) {
@@ -124,7 +127,7 @@ export const Canvas: FC<ICanvasProps> = (props) => {
               key={i}
               points={line.points}
               stroke={line.color}
-              strokeWidth={line.brushSize}
+              strokeWidth={line.tool=="pen"?line.brushSize*baseBrushSize:line.brushSize*baseEraserSize}
               tension={0.5}
               lineCap="round"
               lineJoin="round"
