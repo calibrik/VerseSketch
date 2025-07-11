@@ -19,11 +19,12 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const [color, setColor] = useState<string>("#000000");
     const [tool, setTool] = useState<string>("pen");
     const [widthLevel, setWidthLevel] = useState<WindowLevel>(WindowLevel.XS);
-    const [brushSize, setBrushSize] = useState<number>(3);
+    const [brushSize, setBrushSize] = useState<number>(1);
     const recentColorsModel = useRecentColorsContext();
     const [recentColors, setRecentColors] = useState<string[]>(recentColorsModel.recentColors.current);
     const imageRef = useRef<ILine[]>([]);
     const errorModals=useErrorDisplayContext();
+    const bufferColor=useRef<string>(color);
     // Change activeToolButton to an object with tool names as keys and booleans as values
     const [activeToolButton, setActiveToolButton] = useState<{ [key: string]: boolean }>({
         pen: true,
@@ -52,10 +53,15 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     function handleColorChange(value: string) {
         if (value.trim()===""||value==color)
             return;
-        recentColorsModel.popColor(value);
-        recentColorsModel.pushColor(color);
-        setRecentColors([...recentColorsModel.recentColors.current]);
+        updateRecent(value,color);
         setColor(value)
+    }
+
+    function updateRecent(newColor:string,oldColor:string)
+    {
+        recentColorsModel.popColor(newColor);
+        recentColorsModel.pushColor(oldColor);
+        setRecentColors([...recentColorsModel.recentColors.current]);
     }
 
     function resetTool() {
@@ -106,7 +112,12 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                         <div className={widthLevel <= WindowLevel.SM ? "palette-mobile" : "palette"}>
                             {widthLevel <= WindowLevel.SM ? "" : <Divider type={"horizontal"} className="palette-divider">Color</Divider>}
                             <div className="palette-current">
-                                <ColorPicker className="current-color" value={color} onChangeComplete={(value) => { handleColorChange(value.toHexString()) }} trigger="hover" disabledAlpha />
+                                <ColorPicker className="current-color" value={color} onChangeComplete={(value)=>{setColor(value.toHexString())}} onOpenChange={(open) => {
+                                     if (!open) 
+                                        updateRecent(color,bufferColor.current);
+                                    else
+                                        bufferColor.current=color;
+                                     }} trigger="hover" disabledAlpha />
                             </div>
                             <Divider type={widthLevel <= WindowLevel.SM ? "vertical" : "horizontal"} className="palette-divider">Recently used</Divider>
                             <div className="palette-recent">

@@ -78,3 +78,4 @@ export default App;
 //TODO: Timer
 //TODO: Player complete counter won't update after reconnecting
 //TODO: Back/Forward buttons for drawing
+//TODO: optimize the flood fill algo

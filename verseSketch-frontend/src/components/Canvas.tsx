@@ -22,8 +22,8 @@ export interface ILine {
 	points: Point[];
 }
 
-const CANVAS_BASE_WIDTH = 400;
-const CANVAS_BASE_HEIGHT = 300;
+const CANVAS_BASE_WIDTH = 1200;
+const CANVAS_BASE_HEIGHT = 800;
 
 export const Canvas: FC<ICanvasProps> = (props) => {
 	const isDrawing = useRef(false);
@@ -31,9 +31,11 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 	const [size, setSize] = useState<{ width: number, height: number }>({ width: 0, height: 0 });
 	const [scale, setScale] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
 	const lastPos = useRef<Point>({ x: 0, y: 0 });
-	const baseBrushSize = 3;
+	const baseBrushSize = 2.5;
 	const baseEraserSize = 10;
 	const imageRef = useRef<KonvaImage>(null);
+	const drawingRef=useRef<number>(0);
+	
 
 	const { canvas, context } = useMemo(() => {
 		const canvas = document.createElement('canvas');
@@ -44,6 +46,7 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 			return { canvas, context };
 		context.lineJoin = 'round';
 		context.lineCap = 'round'
+		context.imageSmoothingEnabled=false;
 		return { canvas, context };
 	}, []);
 
@@ -51,100 +54,73 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 		if (!isDrawing.current || !context) {
 			return;
 		}
-
 		const image = imageRef.current;
-
 		context.globalCompositeOperation = props.tool === 'eraser' ? 'destination-out' : 'source-over';
 		context.beginPath();
-		context.getImageData
 		context.moveTo(lastPos.current.x, lastPos.current.y);
 		context.lineTo(point.x, point.y);
 		context.closePath();
 		context.stroke();
-
 		lastPos.current = point;
 		image?.getLayer()?.batchDraw();
 		props.lines.current[props.lines.current.length - 1].points.push(point);
 	}
 
-	function hexToRGB(hex:string):number[] {
+	function colorStrToHex(hex:string):string {
 		hex = hex.replace(/^#/, '');
-		if (hex.length === 3) {
-			hex = hex.split('').map((char: string) => char + char).join('');
-		}
-		const bigint = parseInt(hex, 16);
-		const r = (bigint >> 16) & 255;
-		const g = (bigint >> 8) & 255;
-		const b = bigint & 255;
-
-		return [r,g,b,255];
+		hex+="ff";
+		return hex;
 	}
 
 
-	function getPixelColor(point:Point,imageData:ImageData):number[] {
-		let index=(Math.floor(point.y)*CANVAS_BASE_WIDTH+Math.floor(point.x))*4;
-		// console.log(imageData.data[index+3]);
-		return [imageData.data[index],imageData.data[index+1],imageData.data[index+2],imageData.data[index+3]];
+	function getPixelColor(point:Point,data:Uint32Array):string {
+		let index=Math.floor(point.y)*CANVAS_BASE_WIDTH+Math.floor(point.x);
+		return data[index].toString(16);
 	}
 
-	function setPixelColor(point:Point,color:number[],imageData:ImageData) {
+	function setPixelColor(point:Point,color:number,imageData:ImageData) {
 		let index=(Math.floor(point.y)*CANVAS_BASE_WIDTH+Math.floor(point.x))*4;
-		imageData.data[index]=color[0];
-		imageData.data[index+1]=color[1];
-		imageData.data[index+2]=color[2];
-		imageData.data[index+3]=color[3];
+		imageData.data[index]=(color>>24);
+		imageData.data[index+1]=((color>>16)%0xFF00);
+		imageData.data[index+2]=((color>>8)%0xFFFF00);
+		imageData.data[index+3]=(color%0xFFFFFF00);
+	}
+
+	function checkColors(c:string,target:string,curr:string):boolean {
+		return c==curr&&c!=target;
 	}
 
 	function floodFill(point: Point) {
 		if (!context||!isDrawing.current)
 			return;
 		let imageData:ImageData=context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT);
-		let targetColor=hexToRGB(props.color);
-		let currColor=getPixelColor(point,imageData);
-		console.log(props.color);
-		console.log(currColor,targetColor);
-		if (currColor.toString()===targetColor.toString())
+		let targetColor=colorStrToHex(props.color);
+		let data=new Uint32Array(imageData.data.buffer);
+		let currColor=getPixelColor(point,data);
+		console.log(props.color,currColor,targetColor);
+		if (currColor===targetColor)
 			return;
-		let queue:Point[]=[point];
-		while (queue.length!=0)
+		let stack:Point[]=[point]
+		while (stack.length>0)
 		{
-			if (queue.length>1000)
-			{
-				console.log("gg");
-			}
-			console.log(queue.length);
-			let p:Point|undefined=queue.shift();
+			let p:Point|undefined=stack.pop();
 			if (!p)
 				break;
-
-			console.log((Math.floor(p.y)*CANVAS_BASE_WIDTH+Math.floor(p.x))*4);
-			console.log(getPixelColor(p,imageData));
-			setPixelColor(p,targetColor,imageData);
-			console.log(getPixelColor(p,imageData));
-			if (
-				p.x + 1 < CANVAS_BASE_WIDTH &&
-				getPixelColor({ x: p.x + 1, y: p.y }, imageData).toString() !== targetColor.toString() &&
-				getPixelColor({ x: p.x + 1, y: p.y }, imageData).toString() === currColor.toString()
-			)
-				queue.push({ x: p.x + 1, y: p.y });
-			if (
-				p.x - 1 >= 0 &&
-				getPixelColor({ x: p.x - 1, y: p.y }, imageData).toString() !== targetColor.toString() &&
-				getPixelColor({ x: p.x - 1, y: p.y }, imageData).toString() === currColor.toString()
-			)
-				queue.push({ x: p.x - 1, y: p.y });
-			if (
-				p.y + 1 < CANVAS_BASE_HEIGHT &&
-				getPixelColor({ x: p.x, y: p.y + 1 }, imageData).toString() !== targetColor.toString() &&
-				getPixelColor({ x: p.x, y: p.y + 1 }, imageData).toString() === currColor.toString()
-			)
-				queue.push({ x: p.x, y: p.y + 1 });
-			if (
-				p.y - 1 >= 0 &&
-				getPixelColor({ x: p.x, y: p.y - 1 }, imageData).toString() !== targetColor.toString() &&
-				getPixelColor({ x: p.x, y: p.y - 1 }, imageData).toString() === currColor.toString()
-			)
-				queue.push({ x: p.x, y: p.y - 1 });
+			setPixelColor(p,parseInt(targetColor,16),imageData);
+			const neighbors = [
+				{ x: p.x + 1, y: p.y },
+				{ x: p.x - 1, y: p.y },
+				{ x: p.x, y: p.y + 1 },
+				{ x: p.x, y: p.y - 1 }
+			];
+			for (const n of neighbors) {
+				if (n.x < 0 || n.x >= CANVAS_BASE_WIDTH || n.y < 0 || n.y >= CANVAS_BASE_HEIGHT) 
+					continue;
+				const neighborColor = getPixelColor(n, data);
+				if (checkColors(neighborColor, targetColor, currColor)) {
+					stack.push(n);
+				}
+			}
 		}
 		context.putImageData(imageData,0,0);
 		imageRef.current?.getLayer()?.batchDraw();
@@ -171,15 +147,17 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 		}]
 		if (props.tool=="bucket")
 			floodFill(point);
-		else
+		else{
 			drawTo({ x: point.x + 0.01, y: point.y });
+		}
 	};
 
 	const handleMouseUp = () => {
 		isDrawing.current = false;
+		clearTimeout(drawingRef.current);
 	};
 
-	const handleMouseMove = (e: any) => {
+	const handleMouseMove = async (e: any) => {
 		if (!isDrawing.current || !context) {
 			return;
 		}
