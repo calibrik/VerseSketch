@@ -1,5 +1,5 @@
 import { FC, useEffect, useRef, useState } from "react";
-import { Canvas, ILine } from "../components/Canvas";
+import { Canvas, CanvasHandle, ILine } from "../components/Canvas";
 import { Col, ColorPicker, Divider, Flex, Row, Slider } from "antd";
 import { StageCounter } from "../components/StageCounter";
 import { DisabledColorPicker } from "../components/DisabledColorPicker";
@@ -12,6 +12,11 @@ import { useRecentColorsContext } from "../components/RecentColorsProvider";
 import { ToolButton } from "../components/buttons/ToolButton";
 import useEyeDropper from "use-eye-dropper";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { useSignalRConnectionContext } from "../components/SignalRProvider";
+import { useNavigate } from "react-router";
+import { ConnectionConfig } from "../misc/ConnectionConfig";
+import { Spinner } from "../components/Spinner";
 
 interface IDrawingPageProps { };
 
@@ -25,6 +30,10 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const imageRef = useRef<ILine[]>([]);
     const errorModals=useErrorDisplayContext();
     const bufferColor=useRef<string>(color);
+    const canvasRef=useRef<CanvasHandle|null>(null)
+    const signalRModel=useSignalRConnectionContext();
+    const [lines,setLines]=useState<string[]>([]);
+    const navigate=useNavigate();
     // Change activeToolButton to an object with tool names as keys and booleans as values
     const [activeToolButton, setActiveToolButton] = useState<{ [key: string]: boolean }>({
         pen: true,
@@ -59,6 +68,8 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
 
     function updateRecent(newColor:string,oldColor:string)
     {
+        if (newColor===oldColor)
+            return;
         recentColorsModel.popColor(newColor);
         recentColorsModel.pushColor(oldColor);
         setRecentColors([...recentColorsModel.recentColors.current]);
@@ -85,7 +96,35 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         setActiveToolButton({ ...activeToolButton });
     }
 
+    async function getLines()
+    {
+        let response=null;
+        try{
+            response=await fetch(`${ConnectionConfig.Api}/game/getCurrentLyricsToDraw`,{
+                method:"GET",
+                headers:{
+                    "Content-Type":"application/json",
+                    "Authorization":`Bearer ${sessionStorage.getItem("player")}`
+                }
+            });
+        }
+        catch(_:any){
+            errorModals.errorModal.current?.show("No connection to the server.");
+            return;
+        }
+        let data=await response?.json();
+        if (!response.ok) {
+            errorModals.errorModal.current?.show(data.message);
+        }
+        setLines(data.lyrics);
+    }
+
     useEffect(() => {
+        if (!signalRModel.roomModelRef.current||signalRModel.roomModelRef.current.stage<1||!signalRModel.connection.current) {
+            navigate("/",{replace:true});
+            return;
+        }
+        getLines();
         onResize();
         window.addEventListener("resize", onResize);
         return () => {
@@ -94,6 +133,9 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     }
         , []);
 
+    if (lines.length==0)
+        return (<Spinner style={{marginTop:"3vh"}}/>);
+
     return (
         <>
             <Timer />
@@ -101,19 +143,19 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
             <PlayerCompleteCounter />
             <div className="container-mid">
                 <div style={{ marginTop: "3vh" }} className="lyrics-container">
-                    <h1 className="lyrics-2line">Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love</h1>
-                    <h1 className="lyrics-2line">Fuck apologies, I wanna see y'all geeked up</h1>
+                    <h1 className="lyrics-2line">{lines[0]}</h1>
+                    <h1 className="lyrics-2line">{lines[1]}</h1>
                 </div>
                 <Row gutter={[20, 10]} style={{ width: "100%", marginTop: "3vh" }}>
                     <Col xs={24} md={20} xxl={22}>
-                        <Canvas color={color} tool={tool} brushSize={brushSize} lines={imageRef} />
+                        <Canvas ref={canvasRef} color={color} tool={tool} brushSize={brushSize} lines={imageRef} />
                     </Col>
                     <Col xs={24} md={4} xxl={2}>
                         <div className={widthLevel <= WindowLevel.SM ? "palette-mobile" : "palette"}>
                             {widthLevel <= WindowLevel.SM ? "" : <Divider type={"horizontal"} className="palette-divider">Color</Divider>}
                             <div className="palette-current">
                                 <ColorPicker className="current-color" value={color} onChangeComplete={(value)=>{setColor(value.toHexString())}} onOpenChange={(open) => {
-                                     if (!open) 
+                                     if (!open)
                                         updateRecent(color,bufferColor.current);
                                     else
                                         bufferColor.current=color;
@@ -151,6 +193,8 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                             selectTool("eyedropper"); 
                             await handleEyedropper(); 
                         }} />
+                        <ToolButton icon={<ArrowLeftOutlined className="button-icon-lg"/>} active={false} onClick={canvasRef.current?.goBack}/>
+                        <ToolButton icon={<ArrowRightOutlined className="button-icon-lg"/>} active={false} onClick={canvasRef.current?.goForward}/>
                     </div>
                     {widthLevel > WindowLevel.SM ?
                         <div style={{ display: "flex", justifyContent: "end", width: "100%", position: "absolute", right: 26, zIndex: 1 }}>

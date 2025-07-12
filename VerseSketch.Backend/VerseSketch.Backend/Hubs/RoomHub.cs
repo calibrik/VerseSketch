@@ -265,6 +265,8 @@ public class RoomHub:Hub<IRoomHub>
         Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
         if (room == null)
             throw new HubException("Room not found.");
+        if (room.Stage!=0)
+            throw new HubException("Invalid stage.");
         if (lyrics == "")
         {
             await Clients.Group(room.Title).PlayerKicked(player._Id);

@@ -6,9 +6,10 @@ import { StageCounter } from "../components/StageCounter";
 import { Form } from "antd";
 import { RuleObject } from "antd/es/form";
 import { Spinner } from "../components/Spinner";
-import { IRoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
+import { RoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
+import { useNavigate } from "react-router";
 interface IInsertLyricsPageProps {};
 
 interface IInsertLyricsFormModel {
@@ -17,10 +18,11 @@ interface IInsertLyricsFormModel {
 
 export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     const signalRModel=useSignalRConnectionContext();
-    const [model,setModel]=useState<IRoomModel|null>(signalRModel.roomModelRef.current);
+    const [model,setModel]=useState<RoomModel|null>(signalRModel.roomModelRef.current);
     const [submitLoading,setSubmitLoading]=useState<boolean>(false);
     const [isSubmitted,setIsSubmitted]=useState<boolean>(false);
     const errorModals=useErrorDisplayContext();
+    const navigate=useNavigate();
 
     async function validateLyrics(_: RuleObject, value: string) {
         if (!value || value.trim() === "") {
@@ -65,17 +67,17 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
             setIsSubmitted(prev=>(!prev));
     }
 
-    function triggerUpdate(model:IRoomModel|null) {
+    function triggerUpdate(model:RoomModel|null) {
         setModel(model);
     }
 
     useEffect(() => {
-        signalRModel.updateTrigger.current.on(triggerUpdate);
-        document.title="Insert Lyrics";
-        if (signalRModel.connection.current===null) {
-            errorModals.errorModal.current?.show("No connection to the server.");
+        if (!signalRModel.roomModelRef.current||signalRModel.roomModelRef.current.stage!=0||!signalRModel.connection.current) {
+            navigate("/",{replace:true});
             return;
         }
+        signalRModel.updateTrigger.current.on(triggerUpdate);
+        document.title="Insert Lyrics";
         return () => {
             signalRModel.updateTrigger.current.off(triggerUpdate);
         }

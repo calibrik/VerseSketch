@@ -6,7 +6,7 @@ import Title from "antd/es/typography/Title";
 import { useNavigate, useParams } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { InviteButton } from "../components/buttons/InviteButton";
-import { IRoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
+import { RoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import '../index.css';
 import { LeaveRoomButton } from "../components/buttons/LeaveRoomButton";
@@ -23,7 +23,7 @@ interface ISetParamsModel{
     roomTitle?:string;
 }
 export const RoomPage: FC<IRoomPageProps> = () => {
-    const [model, setModel] = useState<IRoomModel | null>(null);
+    const [model, setModel] = useState<RoomModel | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const switchLabelRef = useRef<HTMLLabelElement | null>(null);
     const {roomTitle} = useParams();
@@ -91,7 +91,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         if (!signalRModel.roomModelRef.current||!signalRModel.roomModelRef.current.isPlayerAdmin) return;
 
         params.roomTitle=roomTitle;
-        let oldModel:IRoomModel=signalRModel.roomModelRef.current;
+        let oldModel:RoomModel=signalRModel.roomModelRef.current;
         try{
             applyParams(params);
         }

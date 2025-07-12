@@ -321,7 +321,6 @@ public class RoomsController:ControllerBase
             return Unauthorized(new {message = $"You must be the admin of the room {model.RoomTitle} to change it parameters."});
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-        
         try
         {
             UpdateDefinition<Room> update = Builders<Room>.Update

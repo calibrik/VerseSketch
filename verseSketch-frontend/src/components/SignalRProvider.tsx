@@ -8,18 +8,18 @@ import { useNavigate } from "react-router";
 interface ISignalRProviderProps {
     children:ReactNode
 };
-export interface IRoomModel{
+export type RoomModel={
     title:string;
     playersCount:number;
     maxPlayersCount:number;
-    players:IPlayerModel[];
+    players:PlayerModel[];
     timeToDraw:number;
     isPublic:boolean;
     isPlayerAdmin:boolean;
     playerId:string;
     stage:number;
 }
-export interface IPlayerModel{
+export type PlayerModel={
     nickname:string;
     id:string;
     isAdmin:boolean;
@@ -30,7 +30,7 @@ export interface ISignalRProviderModel {
     createConnection: (accessToken: string, roomTitle: string) => void;
     stopConnection: () => void;
     updateTrigger: React.RefObject<Event>;
-    roomModelRef: React.RefObject<IRoomModel | null>;
+    roomModelRef: React.RefObject<RoomModel | null>;
 }
 
 const SignalRContext=createContext<ISignalRProviderModel | null>(null);
@@ -41,7 +41,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
     const errorModals=useErrorDisplayContext();
     const updateTrigger = useRef<Event>(new Event());
     const isRecconecting=useRef<boolean>(false);
-    const roomModelRef = useRef<IRoomModel | null>(null);
+    const roomModelRef = useRef<RoomModel | null>(null);
     const navigate=useNavigate();
 
     function createConnection(accessToken: string, roomTitle: string) {
@@ -70,7 +70,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
             roomModelRef.current=null;
         }
     }
-    function onPlayerJoined(data:IPlayerModel) {
+    function onPlayerJoined(data:PlayerModel) {
         if (!roomModelRef.current||roomModelRef.current.playerId==data.id)
             return;
         console.log("Player joined",data);
@@ -79,7 +79,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         updateTrigger.current.invoke(roomModelRef.current);
     }
 
-    async function onRoomReceive(data:IRoomModel) {
+    async function onRoomReceive(data:RoomModel) {
         console.log("Room received",data);
         if (roomModelRef.current && data.stage!=roomModelRef.current.stage)
             onStageSet(data.stage);

@@ -4,10 +4,10 @@ import { FC, ReactNode, useEffect, useState } from "react";
 import { KickButton } from "./buttons/KickButton";
 import { Spinner } from "./Spinner";
 import { getWidthLevel, WindowLevel } from "../misc/MiscFunctions";
-import { IPlayerModel } from "./SignalRProvider";
+import { PlayerModel } from "./SignalRProvider";
 interface IPlayersListProps {
     roomTitle: string;
-    players:IPlayerModel[];
+    players:PlayerModel[];
     loading:boolean;
     playersCount:number
     maxPlayersCount:number;

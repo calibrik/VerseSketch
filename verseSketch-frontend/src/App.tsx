@@ -75,7 +75,6 @@ export default App;
 //TODO: Width slider on drawing canvas
 //TODO: Tinker with showcase canvas size
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
-//TODO: Timer
 //TODO: Player complete counter won't update after reconnecting
 //TODO: Back/Forward buttons for drawing
-//TODO: optimize the flood fill algo
+//TODO: remove "alpha" drawing from canvas

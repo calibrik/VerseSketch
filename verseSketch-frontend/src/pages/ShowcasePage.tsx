@@ -3,12 +3,12 @@ import { FC } from "react";
 import { PlayersList } from "../components/PlayersList";
 import { ShowcaseCanvas } from "../components/ShowcaseCanvas";
 import { SkipButton } from "../components/buttons/SkipButton";
-import { IPlayerModel } from "./RoomPage";
+import { PlayerModel } from "../components/SignalRProvider";
 interface IShowcasePageProps {};
 
 export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
 
-    let players:IPlayerModel[]=[];
+    let players:PlayerModel[]=[];
     for (let i = 0; i < 8; i++) {
         players.push({
             id: `player${i+1}`,

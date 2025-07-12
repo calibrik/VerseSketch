@@ -1,7 +1,7 @@
 import { Image as KonvaImage } from "konva/lib/shapes/Image";
 import { Stage as KonvaStage } from "konva/lib/Stage";
-import { CSSProperties, RefObject, useEffect, useMemo, useRef } from "react";
-import { FC, useState } from "react";
+import { CSSProperties, forwardRef, RefObject, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { useState } from "react";
 import { Stage, Layer, Image } from "react-konva";
 interface ICanvasProps {
 	color: string;
@@ -10,22 +10,27 @@ interface ICanvasProps {
 	lines: RefObject<ILine[]>;
 	style?: CSSProperties
 };
-interface Point {
+type Point = {
 	x: number;
 	y: number
 }
 
-export interface ILine {
+export type CanvasHandle = {
+	goBack:()=>void;
+	goForward:()=>void;
+}
+
+export type ILine = {
 	tool: string;
 	brushSize: number;
 	color: string;
 	points: Point[];
 }
 
-const CANVAS_BASE_WIDTH = 1200;
+const CANVAS_BASE_WIDTH = 1600;
 const CANVAS_BASE_HEIGHT = 800;
 
-export const Canvas: FC<ICanvasProps> = (props) => {
+export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	const isDrawing = useRef(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [size, setSize] = useState<{ width: number, height: number }>({ width: 0, height: 0 });
@@ -35,13 +40,16 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 	const baseEraserSize = 10;
 	const imageRef = useRef<KonvaImage>(null);
 	const drawingRef=useRef<number>(0);
+	const backBuffer=useRef<ArrayBuffer[]>([]);
+	const forwardRef=useRef<ArrayBuffer[]>([]);
+	const bufferLimit=10;
 	
 
 	const { canvas, context } = useMemo(() => {
 		const canvas = document.createElement('canvas');
 		canvas.width = CANVAS_BASE_WIDTH;
 		canvas.height = CANVAS_BASE_HEIGHT;
-		const context = canvas.getContext('2d');
+		const context = canvas.getContext('2d',{willReadFrequently:true});
 		if (!context)
 			return { canvas, context };
 		context.lineJoin = 'round';
@@ -49,6 +57,35 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 		context.imageSmoothingEnabled=false;
 		return { canvas, context };
 	}, []);
+
+	useImperativeHandle(ref,()=>({
+		goBack:()=>{
+			if (!context||backBuffer.current.length==0)
+				return;
+			let imageData=context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT);
+			let curr=new Uint8Array(imageData.data).buffer;
+			let prev=backBuffer.current.pop();
+			if (!prev)
+				return;
+			let newData = new ImageData(new Uint8ClampedArray(prev), imageData.width, imageData.height);
+			context.putImageData(newData,0,0);
+			imageRef.current?.getLayer()?.batchDraw();
+			forwardRef.current.push(curr);
+		},
+		goForward:()=>{
+			if (!context||forwardRef.current.length==0)
+				return;
+			let imageData=context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT);
+			let curr=new Uint8Array(imageData.data).buffer;
+			let forw=forwardRef.current.pop();
+			if (!forw)
+				return;
+			let newData = new ImageData(new Uint8ClampedArray(forw), imageData.width, imageData.height);
+			context.putImageData(newData,0,0);
+			imageRef.current?.getLayer()?.batchDraw();
+			backBuffer.current.push(curr);
+		}
+	}))
 
 	function drawTo(point: Point) {
 		if (!isDrawing.current || !context) {
@@ -66,27 +103,25 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 		props.lines.current[props.lines.current.length - 1].points.push(point);
 	}
 
-	function colorStrToHex(hex:string):string {
+	function colorStrToHex(hex:string):number {
 		hex = hex.replace(/^#/, '');
 		hex+="ff";
-		return hex;
+		return parseInt(hex,16);
 	}
 
 
-	function getPixelColor(point:Point,data:Uint32Array):string {
-		let index=Math.floor(point.y)*CANVAS_BASE_WIDTH+Math.floor(point.x);
-		return data[index].toString(16);
-	}
-
-	function setPixelColor(point:Point,color:number,imageData:ImageData) {
+	function getPixelColor(point:Point,data:DataView):number {
 		let index=(Math.floor(point.y)*CANVAS_BASE_WIDTH+Math.floor(point.x))*4;
-		imageData.data[index]=(color>>24);
-		imageData.data[index+1]=((color>>16)%0xFF00);
-		imageData.data[index+2]=((color>>8)%0xFFFF00);
-		imageData.data[index+3]=(color%0xFFFFFF00);
+		let res=data.getUint32(index,false);
+		return res;
 	}
 
-	function checkColors(c:string,target:string,curr:string):boolean {
+	function setPixelColor(point:Point,color:number,data:DataView) {
+		let index=(Math.floor(point.y)*CANVAS_BASE_WIDTH+Math.floor(point.x))*4;
+		data.setUint32(index,color);
+	}
+
+	function checkColors(c:number,target:number,curr:number):boolean {
 		return c==curr&&c!=target;
 	}
 
@@ -95,9 +130,8 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 			return;
 		let imageData:ImageData=context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT);
 		let targetColor=colorStrToHex(props.color);
-		let data=new Uint32Array(imageData.data.buffer);
+		let data=new DataView(imageData.data.buffer);
 		let currColor=getPixelColor(point,data);
-		console.log(props.color,currColor,targetColor);
 		if (currColor===targetColor)
 			return;
 		let stack:Point[]=[point]
@@ -106,7 +140,7 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 			let p:Point|undefined=stack.pop();
 			if (!p)
 				break;
-			setPixelColor(p,parseInt(targetColor,16),imageData);
+			setPixelColor(p,targetColor,data);
 			const neighbors = [
 				{ x: p.x + 1, y: p.y },
 				{ x: p.x - 1, y: p.y },
@@ -131,6 +165,10 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 		if (props.tool === "eyedropper" || !context)
 			return;
 		isDrawing.current = true;
+		forwardRef.current=[];
+		backBuffer.current.push(new Uint8Array(context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT).data).buffer);
+		if (backBuffer.current.length>bufferLimit)
+			backBuffer.current.shift();
 		context.lineWidth = props.tool == "eraser" ? baseEraserSize * props.brushSize : baseBrushSize * props.brushSize;
 		context.strokeStyle = props.color;
 		const point = e.target.getStage().getPointerPosition();
@@ -148,7 +186,7 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 		if (props.tool=="bucket")
 			floodFill(point);
 		else{
-			drawTo({ x: point.x + 0.01, y: point.y });
+			drawTo(point);
 		}
 	};
 
@@ -240,4 +278,4 @@ export const Canvas: FC<ICanvasProps> = (props) => {
 			</Stage>
 		</div>
 	);
-}
+});
