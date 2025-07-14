@@ -142,6 +142,24 @@ public class RoomHub:Hub<IRoomHub>
         await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
         await Clients.Group(player.RoomTitle).StageSet(room.Stage+1);
     }
+
+    public async Task SendImage(LyricsImage image,string forPlayerId)
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+            throw new HubException("You are not in this room.");
+        string playerId = Context.User.FindFirst("PlayerId").Value;
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
+        if (player == null)
+            throw new HubException("Player not found.");
+        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (room == null)
+            throw new HubException("Room not found.");
+        if (room.Stage<1)
+            throw new HubException("You are in the wrong stage.");
+        
+        await _storylineRepository.UpdateImage(image,room.Stage,forPlayerId);
+        await Clients.Groups(player.RoomTitle).PlayerCompletedTask();
+    }
     
     public async Task SendParams(SetParamsViewModel model)
     {
@@ -250,10 +268,23 @@ public class RoomHub:Hub<IRoomHub>
             instructions.Add(new Instruction
             {
                 PlayerId = id,
-                LyrycsToDraw = Enumerable.Repeat<List<string>>(["", ""], room.PlayersCount - 1).ToList(),
+                LyrycsToDraw = Enumerable.Repeat<Lyrics>(new Lyrics
+                {
+                    FromPlayerId = "",
+                    Lines = ["",""]
+                }, room.PlayersCount - 1).ToList(),
             });
         }
         await _instructionRepository.CreateManyAsync(instructions);
+        List<Storyline> storylines = new List<Storyline>();
+        foreach (string id in playerIds)
+        {
+            storylines.Add(new Storyline
+            {
+                PlayerId = "",
+                Images=Enumerable.Repeat(new LyricsImage(),room.PlayersCount-1).ToList(),
+            });
+        }
         await Clients.Group(player.RoomTitle).StageSet(0);
     }
 
@@ -295,7 +326,11 @@ public class RoomHub:Hub<IRoomHub>
         {
             if (++i >= players.Count)
                 i = 0;
-            await _instructionRepository.UpdatePlayersLyricsAsync(players[i],[lyricsSubmitted[lyricsI],lyricsSubmitted[lyricsI+1]],j-1);
+            await _instructionRepository.UpdatePlayersLyricsAsync(players[i],new Lyrics
+            {
+                FromPlayerId = player._Id,
+                Lines = [lyricsSubmitted[lyricsI],lyricsSubmitted[lyricsI+1]]
+            },j-1);
             lyricsI+=2;
         }
         

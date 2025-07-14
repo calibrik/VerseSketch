@@ -6,6 +6,7 @@ interface ISubmitButtonProps {
     style?: React.CSSProperties;
     loading:boolean;
     isSubmitted:boolean;
+    onClick?:()=>Promise<void>
 };
 
 export const SubmitButton: FC<ISubmitButtonProps> = (props) => {
@@ -13,11 +14,13 @@ export const SubmitButton: FC<ISubmitButtonProps> = (props) => {
     let icon;
     if (props.isSubmitted) {
         icon = <EditOutlined className="button-icon"/>
-    } else if (props.loading) {
-        icon = <Spinner/>;
-    }
-    else{
+    } 
+    else {
         icon = <CheckCircleOutlined className="button-icon"/>;
+    }
+    
+    if (props.loading) {
+        icon = <Spinner/>;
     }
     return (
         <BaseButton

@@ -28,7 +28,6 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         if (!value || value.trim() === "") {
             Promise.reject("Lyrics cannot be empty");
         }
-        console.log("Lyrics submitted:", value);
         let lines:string[] = value.split("\n").filter(line => line.trim() !== "");
         if (lines.length != ((model?.playersCount??2)-1)*2) {
             return Promise.reject(`Please enter exactly ${((model?.playersCount??2)-1)*2} lines of lyrics. (You have ${lines.length} ${lines.length==1?"line":"lines"}.)`);

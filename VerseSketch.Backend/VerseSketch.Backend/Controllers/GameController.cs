@@ -32,7 +32,8 @@ public class GameController:ControllerBase
             return Unauthorized(new { message = $"Room not found." });
         if (room.Stage < 1)
             return Unauthorized(new { message = $"Invalid request." });
-        return Ok(new { lyrics=await _instructionRepository.GetLyricsToDrawForStageAsync(player._Id,room.Stage)});
+        Lyrics lyrics = await _instructionRepository.GetLyricsToDrawForStageAsync(player._Id, room.Stage);
+        return Ok(new { lyrics });
     }
     
     

@@ -715,6 +715,9 @@ html{
   background-color: rgb(255, 255, 255);
   display: inline-block;
 }
+.canvas-container .wrapper.disabled{
+  background-color: #f0b3ff;
+}
 .canvas-container canvas{
   border: 2px solid #7C009B !important;
 }

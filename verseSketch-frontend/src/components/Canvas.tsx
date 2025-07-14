@@ -8,6 +8,7 @@ interface ICanvasProps {
 	tool: string;
 	brushSize: number;
 	lines: RefObject<ILine[]>;
+	disabled:boolean;
 	style?: CSSProperties
 };
 type Point = {
@@ -42,7 +43,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	const drawingRef=useRef<number>(0);
 	const backBuffer=useRef<ArrayBuffer[]>([]);
 	const forwardRef=useRef<ArrayBuffer[]>([]);
-	const bufferLimit=10;
+	const bufferLimit=15;
 	
 
 	const { canvas, context } = useMemo(() => {
@@ -70,6 +71,12 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 			let newData = new ImageData(new Uint8ClampedArray(prev), imageData.width, imageData.height);
 			context.putImageData(newData,0,0);
 			imageRef.current?.getLayer()?.batchDraw();
+			props.lines.current.push({
+				tool: "back",
+				brushSize: 0,
+				color: "",
+				points: []
+			});
 			forwardRef.current.push(curr);
 		},
 		goForward:()=>{
@@ -83,6 +90,12 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 			let newData = new ImageData(new Uint8ClampedArray(forw), imageData.width, imageData.height);
 			context.putImageData(newData,0,0);
 			imageRef.current?.getLayer()?.batchDraw();
+			props.lines.current.push({
+				tool: "forward",
+				brushSize: 0,
+				color: "",
+				points: []
+			})
 			backBuffer.current.push(curr);
 		}
 	}))
@@ -92,7 +105,6 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 			return;
 		}
 		const image = imageRef.current;
-		context.globalCompositeOperation = props.tool === 'eraser' ? 'destination-out' : 'source-over';
 		context.beginPath();
 		context.moveTo(lastPos.current.x, lastPos.current.y);
 		context.lineTo(point.x, point.y);
@@ -162,7 +174,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	}
 
 	const handleMouseDown = (e: any) => {
-		if (props.tool === "eyedropper" || !context)
+		if (props.disabled||props.tool === "eyedropper" || !context)
 			return;
 		isDrawing.current = true;
 		forwardRef.current=[];
@@ -170,6 +182,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 		if (backBuffer.current.length>bufferLimit)
 			backBuffer.current.shift();
 		context.lineWidth = props.tool == "eraser" ? baseEraserSize * props.brushSize : baseBrushSize * props.brushSize;
+		context.globalCompositeOperation = props.tool === 'eraser' ? 'destination-out' : 'source-over';
 		context.strokeStyle = props.color;
 		const point = e.target.getStage().getPointerPosition();
 		if (point) {

@@ -7,12 +7,10 @@ namespace VerseSketch.Backend.Repositories;
 public class InstructionRepository
 {
     private readonly IMongoCollection<Instruction> _instructions;
-    private readonly RoomsRepository _roomsRepository;
 
-    public InstructionRepository(IOptions<MongoDBSettings> settings,IMongoClient mongoClient,RoomsRepository roomsRepository)
+    public InstructionRepository(IOptions<MongoDBSettings> settings,IMongoClient mongoClient)
     {
         _instructions=mongoClient.GetDatabase(settings.Value.DatabaseName).GetCollection<Instruction>("instructions");
-        _roomsRepository = roomsRepository;
     }
 
     public async Task CreateManyAsync(List<Instruction> instructions)
@@ -20,12 +18,12 @@ public class InstructionRepository
         await _instructions.InsertManyAsync(instructions);
     }
 
-    public async Task<List<string>> GetLyricsToDrawForStageAsync(string playerId, int stage)
+    public async Task<Lyrics> GetLyricsToDrawForStageAsync(string playerId, int stage)
     {
         return await _instructions.Find(i=>i.PlayerId==playerId).Project(i=>i.LyrycsToDraw[stage-1]).FirstOrDefaultAsync();
     }
 
-    public async Task UpdatePlayersLyricsAsync(string playerId, List<string> lyrics, int pos)
+    public async Task UpdatePlayersLyricsAsync(string playerId, Lyrics lyrics, int pos)
     {
         UpdateDefinition<Instruction> update = Builders<Instruction>.Update.Set(i => i.LyrycsToDraw[pos], lyrics);
         await _instructions.UpdateOneAsync(i => i.PlayerId == playerId, update);

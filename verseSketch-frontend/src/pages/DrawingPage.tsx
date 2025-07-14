@@ -22,7 +22,7 @@ interface IDrawingPageProps { };
 
 export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const [color, setColor] = useState<string>("#000000");
-    const [tool, setTool] = useState<string>("pen");
+    const [tool, setTool] = useState<string>("brush");
     const [widthLevel, setWidthLevel] = useState<WindowLevel>(WindowLevel.XS);
     const [brushSize, setBrushSize] = useState<number>(1);
     const recentColorsModel = useRecentColorsContext();
@@ -32,6 +32,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const bufferColor=useRef<string>(color);
     const canvasRef=useRef<CanvasHandle|null>(null)
     const signalRModel=useSignalRConnectionContext();
+    const forPlayerId=useRef<string>("");
     const [lines,setLines]=useState<string[]>([]);
     const navigate=useNavigate();
     // Change activeToolButton to an object with tool names as keys and booleans as values
@@ -42,6 +43,8 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         eyedropper: false,
     });
     const { open,isSupported } = useEyeDropper()
+    const [submitLoading,setSubmitLoading]=useState<boolean>(false);
+    const [isSubmitted,setIsSubmitted]=useState<boolean>(false);
 
 
     async function handleEyedropper() {
@@ -96,6 +99,34 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         setActiveToolButton({ ...activeToolButton });
     }
 
+    async function onSubmit() {
+        if (!signalRModel.roomModelRef.current||!signalRModel.connection.current)
+            return;
+
+        setSubmitLoading(true);
+        if (isSubmitted){
+            try {
+                await signalRModel.connection.current.invoke("PlayerCanceledTask",signalRModel.roomModelRef.current.title);
+            }
+            catch (e:any) {
+                errorModals.errorModalClosable.current?.show("An error occured while trying to edit drawing.")
+                setSubmitLoading(false);
+            }
+            setIsSubmitted(false);
+        }
+        else {
+            try {
+                await signalRModel.connection.current.invoke("SendImage",{image:imageRef.current,playerId:signalRModel.roomModelRef.current.playerId,lyrics:lines});
+            }
+            catch (e:any) {
+                errorModals.errorModalClosable.current?.show("An error occured while trying to submit drawing.")
+                setSubmitLoading(false);
+            }
+            setIsSubmitted(true);
+        }
+        setSubmitLoading(false);
+    }
+
     async function getLines()
     {
         let response=null;
@@ -116,6 +147,8 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         if (!response.ok) {
             errorModals.errorModal.current?.show(data.message);
         }
+        console.log("Data received",data);
+        forPlayerId.current=data.forPlayersId;
         setLines(data.lyrics);
     }
 
@@ -148,7 +181,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                 </div>
                 <Row gutter={[20, 10]} style={{ width: "100%", marginTop: "3vh" }}>
                     <Col xs={24} md={20} xxl={22}>
-                        <Canvas ref={canvasRef} color={color} tool={tool} brushSize={brushSize} lines={imageRef} />
+                        <Canvas disabled={isSubmitted} ref={canvasRef} color={color} tool={tool} brushSize={brushSize} lines={imageRef} />
                     </Col>
                     <Col xs={24} md={4} xxl={2}>
                         <div className={widthLevel <= WindowLevel.SM ? "palette-mobile" : "palette"}>
@@ -204,7 +237,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                 </div>
                 {widthLevel <= WindowLevel.SM ?
                     <div style={{ display: "flex", justifyContent: "end", width: "100%", marginTop: "2vh" }}>
-                        <SubmitButton loading={false} isSubmitted={false} />
+                        <SubmitButton onClick={onSubmit} loading={submitLoading} isSubmitted={isSubmitted} />
                     </div>
                     : ""}
             </div>
