@@ -42,4 +42,6 @@ public class Storyline
     public string PlayerId { get; set; }
     [BsonElement("images")]
     public List<LyricsImage> Images { get; set; }
+    [BsonElement("roomTitle")]
+    public string RoomTitle { get; set; }
 }

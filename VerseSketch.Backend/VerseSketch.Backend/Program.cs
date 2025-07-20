@@ -17,6 +17,8 @@ builder.Services.AddSignalR(options =>
 {
     options.ClientTimeoutInterval = TimeSpan.FromSeconds(5);
     options.KeepAliveInterval = TimeSpan.FromSeconds(3);
+    options.EnableDetailedErrors = true;
+    options.MaximumReceiveMessageSize = 5 * 1024 * 1024;
 });
 builder.Services.AddScoped<RoomsRepository>();
 builder.Services.AddScoped<PlayerRepository>();

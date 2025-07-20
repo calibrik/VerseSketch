@@ -6,7 +6,8 @@ interface ISubmitButtonProps {
     style?: React.CSSProperties;
     loading:boolean;
     isSubmitted:boolean;
-    onClick?:()=>Promise<void>
+    onClick?:()=>Promise<void>;
+    disabled?:boolean;
 };
 
 export const SubmitButton: FC<ISubmitButtonProps> = (props) => {
@@ -27,6 +28,8 @@ export const SubmitButton: FC<ISubmitButtonProps> = (props) => {
             icon={icon}
             className="secondary-button"
             style={props.style}
+            onClick={props.onClick}
+            disabled={props.loading||props.disabled}
             htmlType={"submit"}>
                 {props.isSubmitted?"EDIT":"SUBMIT"}
         </BaseButton>

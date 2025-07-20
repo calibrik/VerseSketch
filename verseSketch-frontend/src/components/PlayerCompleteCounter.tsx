@@ -25,10 +25,16 @@ export const PlayerCompleteCounter: FC<IPlayerCompleteCounterProps> = (props) =>
         });
         signalRModel.connection.current?.on("PlayerCanceledTask", () => {
             completedPlayersRef.current--;
+            completedPlayersRef.current=Math.max(0,completedPlayersRef.current);
             setCompletedPlayers(completedPlayersRef.current);
         });
         signalRModel.connection.current?.on("PlayerLeft",(_)=>{
+            if (completedPlayersRef.current==totalPlayersRef.current-1&& signalRModel.roomModelRef.current?.isPlayerAdmin) {
+                signalRModel.connection.current?.invoke("PlayersDoneWithTask");
+                return;
+            }
             totalPlayersRef.current--;
+            totalPlayersRef.current=Math.max(0,totalPlayersRef.current);
             setTotalPlayers(totalPlayersRef.current);
         })
         return () => {

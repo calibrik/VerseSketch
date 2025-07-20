@@ -41,29 +41,28 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     }
 
     async function onSubmit(value:IInsertLyricsFormModel){
+        if (!signalRModel.roomModelRef.current||!signalRModel.connection.current)
+            return;
         setSubmitLoading(true);
-        let isGood:boolean=true;
         if (!isSubmitted) {
             try {
-                await signalRModel.connection.current?.invoke("SendLyrics", value.lyrics)
+                await signalRModel.connection.current.invoke("SendLyrics", value.lyrics);
+                setIsSubmitted(true);
             }
             catch (e:any) {
                 errorModals.errorModalClosable.current?.show("Failed to send lyrics to the server.");
-                isGood=false;
             }
         }
         else {
             try {
-                await signalRModel.connection.current?.invoke("PlayerCanceledTask", model?.title)
+                await signalRModel.connection.current.invoke("PlayerCanceledTask", model?.title)
+                setIsSubmitted(false);
             }
             catch (e:any) {
                 errorModals.errorModalClosable.current?.show("Failed to cancel submission.");
-                isGood=false;
             }
         }
         setSubmitLoading(false);
-        if (isGood)
-            setIsSubmitted(prev=>(!prev));
     }
 
     function triggerUpdate(model:RoomModel|null) {
@@ -92,7 +91,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
             <div className="container-small">
                 <PageTitle style={{marginTop:"3vh"}}>Past {(model.playersCount-1)*2} lines of lyrics of your song!</PageTitle>
                 <Form
-                    onFinish={onSubmit} 
+                    onFinish={onSubmit}
                     style={{width:"100%",display:"flex", flexDirection: "column", alignItems: "center"}}
                     name="insert-lyrics"
                     initialValues={{lyrics:""}}

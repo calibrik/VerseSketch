@@ -33,7 +33,7 @@ public class GameController:ControllerBase
         if (room.Stage < 1)
             return Unauthorized(new { message = $"Invalid request." });
         Lyrics lyrics = await _instructionRepository.GetLyricsToDrawForStageAsync(player._Id, room.Stage);
-        return Ok(new { lyrics });
+        return Ok(new { lyrics=lyrics });
     }
     
     

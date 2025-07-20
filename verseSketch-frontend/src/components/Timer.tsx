@@ -9,6 +9,11 @@ export const Timer: FC<ITimerProps> = (_) => {
     const [percent, setPercent] = useState<number>(0);
     const signalRModel = useSignalRConnectionContext();
 
+    async function timeIsUp()
+    {
+        await signalRModel.connection.current?.invoke("TimeIsUp");
+    }
+
     useEffect(() => {
         let startTime = Date.now();
         const interval = setInterval(() => {
@@ -19,7 +24,11 @@ export const Timer: FC<ITimerProps> = (_) => {
             const elapsed = Date.now() - startTime;
             const newPercent = Math.min((elapsed / (signalRModel.roomModelRef.current.timeToDraw * 1000)) * 100, 100);
             setPercent(newPercent);
-            if (newPercent >= 100) {
+            if (elapsed-startTime>=(signalRModel.roomModelRef.current.timeToDraw * 1000)) {
+                if (signalRModel.roomModelRef.current.isPlayerAdmin)
+                {
+                    timeIsUp();
+                }
                 clearInterval(interval);
             }
         }, 1000);

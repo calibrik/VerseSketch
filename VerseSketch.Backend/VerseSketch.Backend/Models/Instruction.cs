@@ -19,4 +19,6 @@ public class Instruction
     public string PlayerId { get; set; }
     [BsonElement("lyricsToDraw")]
     public List<Lyrics> LyrycsToDraw { get; set; }
+    [BsonElement("roomTitle")]
+    public string RoomTitle { get; set; }
 }

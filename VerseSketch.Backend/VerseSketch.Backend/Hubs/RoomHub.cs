@@ -22,6 +22,7 @@ public interface IRoomHub
     Task StageSet(int stage);
     Task PlayerCompletedTask();
     Task PlayerCanceledTask();
+    Task TimeIsUp();
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -87,6 +88,31 @@ public class RoomHub:Hub<IRoomHub>
         }
         await Clients.Clients(Context.ConnectionId).ReceiveRoom(model);
         await Groups.AddToGroupAsync(Context.ConnectionId,roomTitle);
+    }
+
+    public async Task TimeIsUp()
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+        {
+            throw new HubException("You are not in this room.");
+        }
+        string playerId = Context.User.FindFirst("PlayerId").Value;
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
+        Room? room=await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (player == null)
+        {
+            throw new HubException("Player not found.");
+        }
+        if (room == null)
+        {
+            throw new HubException("Room not found.");
+        }
+        if (room.AdminId != playerId)
+        {
+            throw new HubException("You are not an admin in this room.");
+        }
+        
+        await Clients.Group(player.RoomTitle).TimeIsUp();
     }
 
     public async Task Join(string roomTitle)
@@ -263,28 +289,28 @@ public class RoomHub:Hub<IRoomHub>
         await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
         List<string> playerIds = await _playerRepository.GetPlayersIdsInRoomAsync(room.Title);
         List<Instruction> instructions = new List<Instruction>();
+        List<Storyline> storylines = new List<Storyline>();
         foreach (string id in playerIds)
         {
             instructions.Add(new Instruction
             {
                 PlayerId = id,
-                LyrycsToDraw = Enumerable.Repeat<Lyrics>(new Lyrics
+                LyrycsToDraw = Enumerable.Repeat(new Lyrics
                 {
                     FromPlayerId = "",
                     Lines = ["",""]
                 }, room.PlayersCount - 1).ToList(),
+                RoomTitle=room.Title,
+            });
+            storylines.Add(new Storyline
+            {
+                PlayerId = id,
+                Images=Enumerable.Repeat(new LyricsImage(),room.PlayersCount-1).ToList(),
+                RoomTitle=room.Title,
             });
         }
         await _instructionRepository.CreateManyAsync(instructions);
-        List<Storyline> storylines = new List<Storyline>();
-        foreach (string id in playerIds)
-        {
-            storylines.Add(new Storyline
-            {
-                PlayerId = "",
-                Images=Enumerable.Repeat(new LyricsImage(),room.PlayersCount-1).ToList(),
-            });
-        }
+        await _storylineRepository.CreateManyAsync(storylines);
         await Clients.Group(player.RoomTitle).StageSet(0);
     }
 

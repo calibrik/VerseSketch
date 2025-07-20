@@ -22,7 +22,7 @@ interface IDrawingPageProps { };
 
 export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const [color, setColor] = useState<string>("#000000");
-    const [tool, setTool] = useState<string>("brush");
+    const [tool, setTool] = useState<string>("pen");
     const [widthLevel, setWidthLevel] = useState<WindowLevel>(WindowLevel.XS);
     const [brushSize, setBrushSize] = useState<number>(1);
     const recentColorsModel = useRecentColorsContext();
@@ -32,7 +32,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const bufferColor=useRef<string>(color);
     const canvasRef=useRef<CanvasHandle|null>(null)
     const signalRModel=useSignalRConnectionContext();
-    const forPlayerId=useRef<string>("");
+    const fromPlayerId=useRef<string>("");
     const [lines,setLines]=useState<string[]>([]);
     const navigate=useNavigate();
     // Change activeToolButton to an object with tool names as keys and booleans as values
@@ -45,6 +45,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const { open,isSupported } = useEyeDropper()
     const [submitLoading,setSubmitLoading]=useState<boolean>(false);
     const [isSubmitted,setIsSubmitted]=useState<boolean>(false);
+    const [isTimeUp,setIsTimeUp]=useState<boolean>(false);
 
 
     async function handleEyedropper() {
@@ -107,24 +108,23 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         if (isSubmitted){
             try {
                 await signalRModel.connection.current.invoke("PlayerCanceledTask",signalRModel.roomModelRef.current.title);
+                setIsSubmitted(false);
             }
             catch (e:any) {
                 errorModals.errorModalClosable.current?.show("An error occured while trying to edit drawing.")
-                setSubmitLoading(false);
             }
-            setIsSubmitted(false);
         }
         else {
             try {
-                await signalRModel.connection.current.invoke("SendImage",{image:imageRef.current,playerId:signalRModel.roomModelRef.current.playerId,lyrics:lines});
+                await signalRModel.connection.current.invoke("SendImage",{image:imageRef.current,playerId:signalRModel.roomModelRef.current.playerId,lyrics:lines},fromPlayerId.current);
+                setIsSubmitted(true);
             }
             catch (e:any) {
                 errorModals.errorModalClosable.current?.show("An error occured while trying to submit drawing.")
-                setSubmitLoading(false);
             }
-            setIsSubmitted(true);
         }
         setSubmitLoading(false);
+
     }
 
     async function getLines()
@@ -148,22 +148,33 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
             errorModals.errorModal.current?.show(data.message);
         }
         console.log("Data received",data);
-        forPlayerId.current=data.forPlayersId;
-        setLines(data.lyrics);
+        fromPlayerId.current=data.lyrics.fromPlayerId;
+        setLines(data.lyrics.lines);
+    }
+
+    async function forceSubmit()
+    {
+        if (!signalRModel.roomModelRef.current||!signalRModel.connection.current)
+            return;
+        setIsTimeUp(true);
+        await signalRModel.connection.current.invoke("SendImage",{image:imageRef.current,playerId:signalRModel.roomModelRef.current.playerId,lyrics:lines},fromPlayerId.current);
+        setIsSubmitted(true);
     }
 
     useEffect(() => {
-        if (!signalRModel.roomModelRef.current||signalRModel.roomModelRef.current.stage<1||!signalRModel.connection.current) {
-            navigate("/",{replace:true});
-            return;
+            if (!signalRModel.roomModelRef.current||signalRModel.roomModelRef.current.stage<1||!signalRModel.connection.current) {
+                navigate("/",{replace:true});
+                return;
+            }
+            getLines();
+            onResize();
+            signalRModel.connection.current.on("TimeIsUp",forceSubmit);
+            window.addEventListener("resize", onResize);
+            return () => {
+                window.removeEventListener("resize", onResize);
+                signalRModel.connection.current?.off("TimeIsUp",forceSubmit);
+            }
         }
-        getLines();
-        onResize();
-        window.addEventListener("resize", onResize);
-        return () => {
-            window.removeEventListener("resize", onResize);
-        }
-    }
         , []);
 
     if (lines.length==0)
@@ -181,7 +192,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                 </div>
                 <Row gutter={[20, 10]} style={{ width: "100%", marginTop: "3vh" }}>
                     <Col xs={24} md={20} xxl={22}>
-                        <Canvas disabled={isSubmitted} ref={canvasRef} color={color} tool={tool} brushSize={brushSize} lines={imageRef} />
+                        <Canvas disabled={isSubmitted||isTimeUp} ref={canvasRef} color={color} tool={tool} brushSize={brushSize} lines={imageRef} />
                     </Col>
                     <Col xs={24} md={4} xxl={2}>
                         <div className={widthLevel <= WindowLevel.SM ? "palette-mobile" : "palette"}>
@@ -199,7 +210,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                                 {widthLevel <= WindowLevel.SM ?
                                     <Flex gap={10}>
                                         {recentColors.slice(0, 6).map((c, index) => (
-                                            <DisabledColorPicker key={index} color={c} onClick={() => handleColorChange(c)} />
+                                            <DisabledColorPicker key={index} color={c} onClick={() =>handleColorChange(c)} />
                                         ))}
                                     </Flex>
                                     : <Row style={{ width: "100%" }} gutter={[10, 10]}>
@@ -226,18 +237,18 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                             selectTool("eyedropper"); 
                             await handleEyedropper(); 
                         }} />
-                        <ToolButton icon={<ArrowLeftOutlined className="button-icon-lg"/>} active={false} onClick={canvasRef.current?.goBack}/>
-                        <ToolButton icon={<ArrowRightOutlined className="button-icon-lg"/>} active={false} onClick={canvasRef.current?.goForward}/>
+                        <ToolButton icon={<ArrowLeftOutlined className="button-icon-lg"/>} active={false} onClick={()=>{if (!isSubmitted) canvasRef.current?.goBack();}}/>
+                        <ToolButton icon={<ArrowRightOutlined className="button-icon-lg"/>} active={false} onClick={()=>{if (!isSubmitted) canvasRef.current?.goForward();}}/>
                     </div>
                     {widthLevel > WindowLevel.SM ?
                         <div style={{ display: "flex", justifyContent: "end", width: "100%", position: "absolute", right: 26, zIndex: 1 }}>
-                            <SubmitButton loading={false} isSubmitted={false} />
+                            <SubmitButton disabled={isTimeUp} onClick={onSubmit} loading={submitLoading} isSubmitted={isSubmitted} />
                         </div>
                         : ""}
                 </div>
                 {widthLevel <= WindowLevel.SM ?
                     <div style={{ display: "flex", justifyContent: "end", width: "100%", marginTop: "2vh" }}>
-                        <SubmitButton onClick={onSubmit} loading={submitLoading} isSubmitted={isSubmitted} />
+                        <SubmitButton disabled={isTimeUp} onClick={onSubmit} loading={submitLoading} isSubmitted={isSubmitted} />
                     </div>
                     : ""}
             </div>

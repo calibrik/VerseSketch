@@ -247,6 +247,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	}
 		, []);
 
+	let className=props.disabled? "wrapper disabled":"wrapper";
 	return (
 		<div
 			ref={containerRef}
@@ -254,7 +255,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 			style={props.style}
 		>
 			<Stage
-				className="wrapper"
+				className={className}
 				width={size.width}
 				height={size.height}
 				scaleX={scale.x}

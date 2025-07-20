@@ -10,11 +10,15 @@ public class RoomsRepository
 {
     private readonly IMongoCollection<Room> _rooms;
     private readonly IMongoCollection<Player> _players;
+    private readonly IMongoCollection<Storyline> _storylines;
+    private readonly IMongoCollection<Instruction> _instructions;
     
     public RoomsRepository(IOptions<MongoDBSettings> settings,IMongoClient mongoClient)
     {
         _rooms=mongoClient.GetDatabase(settings.Value.DatabaseName).GetCollection<Room>("rooms");
         _players=mongoClient.GetDatabase(settings.Value.DatabaseName).GetCollection<Player>("players");
+        _storylines=mongoClient.GetDatabase(settings.Value.DatabaseName).GetCollection<Storyline>("storylines");
+        _instructions=mongoClient.GetDatabase(settings.Value.DatabaseName).GetCollection<Instruction>("instructions");
     }
 
     public async Task CreateRoomAsync(Room room)
@@ -56,5 +60,7 @@ public class RoomsRepository
     {
         await _rooms.DeleteOneAsync(r=>r.Title==roomTitle);
         await _players.DeleteManyAsync(p=>p.RoomTitle==roomTitle);
+        await _storylines.DeleteManyAsync(r=>r.RoomTitle==roomTitle);
+        await _instructions.DeleteManyAsync(r=>r.RoomTitle==roomTitle);
     }
 }
