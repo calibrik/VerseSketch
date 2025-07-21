@@ -22,7 +22,7 @@ public interface IRoomHub
     Task StageSet(int stage);
     Task PlayerCompletedTask();
     Task PlayerCanceledTask();
-    Task TimeIsUp();
+    // Task TimeIsUp();
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -90,30 +90,30 @@ public class RoomHub:Hub<IRoomHub>
         await Groups.AddToGroupAsync(Context.ConnectionId,roomTitle);
     }
 
-    public async Task TimeIsUp()
-    {
-        if (!Context.User.Identity.IsAuthenticated)
-        {
-            throw new HubException("You are not in this room.");
-        }
-        string playerId = Context.User.FindFirst("PlayerId").Value;
-        Player? player = await _playerRepository.GetPlayerAsync(playerId);
-        Room? room=await _roomsRepository.GetRoomAsync(player.RoomTitle);
-        if (player == null)
-        {
-            throw new HubException("Player not found.");
-        }
-        if (room == null)
-        {
-            throw new HubException("Room not found.");
-        }
-        if (room.AdminId != playerId)
-        {
-            throw new HubException("You are not an admin in this room.");
-        }
-        
-        await Clients.Group(player.RoomTitle).TimeIsUp();
-    }
+    // public async Task TimeIsUp()
+    // {
+    //     if (!Context.User.Identity.IsAuthenticated)
+    //     {
+    //         throw new HubException("You are not in this room.");
+    //     }
+    //     string playerId = Context.User.FindFirst("PlayerId").Value;
+    //     Player? player = await _playerRepository.GetPlayerAsync(playerId);
+    //     Room? room=await _roomsRepository.GetRoomAsync(player.RoomTitle);
+    //     if (player == null)
+    //     {
+    //         throw new HubException("Player not found.");
+    //     }
+    //     if (room == null)
+    //     {
+    //         throw new HubException("Room not found.");
+    //     }
+    //     if (room.AdminId != playerId)
+    //     {
+    //         throw new HubException("You are not an admin in this room.");
+    //     }
+    //     
+    //     await Clients.Group(player.RoomTitle).TimeIsUp();
+    // }
 
     public async Task Join(string roomTitle)
     {

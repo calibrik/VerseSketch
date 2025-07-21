@@ -2,16 +2,19 @@ import { Progress } from "antd";
 import { FC, useEffect, useState } from "react";
 import { Color } from "../misc/colors";
 import { useSignalRConnectionContext } from "./SignalRProvider";
+import { delay } from "../misc/MiscFunctions";
 interface ITimerProps {
+    onTimeIsUp:()=>void
 };
 
-export const Timer: FC<ITimerProps> = (_) => {
+export const Timer: FC<ITimerProps> = (props) => {
     const [percent, setPercent] = useState<number>(0);
     const signalRModel = useSignalRConnectionContext();
 
-    async function timeIsUp()
+    async function onTimeIsUp()
     {
-        await signalRModel.connection.current?.invoke("TimeIsUp");
+        await delay(1000);
+        props.onTimeIsUp();
     }
 
     useEffect(() => {
@@ -24,11 +27,8 @@ export const Timer: FC<ITimerProps> = (_) => {
             const elapsed = Date.now() - startTime;
             const newPercent = Math.min((elapsed / (signalRModel.roomModelRef.current.timeToDraw * 1000)) * 100, 100);
             setPercent(newPercent);
-            if (elapsed-startTime>=(signalRModel.roomModelRef.current.timeToDraw * 1000)) {
-                if (signalRModel.roomModelRef.current.isPlayerAdmin)
-                {
-                    timeIsUp();
-                }
+            if (elapsed>=(signalRModel.roomModelRef.current.timeToDraw * 1000)) {
+                onTimeIsUp();
                 clearInterval(interval);
             }
         }, 1000);

@@ -168,11 +168,9 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
             }
             getLines();
             onResize();
-            signalRModel.connection.current.on("TimeIsUp",forceSubmit);
             window.addEventListener("resize", onResize);
             return () => {
                 window.removeEventListener("resize", onResize);
-                signalRModel.connection.current?.off("TimeIsUp",forceSubmit);
             }
         }
         , []);
@@ -182,7 +180,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
 
     return (
         <>
-            <Timer />
+            <Timer onTimeIsUp={forceSubmit} />
             <StageCounter />
             <PlayerCompleteCounter />
             <div className="container-mid">
