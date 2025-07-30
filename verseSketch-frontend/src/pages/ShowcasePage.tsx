@@ -1,9 +1,11 @@
 import { Col, Row } from "antd";
-import { FC } from "react";
+import { FC, useRef } from "react";
 import { PlayersList } from "../components/PlayersList";
 import { ShowcaseCanvas } from "../components/ShowcaseCanvas";
 import { SkipButton } from "../components/buttons/SkipButton";
 import { PlayerModel } from "../components/SignalRProvider";
+import { testImage1, testImage2 } from "../misc/testImage";
+import { ILine } from "../components/Canvas";
 interface IShowcasePageProps {};
 
 export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
@@ -22,6 +24,11 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         isAdmin: false
     });
 
+    const msg=new SpeechSynthesisUtterance(`Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love\nFuck apologies, I wanna see y'all geeked up`);
+    msg.rate=1.8
+    window.speechSynthesis.speak(msg);
+
+
     return (
         <div className="container-mid">
             <Row style={{marginTop:"2vh",width:"100%"}} gutter={[20, 5]}>
@@ -32,9 +39,8 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                         loading={false} 
                         playersCount={10} 
                         maxPlayersCount={10} 
-                        selectedPlayerId={"player3"}
-                        isPlayerAdmin
-                        showKickButton/>
+                        selectedPlayerId={"player2"}
+                        isPlayerAdmin/>
                 </Col>
                 <Col xs={24} md={18} xxl={20}>
                     <div className="showcase-container">
@@ -42,7 +48,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                             <h1 className="lyrics-2line">Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love</h1>
                             <h1 className="lyrics-2line">Fuck apologies, I wanna see y'all geeked up</h1>
                         </div>
-                        <ShowcaseCanvas style={{marginTop:"1vh"}}/>
+                        <ShowcaseCanvas lines={testImage1} style={{marginTop:"1vh"}}/>
                     </div>
                 </Col>
             </Row>

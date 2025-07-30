@@ -11,7 +11,7 @@ interface ICanvasProps {
 	disabled:boolean;
 	style?: CSSProperties
 };
-type Point = {
+export type Point = {
 	x: number;
 	y: number
 }
@@ -28,8 +28,11 @@ export type ILine = {
 	points: Point[];
 }
 
-const CANVAS_BASE_WIDTH = 1600;
-const CANVAS_BASE_HEIGHT = 800;
+export const CANVAS_BASE_WIDTH = 1600;
+export const CANVAS_BASE_HEIGHT = 800;
+export const CANVAS_BUFFER_LIMIT=15;
+export const CANVAS_BASE_BRUSH_SIZE = 2.5;
+export const CANVAS_BASE_ERASER_SIZE = 10;
 
 export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	const isDrawing = useRef(false);
@@ -37,13 +40,9 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	const [size, setSize] = useState<{ width: number, height: number }>({ width: 0, height: 0 });
 	const [scale, setScale] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
 	const lastPos = useRef<Point>({ x: 0, y: 0 });
-	const baseBrushSize = 2.5;
-	const baseEraserSize = 10;
 	const imageRef = useRef<KonvaImage>(null);
-	const drawingRef=useRef<number>(0);
 	const backBuffer=useRef<ArrayBuffer[]>([]);
 	const forwardRef=useRef<ArrayBuffer[]>([]);
-	const bufferLimit=15;
 	
 
 	const { canvas, context } = useMemo(() => {
@@ -179,9 +178,9 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 		isDrawing.current = true;
 		forwardRef.current=[];
 		backBuffer.current.push(new Uint8Array(context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT).data).buffer);
-		if (backBuffer.current.length>bufferLimit)
+		if (backBuffer.current.length>CANVAS_BUFFER_LIMIT)
 			backBuffer.current.shift();
-		context.lineWidth = props.tool == "eraser" ? baseEraserSize * props.brushSize : baseBrushSize * props.brushSize;
+		context.lineWidth = props.tool == "eraser" ? CANVAS_BASE_ERASER_SIZE * props.brushSize : CANVAS_BASE_BRUSH_SIZE * props.brushSize;
 		context.globalCompositeOperation = props.tool === 'eraser' ? 'destination-out' : 'source-over';
 		context.strokeStyle = props.color;
 		const point = e.target.getStage().getPointerPosition();
@@ -205,7 +204,6 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 
 	const handleMouseUp = () => {
 		isDrawing.current = false;
-		clearTimeout(drawingRef.current);
 	};
 
 	const handleMouseMove = async (e: any) => {
@@ -268,20 +266,6 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 				onTouchEnd={handleMouseUp}
 			>
 				<Layer>
-					{/* {lines.map((line, i) => (
-            <Line
-              key={i}
-              points={line.points}
-              stroke={line.color}
-              strokeWidth={line.tool=="pen"?line.brushSize*baseBrushSize:line.brushSize*baseEraserSize}
-              tension={0.5}
-              lineCap="round"
-              lineJoin="round"
-              globalCompositeOperation={
-                line.tool === 'eraser' ? 'destination-out' : 'source-over'
-              }
-            />
-          ))} */}
 					<Image
 						ref={imageRef}
 						image={canvas}
