@@ -3,10 +3,12 @@ import { Stage, Layer, Image } from "react-konva";
 import { CANVAS_BASE_BRUSH_SIZE, CANVAS_BASE_ERASER_SIZE, CANVAS_BASE_HEIGHT, CANVAS_BASE_WIDTH, CANVAS_BUFFER_LIMIT, ILine, Point } from "./Canvas";
 import { Image as KonvaImage } from "konva/lib/shapes/Image";
 import { delay } from "../misc/MiscFunctions";
+import { ShowButton } from "./buttons/ShowButton";
 
 interface IShowcaseCanvasProps {
 	style?: React.CSSProperties;
 	lines: ILine[];
+	onClick?: () => Promise<void>;
 };
 
 export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
@@ -15,8 +17,8 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	const [scale, setScale] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
 	const lastPos = useRef<Point>({ x: 0, y: 0 });
 	const imageRef = useRef<KonvaImage>(null);
-	const timeToDraw=4000;
-
+	const timeToDraw=2000;
+	const [isStarted, setIsStarted] = useState(false);
 	const backBuffer = useRef<ArrayBuffer[]>([]);
 	const forwardRef = useRef<ArrayBuffer[]>([]);
 
@@ -33,6 +35,12 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 		context.imageSmoothingEnabled = false;
 		return { canvas, context };
 	}, []);
+
+	async function onStartClick() {
+		setIsStarted(true);
+		await props.onClick?.();
+		setIsStarted(false);
+	}
 
 	function goBack() {
 		if (!context || backBuffer.current.length == 0)
@@ -141,7 +149,7 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	}
 
 	async function drawLines() {
-		if (!context)
+		if (!context||!isStarted)
 			return;
 
 		let pointsCount=0;
@@ -186,7 +194,7 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 				if (++drew==batch){
 					imageRef.current?.getLayer()?.batchDraw();
 					drew=0;
-					await delay(1);
+					await delay(5);
 				}
 			}
 			drawTo(line.points[line.points.length-1]);
@@ -198,6 +206,7 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	useEffect(() => {
 		forwardRef.current=[];
 		backBuffer.current=[];
+		context?.clearRect(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT);
 		drawLines();
 	}, [props.lines])
 
@@ -210,19 +219,20 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	}
 		, []);
 
+	let canvasContainerType=isStarted ? "canvas-container" : "canvas-container disabled";
 	return (
 		<div
 			ref={containerRef}
-			className="canvas-container"
+			className={canvasContainerType}
 			style={props.style}
 		>
+			{isStarted?
 			<Stage
 				className="wrapper"
 				width={size.width}
 				height={size.height}
 				scaleX={scale.x}
-				scaleY={scale.y}
-			>
+				scaleY={scale.y}>
 				<Layer>
 					<Image
 						ref={imageRef}
@@ -231,7 +241,8 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 						y={0}
 					/>
 				</Layer>
-			</Stage>
+			</Stage>:
+			<ShowButton/>}
 		</div>
 	);
 };

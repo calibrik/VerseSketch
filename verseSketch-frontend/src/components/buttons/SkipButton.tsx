@@ -12,7 +12,7 @@ export const SkipButton: FC<ISkipButtonProps> = (props) => {
         iconPosition="end"
         icon={<StepForwardOutlined className="button-icon"/>}
         {...props}>
-            SKIP
+            SKIP PLAYER
         </BaseButton>
     );
 }

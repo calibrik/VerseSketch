@@ -716,12 +716,20 @@ html{
   display: inline-block;
 }
 
+.canvas-container.disabled{
+  background-color: #f2d0f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .canvas-container .wrapper.disabled{
   background-color: #fae4ff;
 }
 .canvas-container .wrapper.disabled:hover{
   cursor: not-allowed;
 }
+
+.canvas-container.disabled,
 .canvas-container canvas{
   border: 2px solid #7C009B !important;
 }

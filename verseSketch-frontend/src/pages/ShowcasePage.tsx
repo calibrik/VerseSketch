@@ -1,19 +1,49 @@
 import { Col, Row } from "antd";
-import { FC, useRef } from "react";
+import { FC, useEffect, useState } from "react";
 import { PlayersList } from "../components/PlayersList";
 import { ShowcaseCanvas } from "../components/ShowcaseCanvas";
 import { SkipButton } from "../components/buttons/SkipButton";
 import { PlayerModel } from "../components/SignalRProvider";
 import { testImage1, testImage2 } from "../misc/testImage";
 import { ILine } from "../components/Canvas";
-interface IShowcasePageProps {};
+import { delay } from "../misc/MiscFunctions";
+interface IShowcasePageProps { };
+
+type LyricImage = {
+    lyrics: string[];
+    image: ILine[];
+    playerId: string;
+}
 
 export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
-
-    let players:PlayerModel[]=[];
+    const lyricImages: LyricImage[] = [
+        {
+            lyrics: [`Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love`, `Fuck apologies, I wanna see y'all geeked up`],
+            image: testImage1,
+            playerId: "player1"
+        },
+        {
+            lyrics: [`Don't acknowledge me, then maybe we can say it's fair`, `Take it to the internet and I'ma take it there`],
+            image: testImage2,
+            playerId: "player2"
+        },
+        {
+            lyrics: [`Miss my uncle Lil' Mane, he said that he would kill me if I didn't make it`, `Now I'm possessed by a spirit and they can't take it`],
+            image: testImage1,
+            playerId: "player1"
+        },
+        {
+            lyrics: [`Used to bump The Carter III, I held my Rollie chain proud`, `Irony, I think my hard work let Lil Wayne down`],
+            image: testImage2,
+            playerId: "player2"
+        },
+    ];
+    const [currImg, setCurrImg] = useState<ILine[]>([]);
+    const [currLyrics, setCurrLyrics] = useState<string[]>([]);
+    let players: PlayerModel[] = [];
     for (let i = 0; i < 8; i++) {
         players.push({
-            id: `player${i+1}`,
+            id: `player${i + 1}`,
             nickname: `qwertyu`,
             isAdmin: i === 0 // First player is admin
         });
@@ -24,36 +54,69 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         isAdmin: false
     });
 
-    const msg=new SpeechSynthesisUtterance(`Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love\nFuck apologies, I wanna see y'all geeked up`);
-    msg.rate=1.8
-    window.speechSynthesis.speak(msg);
+    async function playStoryline() {
+        window.speechSynthesis.cancel();
+        await delay(500);
+        if (window.speechSynthesis.getVoices().length == 0) {
+            await new Promise<void>(resolve => {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    resolve();
+                }
+            });
+        }
+        for (const lyricImage of lyricImages) {
+            setCurrImg(lyricImage.image);
+            setCurrLyrics([lyricImage.lyrics[0], lyricImage.lyrics[1]]);
+            const msg = new SpeechSynthesisUtterance(lyricImage.lyrics[0] + '\n' + lyricImage.lyrics[1]);
+            msg.rate = 1.8;
+            console.log(window.speechSynthesis.getVoices());
+            const voice = window.speechSynthesis.getVoices().find(v => v.name === "Microsoft David - English (United States)");
+            if (voice) {
+                msg.voice = voice;
+            }
+            let p = new Promise<void>((resolve) => {
+                msg.onend = () => {
+                    resolve();
+                };
+            });
+            window.speechSynthesis.speak(msg);
+            await p;
+        }
+    }
+
+    useEffect(() => {
+        playStoryline();
+    }, []);
+
+
 
 
     return (
         <div className="container-mid">
-            <Row style={{marginTop:"2vh",width:"100%"}} gutter={[20, 5]}>
+            {/* {window.speechSynthesis.getVoices()[0].toString()} */}
+            <Row style={{ marginTop: "2vh", width: "100%" }} gutter={[20, 5]}>
                 <Col xs={24} md={6} xxl={4}>
-                    <PlayersList 
-                        players={players} 
-                        roomTitle={"penis"} 
-                        loading={false} 
-                        playersCount={10} 
-                        maxPlayersCount={10} 
+                    <PlayersList
+                        players={players}
+                        roomTitle={"penis"}
+                        loading={false}
+                        playersCount={10}
+                        maxPlayersCount={10}
                         selectedPlayerId={"player2"}
-                        isPlayerAdmin/>
+                        isPlayerAdmin />
                 </Col>
                 <Col xs={24} md={18} xxl={20}>
                     <div className="showcase-container">
                         <div className="header">
-                            <h1 className="lyrics-2line">Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love</h1>
-                            <h1 className="lyrics-2line">Fuck apologies, I wanna see y'all geeked up</h1>
+                            <h1 className="lyrics-2line">{currLyrics[0]}</h1>
+                            <h1 className="lyrics-2line">{currLyrics[1]}</h1>
                         </div>
-                        <ShowcaseCanvas lines={testImage1} style={{marginTop:"1vh"}}/>
+                        <ShowcaseCanvas lines={currImg} style={{ marginTop: "1vh" }} />
                     </div>
                 </Col>
             </Row>
-            <div style={{display:"flex",justifyContent:"end",width:"100%",marginTop:"2vh"}}>
-                <SkipButton style={{marginRight:10}}/>
+            <div style={{ display: "flex", justifyContent: "end", width: "100%", marginTop: "2vh" }}>
+                <SkipButton style={{ marginRight: 10 }} />
             </div>
         </div>
     );
