@@ -10,6 +10,7 @@ export const LeaveWebsiteHandler: FC<ILeaveWebsiteHandlerProps> = (_) => {
 
     async function onUnload()
     {
+        window.speechSynthesis.cancel();
         await leave(signalRModel);
     }
 

@@ -16,30 +16,10 @@ type LyricImage = {
 }
 
 export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
-    const lyricImages: LyricImage[] = [
-        {
-            lyrics: [`Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love`, `Fuck apologies, I wanna see y'all geeked up`],
-            image: testImage1,
-            playerId: "player1"
-        },
-        {
-            lyrics: [`Don't acknowledge me, then maybe we can say it's fair`, `Take it to the internet and I'ma take it there`],
-            image: testImage2,
-            playerId: "player2"
-        },
-        {
-            lyrics: [`Miss my uncle Lil' Mane, he said that he would kill me if I didn't make it`, `Now I'm possessed by a spirit and they can't take it`],
-            image: testImage1,
-            playerId: "player1"
-        },
-        {
-            lyrics: [`Used to bump The Carter III, I held my Rollie chain proud`, `Irony, I think my hard work let Lil Wayne down`],
-            image: testImage2,
-            playerId: "player2"
-        },
-    ];
     const [currImg, setCurrImg] = useState<ILine[]>([]);
-    const [currLyrics, setCurrLyrics] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [currPlayerPlayed, setCurrPlayerPlayed] = useState<number>(0);
+    const [currLyrics, setCurrLyrics] = useState<string[]>(["Prepare to see your own drawings", "for lyrics you wrote!"]);
     let players: PlayerModel[] = [];
     for (let i = 0; i < 8; i++) {
         players.push({
@@ -54,9 +34,37 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         isAdmin: false
     });
 
+    async function getStoryline(): Promise<LyricImage[]> {
+        setLoading(true);
+        await delay(2000);//getting current player's storyline
+        setLoading(false);
+        return [
+            {
+                lyrics: [`Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love`, `Fuck apologies, I wanna see y'all geeked up`],
+                image: testImage1,
+                playerId: "player1"
+            },
+            {
+                lyrics: [`Don't acknowledge me, then maybe we can say it's fair`, `Take it to the internet and I'ma take it there`],
+                image: testImage2,
+                playerId: "player2"
+            },
+            {
+                lyrics: [`Miss my uncle Lil' Mane, he said that he would kill me if I didn't make it`, `Now I'm possessed by a spirit and they can't take it`],
+                image: testImage1,
+                playerId: "player1"
+            },
+            {
+                lyrics: [`Used to bump The Carter III, I held my Rollie chain proud`, `Irony, I think my hard work let Lil Wayne down`],
+                image: testImage2,
+                playerId: "player2"
+            },
+        ];
+    }
+
     async function playStoryline() {
         window.speechSynthesis.cancel();
-        await delay(500);
+        const lyricImages=await getStoryline();
         if (window.speechSynthesis.getVoices().length == 0) {
             await new Promise<void>(resolve => {
                 window.speechSynthesis.onvoiceschanged = () => {
@@ -68,9 +76,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             setCurrImg(lyricImage.image);
             setCurrLyrics([lyricImage.lyrics[0], lyricImage.lyrics[1]]);
             const msg = new SpeechSynthesisUtterance(lyricImage.lyrics[0] + '\n' + lyricImage.lyrics[1]);
-            msg.rate = 1.8;
-            console.log(window.speechSynthesis.getVoices());
-            const voice = window.speechSynthesis.getVoices().find(v => v.name === "Microsoft David - English (United States)");
+            const voice = window.speechSynthesis.getVoices()[0];
             if (voice) {
                 msg.voice = voice;
             }
@@ -82,10 +88,11 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             window.speechSynthesis.speak(msg);
             await p;
         }
+        setCurrLyrics(["Prepare to see your own drawings", "for lyrics you wrote!"]);
+        setCurrImg([]);
     }
 
     useEffect(() => {
-        playStoryline();
     }, []);
 
 
@@ -93,7 +100,6 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
 
     return (
         <div className="container-mid">
-            {/* {window.speechSynthesis.getVoices()[0].toString()} */}
             <Row style={{ marginTop: "2vh", width: "100%" }} gutter={[20, 5]}>
                 <Col xs={24} md={6} xxl={4}>
                     <PlayersList
@@ -111,7 +117,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                             <h1 className="lyrics-2line">{currLyrics[0]}</h1>
                             <h1 className="lyrics-2line">{currLyrics[1]}</h1>
                         </div>
-                        <ShowcaseCanvas lines={currImg} style={{ marginTop: "1vh" }} />
+                        <ShowcaseCanvas style={{marginTop:"auto"}} onPlayClick={playStoryline} lines={currImg} loading={loading} />
                     </div>
                 </Col>
             </Row>

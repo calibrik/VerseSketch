@@ -3,12 +3,14 @@ import { Stage, Layer, Image } from "react-konva";
 import { CANVAS_BASE_BRUSH_SIZE, CANVAS_BASE_ERASER_SIZE, CANVAS_BASE_HEIGHT, CANVAS_BASE_WIDTH, CANVAS_BUFFER_LIMIT, ILine, Point } from "./Canvas";
 import { Image as KonvaImage } from "konva/lib/shapes/Image";
 import { delay } from "../misc/MiscFunctions";
-import { ShowButton } from "./buttons/ShowButton";
+import { PlayButton } from "./buttons/PlayButton";
+import { Spinner } from "./Spinner";
 
 interface IShowcaseCanvasProps {
 	style?: React.CSSProperties;
 	lines: ILine[];
-	onClick?: () => Promise<void>;
+	onPlayClick: () => Promise<void>;
+	loading: boolean;
 };
 
 export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
@@ -17,7 +19,7 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	const [scale, setScale] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
 	const lastPos = useRef<Point>({ x: 0, y: 0 });
 	const imageRef = useRef<KonvaImage>(null);
-	const timeToDraw=2000;
+	const timeToDraw = 2000;
 	const [isStarted, setIsStarted] = useState(false);
 	const backBuffer = useRef<ArrayBuffer[]>([]);
 	const forwardRef = useRef<ArrayBuffer[]>([]);
@@ -36,9 +38,9 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 		return { canvas, context };
 	}, []);
 
-	async function onStartClick() {
+	async function onPlayClick() {
 		setIsStarted(true);
-		await props.onClick?.();
+		await props.onPlayClick();
 		setIsStarted(false);
 	}
 
@@ -149,35 +151,35 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	}
 
 	async function drawLines() {
-		if (!context||!isStarted)
+		if (!context || !isStarted)
 			return;
 
-		let pointsCount=0;
+		let pointsCount = 0;
 		for (const line of props.lines)
-			pointsCount+=line.points.length;
-		const batch=Math.ceil((pointsCount*5)/timeToDraw);
+			pointsCount += line.points.length;
+		const batch = Math.ceil((pointsCount * 5) / timeToDraw);
 
-		let start=Date.now();
+		let start = Date.now();
 		for (const line of props.lines) {
-			if (line.tool==="forward") {
+			if (line.tool === "forward") {
 				goForward();
 				await delay(150);
 				continue;
 			}
 
-			if (line.tool==="back") {
+			if (line.tool === "back") {
 				goBack();
 				await delay(150);
 				continue;
 			}
 
-			if (line.tool==="bucket") {
-				floodFill(line.points[0],line.color);
+			if (line.tool === "bucket") {
+				floodFill(line.points[0], line.color);
 				await delay(150);
 				continue;
 			}
 
-			
+
 			forwardRef.current = [];
 			backBuffer.current.push(new Uint8Array(context.getImageData(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT).data).buffer);
 			if (backBuffer.current.length > CANVAS_BUFFER_LIMIT)
@@ -186,26 +188,26 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 			context.globalCompositeOperation = line.tool === 'eraser' ? 'destination-out' : 'source-over';
 			context.strokeStyle = line.color;
 			lastPos.current = line.points[0];
-			let drew=0;
-			for (let i=0;i<line.points.length;i++) {
-				if (i==0)
+			let drew = 0;
+			for (let i = 0; i < line.points.length; i++) {
+				if (i == 0)
 					continue;
 				drawTo(line.points[i]);
-				if (++drew==batch){
+				if (++drew == batch) {
 					imageRef.current?.getLayer()?.batchDraw();
-					drew=0;
+					drew = 0;
 					await delay(5);
 				}
 			}
-			drawTo(line.points[line.points.length-1]);
+			drawTo(line.points[line.points.length - 1]);
 			imageRef.current?.getLayer()?.batchDraw();
 		}
-		console.log(Date.now()-start);
+		console.log(Date.now() - start);
 	}
 
 	useEffect(() => {
-		forwardRef.current=[];
-		backBuffer.current=[];
+		forwardRef.current = [];
+		backBuffer.current = [];
 		context?.clearRect(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT);
 		drawLines();
 	}, [props.lines])
@@ -219,14 +221,23 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	}
 		, []);
 
-	let canvasContainerType=isStarted ? "canvas-container" : "canvas-container disabled";
+	if (!isStarted || props.loading) {
+		let currMiddle = props.loading ? <Spinner /> : <PlayButton onClick={onPlayClick}/>
+		return (
+			<div
+				ref={containerRef}
+				className="canvas-container disabled"
+				style={props.style}>
+				{currMiddle}
+			</div>
+		)
+	}
+
 	return (
 		<div
 			ref={containerRef}
-			className={canvasContainerType}
-			style={props.style}
-		>
-			{isStarted?
+			className="canvas-container"
+			style={props.style}>
 			<Stage
 				className="wrapper"
 				width={size.width}
@@ -241,8 +252,7 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 						y={0}
 					/>
 				</Layer>
-			</Stage>:
-			<ShowButton/>}
+			</Stage>
 		</div>
 	);
 };
