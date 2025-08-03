@@ -1,12 +1,15 @@
 import { Col, Row } from "antd";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import { PlayersList } from "../components/PlayersList";
 import { ShowcaseCanvas } from "../components/ShowcaseCanvas";
 import { SkipButton } from "../components/buttons/SkipButton";
-import { PlayerModel } from "../components/SignalRProvider";
-import { testImage1, testImage2 } from "../misc/testImage";
+import { useSignalRConnectionContext } from "../components/SignalRProvider";
 import { ILine } from "../components/Canvas";
-import { delay } from "../misc/MiscFunctions";
+import { delay, leave } from "../misc/MiscFunctions";
+import { useNavigate } from "react-router";
+import { ConnectionConfig } from "../misc/ConnectionConfig";
+import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
+import { Event } from "../misc/Event";
 interface IShowcasePageProps { };
 
 type LyricImage = {
@@ -16,55 +19,76 @@ type LyricImage = {
 }
 
 export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
+    const signalRModel = useSignalRConnectionContext();
     const [currImg, setCurrImg] = useState<ILine[]>([]);
     const [loading, setLoading] = useState(false);
-    const [currPlayerPlayed, setCurrPlayerPlayed] = useState<number>(0);
-    const [currLyrics, setCurrLyrics] = useState<string[]>(["Prepare to see your own drawings", "for lyrics you wrote!"]);
-    let players: PlayerModel[] = [];
-    for (let i = 0; i < 8; i++) {
-        players.push({
-            id: `player${i + 1}`,
-            nickname: `qwertyu`,
-            isAdmin: i === 0 // First player is admin
-        });
-    }
-    players.push({
-        id: "dfgsdfg",
-        nickname: "qwertyui oplkjhgfdsa zxcvb nm,",
-        isAdmin: false
-    });
+    const [currPlayerPlaying,setCurrPlayerPlaying] = useState<number>(0);
+    const currPlayerPlayingRef = useRef<number>(0);
+    const navigate = useNavigate();
+    const [currLyrics, setCurrLyrics] = useState<string[]>(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
+    const errorModals=useErrorDisplayContext();
+    const onFinishDrawing = useRef<Event>(new Event());
+    const [isShowcaseStarted, setIsShowcaseStarted] = useState<boolean>(false);
+    const [isWaiting, setIsWaiting] = useState<boolean>(false);
+    
 
     async function getStoryline(): Promise<LyricImage[]> {
+        // return [
+        //     {
+        //     lyrics: ["Hello","dick"],
+        //     image: testImage1,
+        //     playerId: "test-player-1"
+        //     },
+        //     {
+        //     lyrics: ["World","of shit"],
+        //     image: testImage2,
+        //     playerId: "test-player-2"
+        //     }
+        // ];
         setLoading(true);
-        await delay(2000);//getting current player's storyline
+        let response;
+        try {
+            response=await fetch(`${ConnectionConfig.Api}/game/getPlayersStoryline?${new URLSearchParams({
+                playerId: signalRModel.roomModelRef.current?.players[currPlayerPlayingRef.current].id ?? "",
+            })}`,{
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization":`Bearer ${sessionStorage.getItem("player")}`
+                }
+            });
+        }
+        catch (e: any) {
+            setLoading(false);
+            errorModals.errorModalClosable.current?.show("Something went wrong.");
+            return [];
+        }
+        let data = await response.json();
+        if (!response.ok) {
+            setLoading(false);
+            errorModals.errorModalClosable.current?.show(data.message);
+            return [];
+        }
         setLoading(false);
-        return [
-            {
-                lyrics: [`Ridin' in my GNX with Anita Baker in the tape deck, it's gon' be a sweet love`, `Fuck apologies, I wanna see y'all geeked up`],
-                image: testImage1,
-                playerId: "player1"
-            },
-            {
-                lyrics: [`Don't acknowledge me, then maybe we can say it's fair`, `Take it to the internet and I'ma take it there`],
-                image: testImage2,
-                playerId: "player2"
-            },
-            {
-                lyrics: [`Miss my uncle Lil' Mane, he said that he would kill me if I didn't make it`, `Now I'm possessed by a spirit and they can't take it`],
-                image: testImage1,
-                playerId: "player1"
-            },
-            {
-                lyrics: [`Used to bump The Carter III, I held my Rollie chain proud`, `Irony, I think my hard work let Lil Wayne down`],
-                image: testImage2,
-                playerId: "player2"
-            },
-        ];
+        return data.lyricImages;
+    }
+
+    async function onPlayClick() {
+        if (!signalRModel.roomModelRef.current?.isPlayerAdmin)
+            return;
+        await signalRModel.connection.current?.invoke("StartShowcase");
+        // playStoryline();
     }
 
     async function playStoryline() {
+        if (!signalRModel.roomModelRef.current)
+            return;
+        setIsShowcaseStarted(true);
         window.speechSynthesis.cancel();
-        const lyricImages=await getStoryline();
+        const lyricImages = await getStoryline();
+        if (lyricImages.length === 0) {
+            return;
+        }
         if (window.speechSynthesis.getVoices().length == 0) {
             await new Promise<void>(resolve => {
                 window.speechSynthesis.onvoiceschanged = () => {
@@ -80,19 +104,45 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             if (voice) {
                 msg.voice = voice;
             }
-            let p = new Promise<void>((resolve) => {
+            let msgEnd = new Promise<void>((resolve) => {
                 msg.onend = () => {
                     resolve();
                 };
             });
+            let drawingEnd=new Promise<void>((resolve) => {
+                onFinishDrawing.current.on(() => {
+                    resolve();
+                });
+            });
             window.speechSynthesis.speak(msg);
-            await p;
+            await msgEnd;
+            await drawingEnd;
         }
-        setCurrLyrics(["Prepare to see your own drawings", "for lyrics you wrote!"]);
+        await delay(3000);
+        if (currPlayerPlayingRef.current+1 >= signalRModel.roomModelRef.current.players.length) {
+            navigate(`/room/${signalRModel.roomModelRef.current?.title}`, { replace: true });//placeholder
+            return;
+        }
+        setIsShowcaseStarted(false);
+        currPlayerPlayingRef.current++;
+        setCurrPlayerPlaying((prev)=>prev+1);
+        setCurrLyrics(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
         setCurrImg([]);
+        setIsWaiting(true);
+        await delay(3000);
+        setIsWaiting(false);
     }
 
     useEffect(() => {
+        if (!signalRModel.roomModelRef.current || signalRModel.roomModelRef.current.stage < 1 || !signalRModel.connection.current) {
+            leave(signalRModel);
+            navigate("/", { replace: true });
+            return;
+        }
+        signalRModel.connection.current.on("StartShowcase", playStoryline);
+        return () => {
+            signalRModel.connection.current?.off("StartShowcase", playStoryline);
+        }
     }, []);
 
 
@@ -103,13 +153,12 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             <Row style={{ marginTop: "2vh", width: "100%" }} gutter={[20, 5]}>
                 <Col xs={24} md={6} xxl={4}>
                     <PlayersList
-                        players={players}
-                        roomTitle={"penis"}
+                        players={signalRModel.roomModelRef.current?.players??[]}
+                        roomTitle={signalRModel.roomModelRef.current?.title??""}
                         loading={false}
-                        playersCount={10}
-                        maxPlayersCount={10}
-                        selectedPlayerId={"player2"}
-                        isPlayerAdmin />
+                        playersCount={signalRModel.roomModelRef.current?.players.length ?? 0}
+                        maxPlayersCount={signalRModel.roomModelRef.current?.maxPlayersCount ?? 0}
+                        selectedPlayerId={signalRModel.roomModelRef.current?.players[currPlayerPlaying].id??""}/>
                 </Col>
                 <Col xs={24} md={18} xxl={20}>
                     <div className="showcase-container">
@@ -117,7 +166,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                             <h1 className="lyrics-2line">{currLyrics[0]}</h1>
                             <h1 className="lyrics-2line">{currLyrics[1]}</h1>
                         </div>
-                        <ShowcaseCanvas style={{marginTop:"auto"}} onPlayClick={playStoryline} lines={currImg} loading={loading} />
+                        <ShowcaseCanvas disabledButton={isWaiting} style={{ marginTop: "auto" }} onFinishDrawing={onFinishDrawing} onPlayClick={onPlayClick} lines={currImg} loading={loading} isShowcaseStarted={isShowcaseStarted} />
                     </div>
                 </Col>
             </Row>

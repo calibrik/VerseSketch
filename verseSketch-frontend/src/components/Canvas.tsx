@@ -3,6 +3,7 @@ import { Stage as KonvaStage } from "konva/lib/Stage";
 import { CSSProperties, forwardRef, RefObject, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { useState } from "react";
 import { Stage, Layer, Image } from "react-konva";
+import { useSignalRConnectionContext } from "./SignalRProvider";
 interface ICanvasProps {
 	color: string;
 	tool: string;
@@ -43,6 +44,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	const imageRef = useRef<KonvaImage>(null);
 	const backBuffer=useRef<ArrayBuffer[]>([]);
 	const forwardRef=useRef<ArrayBuffer[]>([]);
+	const signalRModel = useSignalRConnectionContext();
 	
 
 	const { canvas, context } = useMemo(() => {
@@ -228,18 +230,28 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 		});
 	}
 
+	function onStageSet(_:number) {
+		props.lines.current = [];
+		backBuffer.current = [];
+		forwardRef.current = [];
+		context?.clearRect(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT);
+		imageRef.current?.getLayer()?.batchDraw();
+	}
+
 	useEffect(() => {
 		onResize();
 		window.addEventListener("resize", onResize);
 		window.addEventListener("mouseup", (e: any) => { e.preventDefault(); isDrawing.current = false; });
 		window.addEventListener("touchend", (_) => { isDrawing.current = false; });
 		window.addEventListener("mousedown", (e: any) => e.preventDefault());
+		signalRModel.connection.current?.on("StageSet",onStageSet);
 		// window.addEventListener("touchstart", (e:any)=>e.preventDefault());
 		return () => {
 			window.removeEventListener("resize", onResize);
 			window.removeEventListener("mouseup", (e: any) => { e.preventDefault(); isDrawing.current = false; });
 			window.removeEventListener("touchend", (_) => { isDrawing.current = false; });
 			window.removeEventListener("mousedown", (e: any) => e.preventDefault());
+			signalRModel.connection.current?.off("StageSet",onStageSet);
 			// window.removeEventListener("touchstart", (e:any)=>e.preventDefault());
 		};
 	}
@@ -250,8 +262,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 		<div
 			ref={containerRef}
 			className="canvas-container"
-			style={props.style}
-		>
+			style={props.style}>
 			<Stage
 				className={className}
 				width={size.width}

@@ -1,12 +1,12 @@
 import { FC } from "react";
-import { useSignalRConnectionContext } from "./SignalRProvider";
 interface IStageCounterProps {
     style?: React.CSSProperties;
+    stage: number;
+    maxStage: number;
 };
 
 export const StageCounter: FC<IStageCounterProps> = (props) => {
-    const signalRModel = useSignalRConnectionContext();
     return (
-        <h1 style={props.style} className="step-counter">{(signalRModel.roomModelRef.current?.stage??0)+1}/{signalRModel.roomModelRef.current?.playersCount}</h1>
+        <h1 style={props.style} className="step-counter">{(props.stage)+1}/{props.maxStage}</h1>
     );
 }

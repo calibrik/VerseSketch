@@ -1,16 +1,21 @@
-import { FC, useEffect, useMemo, useRef, useState } from "react";
+import { FC, RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { Stage, Layer, Image } from "react-konva";
 import { CANVAS_BASE_BRUSH_SIZE, CANVAS_BASE_ERASER_SIZE, CANVAS_BASE_HEIGHT, CANVAS_BASE_WIDTH, CANVAS_BUFFER_LIMIT, ILine, Point } from "./Canvas";
 import { Image as KonvaImage } from "konva/lib/shapes/Image";
 import { delay } from "../misc/MiscFunctions";
 import { PlayButton } from "./buttons/PlayButton";
 import { Spinner } from "./Spinner";
+import { useSignalRConnectionContext } from "./SignalRProvider";
+import { Event } from "../misc/Event";
 
 interface IShowcaseCanvasProps {
 	style?: React.CSSProperties;
 	lines: ILine[];
 	onPlayClick: () => Promise<void>;
 	loading: boolean;
+	onFinishDrawing: RefObject<Event>;
+	isShowcaseStarted: boolean;
+	disabledButton?: boolean;
 };
 
 export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
@@ -19,10 +24,10 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	const [scale, setScale] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
 	const lastPos = useRef<Point>({ x: 0, y: 0 });
 	const imageRef = useRef<KonvaImage>(null);
-	const timeToDraw = 2000;
-	const [isStarted, setIsStarted] = useState(false);
+	const timeToDraw = 1500;
 	const backBuffer = useRef<ArrayBuffer[]>([]);
 	const forwardRef = useRef<ArrayBuffer[]>([]);
+	const signalRModel = useSignalRConnectionContext();
 
 
 	const { canvas, context } = useMemo(() => {
@@ -37,12 +42,6 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 		context.imageSmoothingEnabled = false;
 		return { canvas, context };
 	}, []);
-
-	async function onPlayClick() {
-		setIsStarted(true);
-		await props.onPlayClick();
-		setIsStarted(false);
-	}
 
 	function goBack() {
 		if (!context || backBuffer.current.length == 0)
@@ -151,8 +150,10 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	}
 
 	async function drawLines() {
-		if (!context || !isStarted)
+		if (!context || !props.isShowcaseStarted || props.lines == null) {
+			props.onFinishDrawing.current.invoke();
 			return;
+		}
 
 		let pointsCount = 0;
 		for (const line of props.lines)
@@ -202,6 +203,7 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 			drawTo(line.points[line.points.length - 1]);
 			imageRef.current?.getLayer()?.batchDraw();
 		}
+		props.onFinishDrawing.current.invoke();
 		console.log(Date.now() - start);
 	}
 
@@ -221,8 +223,8 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	}
 		, []);
 
-	if (!isStarted || props.loading) {
-		let currMiddle = props.loading ? <Spinner /> : <PlayButton onClick={onPlayClick}/>
+	if (!props.isShowcaseStarted || props.loading) {
+		let currMiddle = props.loading ? <Spinner /> : <PlayButton disabled={props.disabledButton || !signalRModel.roomModelRef.current?.isPlayerAdmin} onClick={props.onPlayClick} />
 		return (
 			<div
 				ref={containerRef}

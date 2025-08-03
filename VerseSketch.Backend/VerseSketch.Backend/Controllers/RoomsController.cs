@@ -215,29 +215,7 @@ public class RoomsController:ControllerBase
 
         return Ok(new { isExist = await _playerRepository.GetPlayerByNicknameInRoomAsync(nickname, roomTitle, ct) });
     }
-
-    // [HttpGet("/api/rooms/generateJoinToken")]
-    // public async Task<IActionResult> GenerateJoinToken([FromQuery] string roomTitle)
-    // {
-    //     if (!User.Identity.IsAuthenticated)
-    //         return Unauthorized(new {message = $"You must be the admin of the room {roomTitle} to change it parameters."});
-    //     Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
-    //     if (room == null)
-    //         return NotFound(new {message = $"Room {roomTitle} is not found"});
-    //     string playerId=User.FindFirst("PlayerId").Value;
-    //     if (room.AdminId!=playerId)
-    //         return Unauthorized(new {message = $"You must be the admin of the room {roomTitle} to change it parameters."});
-    //     string joinToken = CreateJoinLinkToken(room);
-    //     try
-    //     {
-    //         await _roomsRepository.UpdateRoomAsync(room);
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         return StatusCode(500,new {message="Something went wrong, please try again later."});
-    //     }
-    //     return Ok(new {joinToken=joinToken});
-    // }
+    
     [HttpPost("/api/rooms/join")]
     public async Task<IActionResult> Join([FromBody] CreatePlayerViewModel model)
     {
@@ -268,8 +246,8 @@ public class RoomsController:ControllerBase
             if (player == null)
                 return StatusCode(500,new {message="Something went wrong, please try again later."});
         }
-        if (await _playerRepository.GetPlayerByNicknameInRoomAsync(model.Nickname, roomTitle) != null)
-            return BadRequest(new {message="Nickname already exists in this room."});//check if username exists
+        // if (await _playerRepository.GetPlayerByNicknameInRoomAsync(model.Nickname, roomTitle) != null)
+        //     return BadRequest(new {message="Nickname already exists in this room."});//check if username exists
         if (room.PlayersCount==0&&(player==null||player._Id!=room.AdminId))
             return BadRequest(new {message="Only creator of the room is allowed to join."});//check if only admin can join room with 0 players
         if (!ModelState.IsValid)

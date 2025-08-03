@@ -3,11 +3,11 @@ import { Canvas, CanvasHandle, ILine } from "../components/Canvas";
 import { Col, ColorPicker, Divider, Flex, Row, Slider } from "antd";
 import { StageCounter } from "../components/StageCounter";
 import { DisabledColorPicker } from "../components/DisabledColorPicker";
-import { getWidthLevel, WindowLevel } from "../misc/MiscFunctions";
+import { getWidthLevel, leave, WindowLevel } from "../misc/MiscFunctions";
 import { BrushIcon, BucketIcon, EraserIcon, EyedropperIcon } from "../components/Icons";
 import { SubmitButton } from "../components/buttons/SubmitButton";
-import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
-import { Timer } from "../components/Timer";
+import { IPlayerCompleteCounterHandle, PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
+import { ITimerHandle, Timer } from "../components/Timer";
 import { useRecentColorsContext } from "../components/RecentColorsProvider";
 import { ToolButton } from "../components/buttons/ToolButton";
 import useEyeDropper from "use-eye-dropper";
@@ -46,6 +46,9 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const [submitLoading,setSubmitLoading]=useState<boolean>(false);
     const [isSubmitted,setIsSubmitted]=useState<boolean>(false);
     const [isTimeUp,setIsTimeUp]=useState<boolean>(false);
+    const timerRef=useRef<ITimerHandle|null>(null);
+    const playerCompleteCounterRef=useRef<IPlayerCompleteCounterHandle | null>(null);
+    const [stage,setStage]=useState<number>(signalRModel.roomModelRef.current?.stage??0);
 
 
     async function handleEyedropper() {
@@ -161,15 +164,27 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         setIsSubmitted(true);
     }
 
+    async function onStageSet(stage:number) {
+        await getLines();
+        setStage(stage);
+        timerRef.current?.reset();
+        playerCompleteCounterRef.current?.reset();
+        setIsTimeUp(false);
+        setIsSubmitted(false);
+    }
+
     useEffect(() => {
             if (!signalRModel.roomModelRef.current||signalRModel.roomModelRef.current.stage<1||!signalRModel.connection.current) {
+                leave(signalRModel);
                 navigate("/",{replace:true});
                 return;
             }
             getLines();
             onResize();
+            signalRModel.connection.current.on("StageSet",onStageSet);
             window.addEventListener("resize", onResize);
             return () => {
+                signalRModel.connection.current?.off("StageSet",onStageSet);
                 window.removeEventListener("resize", onResize);
             }
         }
@@ -180,9 +195,9 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
 
     return (
         <>
-            <Timer onTimeIsUp={forceSubmit} />
-            <StageCounter />
-            <PlayerCompleteCounter />
+            <Timer ref={timerRef} onTimeIsUp={forceSubmit} />
+            <StageCounter stage={stage} maxStage={signalRModel.roomModelRef.current?.playersCount??0}/>
+            <PlayerCompleteCounter ref={playerCompleteCounterRef}/>
             <div className="container-mid">
                 <div style={{ marginTop: "3vh" }} className="lyrics-container">
                     <h1 className="lyrics-2line">{lines[0]}</h1>

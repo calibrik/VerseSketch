@@ -5,7 +5,7 @@ using VerseSketch.Backend.Repositories;
 namespace VerseSketch.Backend.Controllers;
 
 [ApiController]
-public class GameController:ControllerBase
+public class GameController : ControllerBase
 {
     private RoomsRepository _roomsRepository;
     private InstructionRepository _instructionRepository;
@@ -33,9 +33,21 @@ public class GameController:ControllerBase
         if (room.Stage < 1)
             return Unauthorized(new { message = $"Invalid request." });
         Lyrics lyrics = await _instructionRepository.GetLyricsToDrawForStageAsync(player._Id, room.Stage);
-        return Ok(new { lyrics=lyrics });
+        return Ok(new { lyrics = lyrics });
     }
-    
-    
-    
+
+    [HttpGet("/api/game/getPlayersStoryline")]
+    public async Task<IActionResult> GetPlayersStoryline([FromQuery] string playerId)
+    {
+        if (!User.Identity.IsAuthenticated)
+            return Unauthorized(new { message = $"You are not part of this game." });
+        Player? player = await _playerRepository.GetPlayerAsync(User.FindFirst("PlayerId").Value);
+        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (room == null)
+            return Unauthorized(new { message = $"Room not found." });
+        if (room.Stage < 1)
+            return Unauthorized(new { message = $"Invalid request." });
+
+        return Ok(new { lyricImages = await _storylineRepository.GetPlayersStoryline(playerId) });
+    }
 }

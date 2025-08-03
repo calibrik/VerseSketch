@@ -1,17 +1,30 @@
-import { FC, useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import { useSignalRConnectionContext } from "./SignalRProvider";
 interface IPlayerCompleteCounterProps {
     style?: React.CSSProperties;
 };
 
-export const PlayerCompleteCounter: FC<IPlayerCompleteCounterProps> = (props) => {
+export interface IPlayerCompleteCounterHandle {
+    reset: () => void;
+};
+
+export const PlayerCompleteCounter=forwardRef<IPlayerCompleteCounterHandle,IPlayerCompleteCounterProps>((props,ref) => {
 
     const signalRModel=useSignalRConnectionContext();
     const [completedPlayers, setCompletedPlayers] = useState(0);
     const [totalPlayers, setTotalPlayers] = useState(signalRModel.roomModelRef.current?.playersCount ?? 0);
     const completedPlayersRef=useRef<number>(0);
     const totalPlayersRef=useRef<number>(signalRModel.roomModelRef.current?.playersCount ?? 0);
+
+    useImperativeHandle(ref, () => ({
+        reset: () => {
+            completedPlayersRef.current = 0;
+            totalPlayersRef.current = signalRModel.roomModelRef.current?.playersCount ?? 0;
+            setCompletedPlayers(0);
+            setTotalPlayers(totalPlayersRef.current);
+        }
+    }));
 
     useEffect(() => {
         signalRModel.connection.current?.on("PlayerCompletedTask", () => {
@@ -53,4 +66,4 @@ export const PlayerCompleteCounter: FC<IPlayerCompleteCounterProps> = (props) =>
             <CheckCircleOutlined className="icon"/>
         </div>
     );
-}
+});

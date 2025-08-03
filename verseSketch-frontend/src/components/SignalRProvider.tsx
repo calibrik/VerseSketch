@@ -111,7 +111,8 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         errorModals.errorModal.current?.show("Admin has left the room.");
     }
     function onConnectionClose(error?: any) {
-        console.log("Connection closed", error);
+        connection.current = null;
+        roomModelRef.current = null;
         errorModals.statusModal.current?.close();
         if (error || isRecconecting.current)
             errorModals.errorModal.current?.show("Lost connection to the server.");
@@ -144,7 +145,10 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
             navigate("/showcase", { replace: true });
             return;
         }
-        navigate("/draw", { replace: true });
+        if (stage == 1) {
+            navigate(`/draw`, { replace: true });
+            return;
+        }
     }
 
 

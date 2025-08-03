@@ -170,8 +170,9 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         document.title = roomTitle ?? "Room";
         signalRModel.updateTrigger.current.on(triggerUpdate);
         // console.log("remount")
-        if (!signalRModel.connection.current || signalRModel.roomModelRef.current?.title !== roomTitle) {
+        if (!signalRModel.connection.current|| !signalRModel.roomModelRef.current || signalRModel.roomModelRef.current?.title !== roomTitle) {
             setLoading(true);
+            signalRModel.stopConnection();
             initLoad()
                 .then(async () => {
                     signalRModel.createConnection(sessionStorage.getItem("player") ?? "",roomTitle ?? "");
@@ -199,6 +200,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         }
         else{
             signalRModel.connection.current.on("ReceiveParams", onReceiveParams);
+            setModel({...signalRModel.roomModelRef.current});
         }
         return () => {
             signalRModel.connection.current?.off("ReceiveParams", onReceiveParams);

@@ -22,8 +22,11 @@ public class StorylineRepository
     public async Task UpdateImage(LyricsImage image,int stage,string forPlayerId)
     {
         UpdateDefinition<Storyline> update = Builders<Storyline>.Update.Set(s => s.Images[stage-1], image);
-
         await _storylines.UpdateOneAsync(s=>s.PlayerId==forPlayerId,update);
+    }
 
+    public async Task<List<LyricsImage>> GetPlayersStoryline(string playerId)
+    {
+        return await _storylines.Find(s => s.PlayerId==playerId).Project(s=>s.Images).FirstOrDefaultAsync();
     }
 }
