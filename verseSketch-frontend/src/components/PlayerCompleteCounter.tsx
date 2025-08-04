@@ -39,6 +39,7 @@ export const PlayerCompleteCounter=forwardRef<IPlayerCompleteCounterHandle,IPlay
         signalRModel.connection.current?.on("PlayerCanceledTask", () => {
             completedPlayersRef.current--;
             completedPlayersRef.current=Math.max(0,completedPlayersRef.current);
+            console.log(`Player canceled task ${completedPlayersRef.current}/${totalPlayersRef.current}`);
             setCompletedPlayers(completedPlayersRef.current);
         });
         signalRModel.connection.current?.on("PlayerLeft",(_)=>{

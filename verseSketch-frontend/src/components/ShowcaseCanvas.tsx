@@ -3,19 +3,14 @@ import { Stage, Layer, Image } from "react-konva";
 import { CANVAS_BASE_BRUSH_SIZE, CANVAS_BASE_ERASER_SIZE, CANVAS_BASE_HEIGHT, CANVAS_BASE_WIDTH, CANVAS_BUFFER_LIMIT, ILine, Point } from "./Canvas";
 import { Image as KonvaImage } from "konva/lib/shapes/Image";
 import { delay } from "../misc/MiscFunctions";
-import { PlayButton } from "./buttons/PlayButton";
 import { Spinner } from "./Spinner";
-import { useSignalRConnectionContext } from "./SignalRProvider";
-import { Event } from "../misc/Event";
 
 interface IShowcaseCanvasProps {
 	style?: React.CSSProperties;
 	lines: ILine[];
-	onPlayClick: () => Promise<void>;
 	loading: boolean;
-	onFinishDrawing: RefObject<Event>;
+	onFinishDrawing: RefObject<()=>void>;
 	isShowcaseStarted: boolean;
-	disabledButton?: boolean;
 };
 
 export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
@@ -27,7 +22,6 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	const timeToDraw = 1500;
 	const backBuffer = useRef<ArrayBuffer[]>([]);
 	const forwardRef = useRef<ArrayBuffer[]>([]);
-	const signalRModel = useSignalRConnectionContext();
 
 
 	const { canvas, context } = useMemo(() => {
@@ -151,7 +145,7 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 
 	async function drawLines() {
 		if (!context || !props.isShowcaseStarted || props.lines == null) {
-			props.onFinishDrawing.current.invoke();
+			props.onFinishDrawing.current();
 			return;
 		}
 
@@ -203,7 +197,7 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 			drawTo(line.points[line.points.length - 1]);
 			imageRef.current?.getLayer()?.batchDraw();
 		}
-		props.onFinishDrawing.current.invoke();
+		props.onFinishDrawing.current();
 		console.log(Date.now() - start);
 	}
 
@@ -223,14 +217,13 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	}
 		, []);
 
-	if (!props.isShowcaseStarted || props.loading) {
-		let currMiddle = props.loading ? <Spinner /> : <PlayButton disabled={props.disabledButton || !signalRModel.roomModelRef.current?.isPlayerAdmin} onClick={props.onPlayClick} />
+	if (props.loading) {
 		return (
 			<div
 				ref={containerRef}
 				className="canvas-container disabled"
 				style={props.style}>
-				{currMiddle}
+				<Spinner />
 			</div>
 		)
 	}

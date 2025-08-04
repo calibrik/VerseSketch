@@ -5,7 +5,7 @@ import { Spinner } from "../Spinner";
 interface ISubmitButtonProps {
     style?: React.CSSProperties;
     loading:boolean;
-    isSubmitted:boolean;
+    isSubmitted?:boolean;
     onClick?:()=>Promise<void>;
     disabled?:boolean;
 };

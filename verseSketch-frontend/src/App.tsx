@@ -75,5 +75,5 @@ export default App;
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
 //TODO: Player complete counter won't update after reconnecting
 //TODO: remove "alpha" drawing from canvas
-//TODO: Bug with textarea when start the game after finishing one without reloading the page only on different tabs from admin
+//TODO: Bug with textarea when start the game after finishing one without reloading the page (i give up, ditch the ant design form on insert lyrics page)
 //TODO: Need to interrupt showcase playing if admin clicked on showing next (tts as audiofile should cut it)

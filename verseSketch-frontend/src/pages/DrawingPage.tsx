@@ -165,6 +165,8 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     }
 
     async function onStageSet(stage:number) {
+        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current || stage==signalRModel.roomModelRef.current.playersCount)
+            return;
         await getLines();
         setStage(stage);
         timerRef.current?.reset();

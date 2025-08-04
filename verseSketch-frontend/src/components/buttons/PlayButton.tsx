@@ -5,17 +5,18 @@ interface IPlayButtonProps {
     onClick: () => Promise<void>;
     style?: React.CSSProperties;
     disabled?: boolean;
+    children:string
 };
 
 export const PlayButton: FC<IPlayButtonProps> = (props) => {
     return (
         <BaseButton
-            className="play-button"
+            className="primary-button"
             onClick={props.onClick}
             style={props.style}
             disabled={props.disabled}
             icon={<PlaySquareFilled className="button-icon" />}>
-            PLAY
+            {props.children}
         </BaseButton>
     );
 }

@@ -163,3 +163,4 @@ app.Run();
 //TODO Don't delete the player if he disconnected during the game
 //TODO Shuffle order of lyrics lines in future
 //TODO TTS pass as the audio file
+//TODO Sync the player playing

@@ -2,14 +2,13 @@ import { Col, Row } from "antd";
 import { FC, useEffect, useRef, useState } from "react";
 import { PlayersList } from "../components/PlayersList";
 import { ShowcaseCanvas } from "../components/ShowcaseCanvas";
-import { SkipButton } from "../components/buttons/SkipButton";
 import { useSignalRConnectionContext } from "../components/SignalRProvider";
 import { ILine } from "../components/Canvas";
 import { delay, leave } from "../misc/MiscFunctions";
 import { useNavigate } from "react-router";
 import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
-import { Event } from "../misc/Event";
+import { PlayButton } from "../components/buttons/PlayButton";
 interface IShowcasePageProps { };
 
 type LyricImage = {
@@ -27,7 +26,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     const navigate = useNavigate();
     const [currLyrics, setCurrLyrics] = useState<string[]>(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
     const errorModals=useErrorDisplayContext();
-    const onFinishDrawing = useRef<Event>(new Event());
+    const onFinishDrawing = useRef<()=>void>(()=>{});
     const [isShowcaseStarted, setIsShowcaseStarted] = useState<boolean>(false);
     const [isWaiting, setIsWaiting] = useState<boolean>(false);
     
@@ -69,6 +68,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             errorModals.errorModalClosable.current?.show(data.message);
             return [];
         }
+        console.log(data);
         setLoading(false);
         return data.lyricImages;
     }
@@ -87,6 +87,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         window.speechSynthesis.cancel();
         const lyricImages = await getStoryline();
         if (lyricImages.length === 0) {
+            setIsShowcaseStarted(false);
             return;
         }
         if (window.speechSynthesis.getVoices().length == 0) {
@@ -110,13 +111,15 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                 };
             });
             let drawingEnd=new Promise<void>((resolve) => {
-                onFinishDrawing.current.on(() => {
+                onFinishDrawing.current= () => {
                     resolve();
-                });
+                };
             });
             window.speechSynthesis.speak(msg);
             await msgEnd;
+            console.log("msg end");
             await drawingEnd;
+            console.log("drawing end");
         }
         await delay(3000);
         if (currPlayerPlayingRef.current+1 >= signalRModel.roomModelRef.current.players.length) {
@@ -147,7 +150,15 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
 
 
 
-
+    let playButtonText="";
+    if (!signalRModel.roomModelRef.current?.isPlayerAdmin)
+        playButtonText="WAITING FOR ADMIN";
+    else if (isShowcaseStarted)
+        playButtonText="PLAYING";
+    else if (isWaiting)
+        playButtonText="WAIT";
+    else
+        playButtonText="PLAY";
     return (
         <div className="container-mid">
             <Row style={{ marginTop: "2vh", width: "100%" }} gutter={[20, 5]}>
@@ -166,12 +177,12 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                             <h1 className="lyrics-2line">{currLyrics[0]}</h1>
                             <h1 className="lyrics-2line">{currLyrics[1]}</h1>
                         </div>
-                        <ShowcaseCanvas disabledButton={isWaiting} style={{ marginTop: "auto" }} onFinishDrawing={onFinishDrawing} onPlayClick={onPlayClick} lines={currImg} loading={loading} isShowcaseStarted={isShowcaseStarted} />
+                        <ShowcaseCanvas style={{ marginTop: "auto" }} onFinishDrawing={onFinishDrawing} lines={currImg} loading={loading} isShowcaseStarted={isShowcaseStarted} />
                     </div>
                 </Col>
             </Row>
             <div style={{ display: "flex", justifyContent: "end", width: "100%", marginTop: "2vh" }}>
-                <SkipButton style={{ marginRight: 10 }} />
+                <PlayButton style={{ marginRight: 10 }} disabled={isWaiting||!signalRModel.roomModelRef.current?.isPlayerAdmin||isShowcaseStarted} onClick={onPlayClick}>{playButtonText}</PlayButton>
             </div>
         </div>
     );
