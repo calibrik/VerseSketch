@@ -29,4 +29,9 @@ public class StorylineRepository
     {
         return await _storylines.Find(s => s.PlayerId==playerId).Project(s=>s.Images).FirstOrDefaultAsync();
     }
+
+    public async Task DeleteRoomsStorylines(string roomTitle)
+    {
+        await _storylines.DeleteManyAsync(s=>s.RoomTitle==roomTitle);
+    }
 }

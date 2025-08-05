@@ -29,8 +29,8 @@ public class InstructionRepository
         await _instructions.UpdateOneAsync(i => i.PlayerId == playerId, update);
     }
 
-    public async Task DeleteManyAsync(HashSet<string> playerIds)
+    public async Task DeleteRoomsInstructions(string roomTitle)
     {
-        await _instructions.DeleteManyAsync(i => playerIds.Contains(i.PlayerId));
+        await _instructions.DeleteManyAsync(i=>i.RoomTitle==roomTitle);
     }
 }

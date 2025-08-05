@@ -144,6 +144,27 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Group(player.RoomTitle).StageSet(room.Stage+1);
     }
 
+    public async Task FinishGame()
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+            throw new HubException("You are not an admin in this room.");
+        string playerId = Context.User.FindFirst("PlayerId").Value;
+        Player? player = await _playerRepository.GetPlayerAsync(playerId);
+        if (player == null)
+            throw new HubException("You are not an admin in this room.");
+        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (room == null)
+            throw new HubException("Room not found.");
+        if (room.AdminId!=playerId)
+            throw new HubException("You are not an admin in this room.");
+        
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage,-1);
+        await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
+        await _storylineRepository.DeleteRoomsStorylines(room.Title);
+        await _instructionRepository.DeleteRoomsInstructions(room.Title);
+        await Clients.Group(player.RoomTitle).StageSet(-1);
+    }
+    
     public async Task StartShowcase()
     {
         if (!Context.User.Identity.IsAuthenticated)

@@ -67,13 +67,12 @@ function App() {
 
 export default App;
 
-//TODO: Random WS handshake issue on devices (if connecting by wifi on the phone, still random tho)
-//TODO: onInvite clipboard bug when accessing by local (api doesn't work on http)
 //TODO: Ban album orientation
 //TODO: Width slider on drawing canvas
 //TODO: Tinker with showcase canvas size
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
 //TODO: Player complete counter won't update after reconnecting
 //TODO: remove "alpha" drawing from canvas
-//TODO: Bug with textarea when start the game after finishing one without reloading the page (i give up, ditch the ant design form on insert lyrics page)
 //TODO: Need to interrupt showcase playing if admin clicked on showing next (tts as audiofile should cut it)
+//TODO: ColorPicker is bugged tf out
+//TODO: Showcase bugging if u fill the whole page many times+not fetching an image sometimes

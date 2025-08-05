@@ -154,13 +154,11 @@ app.Run();
 
 //TODO Caching where appropriate
 //TODO Browser caching
-//TODO Room hub reconnection (it is working but onDisconnectedAsync sometimes not being called)
-//TODO test dat shit
 //TODO Figure out how to pass errors to client from room hub (tbf, not that important?)
 //TODO Bg service to delete empty rooms and unused players
-//TODO Timer for game
 //TODO ValidationLink function????(tf is that for bro)
 //TODO Don't delete the player if he disconnected during the game
 //TODO Shuffle order of lyrics lines in future
 //TODO TTS pass as the audio file
 //TODO Sync the player playing
+//TODO All the leave/reconnect functionality during the game

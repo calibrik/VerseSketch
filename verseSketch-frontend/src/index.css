@@ -248,6 +248,7 @@ html {
     overflow-y: hidden;
     font-size: clamp(0.8rem, 2vmin, 1.3rem);
     resize: none !important;
+    padding: 2px 10px;
 }
 
 .player-complete-counter {

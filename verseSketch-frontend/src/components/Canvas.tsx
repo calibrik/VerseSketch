@@ -117,7 +117,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	}
 
 	function colorStrToHex(hex:string):number {
-		hex = hex.replace(/^#/, '');
+		hex=hex.slice(1,hex.length);
 		hex+="ff";
 		return parseInt(hex,16);
 	}
@@ -238,24 +238,35 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 		imageRef.current?.getLayer()?.batchDraw();
 	}
 
+	const handleWindowMouseUp = (e: any) => {
+		e.preventDefault();
+		isDrawing.current = false;
+	};
+
+	const handleWindowTouchEnd = (_: any) => {
+		isDrawing.current = false;
+	};
+
+	const handleWindowMouseDown = (e: any) => {
+		e.preventDefault();
+	};
+
 	useEffect(() => {
 		onResize();
 		window.addEventListener("resize", onResize);
-		window.addEventListener("mouseup", (e: any) => { e.preventDefault(); isDrawing.current = false; });
-		window.addEventListener("touchend", (_) => { isDrawing.current = false; });
-		window.addEventListener("mousedown", (e: any) => e.preventDefault());
-		signalRModel.connection.current?.on("StageSet",onStageSet);
-		// window.addEventListener("touchstart", (e:any)=>e.preventDefault());
+		window.addEventListener("mouseup", handleWindowMouseUp);
+		window.addEventListener("touchend", handleWindowTouchEnd);
+		window.addEventListener("mousedown", handleWindowMouseDown);
+		signalRModel.connection.current?.on("StageSet", onStageSet);
+
 		return () => {
 			window.removeEventListener("resize", onResize);
-			window.removeEventListener("mouseup", (e: any) => { e.preventDefault(); isDrawing.current = false; });
-			window.removeEventListener("touchend", (_) => { isDrawing.current = false; });
-			window.removeEventListener("mousedown", (e: any) => e.preventDefault());
-			signalRModel.connection.current?.off("StageSet",onStageSet);
-			// window.removeEventListener("touchstart", (e:any)=>e.preventDefault());
+			window.removeEventListener("mouseup", handleWindowMouseUp);
+			window.removeEventListener("touchend", handleWindowTouchEnd);
+			window.removeEventListener("mousedown", handleWindowMouseDown);
+			signalRModel.connection.current?.off("StageSet", onStageSet);
 		};
-	}
-		, []);
+	}, []);
 
 	let className=props.disabled? "wrapper disabled":"wrapper";
 	return (

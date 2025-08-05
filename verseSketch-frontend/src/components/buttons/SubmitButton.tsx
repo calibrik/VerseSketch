@@ -29,8 +29,7 @@ export const SubmitButton: FC<ISubmitButtonProps> = (props) => {
             className="secondary-button"
             style={props.style}
             onClick={props.onClick}
-            disabled={props.loading||props.disabled}
-            htmlType={"submit"}>
+            disabled={props.loading||props.disabled}>
                 {props.isSubmitted?"EDIT":"SUBMIT"}
         </BaseButton>
     );

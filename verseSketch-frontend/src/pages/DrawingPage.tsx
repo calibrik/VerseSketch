@@ -164,11 +164,11 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         setIsSubmitted(true);
     }
 
-    async function onStageSet(stage:number) {
-        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current || stage==signalRModel.roomModelRef.current.playersCount)
+    async function onStageSet(s:number) {
+        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current || s==signalRModel.roomModelRef.current.playersCount)
             return;
         await getLines();
-        setStage(stage);
+        setStage(s);
         timerRef.current?.reset();
         playerCompleteCounterRef.current?.reset();
         setIsTimeUp(false);

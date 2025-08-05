@@ -1,28 +1,30 @@
-import { FC, RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Stage, Layer, Image } from "react-konva";
 import { CANVAS_BASE_BRUSH_SIZE, CANVAS_BASE_ERASER_SIZE, CANVAS_BASE_HEIGHT, CANVAS_BASE_WIDTH, CANVAS_BUFFER_LIMIT, ILine, Point } from "./Canvas";
 import { Image as KonvaImage } from "konva/lib/shapes/Image";
 import { delay } from "../misc/MiscFunctions";
 import { Spinner } from "./Spinner";
+import { forwardRef, useImperativeHandle } from "react";
 
 interface IShowcaseCanvasProps {
 	style?: React.CSSProperties;
-	lines: ILine[];
 	loading: boolean;
-	onFinishDrawing: RefObject<()=>void>;
-	isShowcaseStarted: boolean;
 };
 
-export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
+export type ShowcaseCanvasHandle = {
+	draw: (lines: ILine[]) => Promise<void>;
+	reset: () => void;
+};
+
+export const ShowcaseCanvas = forwardRef<any, IShowcaseCanvasProps>((props, ref) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [size, setSize] = useState<{ width: number, height: number }>({ width: 0, height: 0 });
 	const [scale, setScale] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
 	const lastPos = useRef<Point>({ x: 0, y: 0 });
 	const imageRef = useRef<KonvaImage>(null);
 	const timeToDraw = 1500;
-	const backBuffer = useRef<ArrayBuffer[]>([]);
-	const forwardRef = useRef<ArrayBuffer[]>([]);
-
+	const backBufferRef = useRef<ArrayBuffer[]>([]);
+	const forwardBufferRef = useRef<ArrayBuffer[]>([]);
 
 	const { canvas, context } = useMemo(() => {
 		const canvas = document.createElement('canvas');
@@ -38,30 +40,30 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 	}, []);
 
 	function goBack() {
-		if (!context || backBuffer.current.length == 0)
+		if (!context || backBufferRef.current.length == 0)
 			return;
 		let imageData = context.getImageData(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT);
 		let curr = new Uint8Array(imageData.data).buffer;
-		let prev = backBuffer.current.pop();
+		let prev = backBufferRef.current.pop();
 		if (!prev)
 			return;
 		let newData = new ImageData(new Uint8ClampedArray(prev), imageData.width, imageData.height);
 		context.putImageData(newData, 0, 0);
 		imageRef.current?.getLayer()?.batchDraw();
-		forwardRef.current.push(curr);
+		forwardBufferRef.current.push(curr);
 	}
 	function goForward() {
-		if (!context || forwardRef.current.length == 0)
+		if (!context || forwardBufferRef.current.length == 0)
 			return;
 		let imageData = context.getImageData(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT);
 		let curr = new Uint8Array(imageData.data).buffer;
-		let forw = forwardRef.current.pop();
+		let forw = forwardBufferRef.current.pop();
 		if (!forw)
 			return;
 		let newData = new ImageData(new Uint8ClampedArray(forw), imageData.width, imageData.height);
 		context.putImageData(newData, 0, 0);
 		imageRef.current?.getLayer()?.batchDraw();
-		backBuffer.current.push(curr);
+		backBufferRef.current.push(curr);
 	}
 
 	function drawTo(point: Point) {
@@ -81,7 +83,6 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 		hex += "ff";
 		return parseInt(hex, 16);
 	}
-
 
 	function getPixelColor(point: Point, data: DataView): number {
 		let index = (Math.floor(point.y) * CANVAS_BASE_WIDTH + Math.floor(point.x)) * 4;
@@ -143,19 +144,18 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 		});
 	}
 
-	async function drawLines() {
-		if (!context || !props.isShowcaseStarted || props.lines == null) {
-			props.onFinishDrawing.current();
+	async function draw(lines: ILine[]) {
+		if (!context || lines == null) {
 			return;
 		}
 
 		let pointsCount = 0;
-		for (const line of props.lines)
+		for (const line of lines)
 			pointsCount += line.points.length;
 		const batch = Math.ceil((pointsCount * 5) / timeToDraw);
 
 		let start = Date.now();
-		for (const line of props.lines) {
+		for (const line of lines) {
 			if (line.tool === "forward") {
 				goForward();
 				await delay(150);
@@ -174,11 +174,10 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 				continue;
 			}
 
-
-			forwardRef.current = [];
-			backBuffer.current.push(new Uint8Array(context.getImageData(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT).data).buffer);
-			if (backBuffer.current.length > CANVAS_BUFFER_LIMIT)
-				backBuffer.current.shift();
+			forwardBufferRef.current = [];
+			backBufferRef.current.push(new Uint8Array(context.getImageData(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT).data).buffer);
+			if (backBufferRef.current.length > CANVAS_BUFFER_LIMIT)
+				backBufferRef.current.shift();
 			context.lineWidth = line.tool == "eraser" ? CANVAS_BASE_ERASER_SIZE * line.brushSize : CANVAS_BASE_BRUSH_SIZE * line.brushSize;
 			context.globalCompositeOperation = line.tool === 'eraser' ? 'destination-out' : 'source-over';
 			context.strokeStyle = line.color;
@@ -197,16 +196,23 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 			drawTo(line.points[line.points.length - 1]);
 			imageRef.current?.getLayer()?.batchDraw();
 		}
-		props.onFinishDrawing.current();
 		console.log(Date.now() - start);
 	}
 
-	useEffect(() => {
-		forwardRef.current = [];
-		backBuffer.current = [];
+	function reset() {
+		forwardBufferRef.current = [];
+		backBufferRef.current = [];
 		context?.clearRect(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT);
-		drawLines();
-	}, [props.lines])
+		imageRef.current?.getLayer()?.batchDraw();
+	}
+
+	useImperativeHandle(ref, () => ({
+		draw: async (lines: ILine[]) => {
+			reset();
+			await draw(lines);
+		},
+		reset: reset
+	}));
 
 	useEffect(() => {
 		onResize();
@@ -250,4 +256,4 @@ export const ShowcaseCanvas: FC<IShowcaseCanvasProps> = (props) => {
 			</Stage>
 		</div>
 	);
-};
+});
