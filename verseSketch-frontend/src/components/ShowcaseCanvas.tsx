@@ -167,6 +167,11 @@ export const ShowcaseCanvas = forwardRef<any, IShowcaseCanvasProps>((props, ref)
 				await delay(150);
 				continue;
 			}
+			
+			forwardBufferRef.current = [];
+			backBufferRef.current.push(new Uint8Array(context.getImageData(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT).data).buffer);
+			if (backBufferRef.current.length > CANVAS_BUFFER_LIMIT)
+				backBufferRef.current.shift();
 
 			if (line.tool === "bucket") {
 				floodFill(line.points[0], line.color);
@@ -174,10 +179,6 @@ export const ShowcaseCanvas = forwardRef<any, IShowcaseCanvasProps>((props, ref)
 				continue;
 			}
 
-			forwardBufferRef.current = [];
-			backBufferRef.current.push(new Uint8Array(context.getImageData(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT).data).buffer);
-			if (backBufferRef.current.length > CANVAS_BUFFER_LIMIT)
-				backBufferRef.current.shift();
 			context.lineWidth = line.tool == "eraser" ? CANVAS_BASE_ERASER_SIZE * line.brushSize : CANVAS_BASE_BRUSH_SIZE * line.brushSize;
 			context.globalCompositeOperation = line.tool === 'eraser' ? 'destination-out' : 'source-over';
 			context.strokeStyle = line.color;

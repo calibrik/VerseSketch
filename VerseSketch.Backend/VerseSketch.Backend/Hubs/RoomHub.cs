@@ -20,8 +20,7 @@ public interface IRoomHub
     Task PlayerKicked(string playerId);
     Task PlayerJoined(PlayerViewModel player);
     Task StageSet(int stage);
-    Task PlayerCompletedTask();
-    Task PlayerCanceledTask();
+    Task PlayerCompletedTask(int completedNum);
     Task StartShowcase();
 }
 
@@ -75,6 +74,7 @@ public class RoomHub:Hub<IRoomHub>
             isPlayerAdmin = playerId==room.AdminId,
             PlayerId = player._Id,
             Stage = room.Stage,
+            CurrDone = room.CompletedMap.CurrDone
         };
         List<Player> players = await _playerRepository.GetPlayersInRoomAsync(room.Title);
         foreach (Player p in players)
@@ -116,30 +116,34 @@ public class RoomHub:Hub<IRoomHub>
         });
     }
 
-    public async Task PlayerCanceledTask(string roomTitle)
+    public async Task PlayerCanceledTask()
     {
         if (!Context.User.Identity.IsAuthenticated)
         {
             throw new HubException("You are not in this room.");
         }
-        await Clients.Groups(roomTitle).PlayerCanceledTask();
+        Player? player = await _playerRepository.GetPlayerAsync(Context.User.FindFirst("PlayerId").Value);
+        Room? room=await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (player == null)
+        {
+            throw new HubException("Player not found.");
+        }
+        if (room == null)
+        {
+            throw new HubException("Room not found.");
+        }
+
+        if (room.CompletedMap.IdToStage[player._Id] != room.Stage)
+            return;
+        int currDone=int.Max(room.CompletedMap.CurrDone-1,0);
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.CompletedMap.CurrDone, currDone ).Inc(r=>r.CompletedMap.IdToStage[player._Id], -1 );
+        await _roomsRepository.UpdateRoomAsync(room.Title,update);
+        await Clients.Groups(room.Title).PlayerCompletedTask(currDone);
     }
 
-    public async Task PlayersDoneWithTask()
+    private async Task PlayersDoneWithTask(Room room, Player player)
     {
-        if (!Context.User.Identity.IsAuthenticated)
-            throw new HubException("You are not an admin in this room.");
-        string playerId = Context.User.FindFirst("PlayerId").Value;
-        Player? player = await _playerRepository.GetPlayerAsync(playerId);
-        if (player == null)
-            throw new HubException("You are not an admin in this room.");
-        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
-        if (room == null)
-            throw new HubException("Room not found.");
-        if (room.AdminId!=playerId)
-            throw new HubException("You are not an admin in this room.");
-        
-        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r => r.Stage,1);
+        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r => r.Stage,1).Set(r=>r.CompletedMap.CurrDone,0);
         await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
         await Clients.Group(player.RoomTitle).StageSet(room.Stage+1);
     }
@@ -182,6 +186,21 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Group(player.RoomTitle).StartShowcase();
     }
 
+    private async Task PlayerCompletedTask(Room room, Player player)
+    {
+        if (room.CompletedMap.IdToStage[player._Id] != room.Stage)
+            return;
+        int currDone=int.Min(room.CompletedMap.CurrDone+1,room.PlayersCount);
+        if (currDone == room.PlayersCount)
+        {
+            await PlayersDoneWithTask(room, player);
+            return;
+        }
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.CompletedMap.CurrDone, currDone ).Set(r=>r.CompletedMap.IdToStage[player._Id], room.Stage );
+        await _roomsRepository.UpdateRoomAsync(room.Title,update);
+        await Clients.Groups(room.Title).PlayerCompletedTask(currDone);
+    }
+
     public async Task SendImage(LyricsImage image,string forPlayerId)
     {
         if (!Context.User.Identity.IsAuthenticated)
@@ -196,8 +215,9 @@ public class RoomHub:Hub<IRoomHub>
         if (room.Stage<1)
             throw new HubException("You are in the wrong stage.");
         
+        Console.WriteLine($"{player.Nickname} sent image with size {image.Image.Length} on stage {room.Stage}");
         await _storylineRepository.UpdateImage(image,room.Stage,forPlayerId);
-        await Clients.Groups(player.RoomTitle).PlayerCompletedTask();
+        await PlayerCompletedTask(room,player);
     }
     
     public async Task SendParams(SetParamsViewModel model)
@@ -373,7 +393,7 @@ public class RoomHub:Hub<IRoomHub>
             lyricsI+=2;
         }
         
-        await Clients.Group(room.Title).PlayerCompletedTask();
+        await PlayerCompletedTask(room,player);
     }
 
     public async Task Leave()
@@ -408,6 +428,9 @@ public class RoomHub:Hub<IRoomHub>
             await Clients.Groups(player.RoomTitle).RoomDeleted();
             return;
         }
+
+        if (room.CompletedMap.CurrDone == room.PlayersCount)
+            await PlayersDoneWithTask(room, player);
         await Clients.Groups(player.RoomTitle).PlayerLeft(player._Id);
     }
     

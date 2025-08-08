@@ -4,6 +4,14 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace VerseSketch.Backend.Models;
 
+public struct CompletedMap
+{
+    [BsonElement("currDone")]
+    public int CurrDone { get; set; }
+    [BsonElement("idToStage")]
+    public Dictionary<string,int> IdToStage { get; set; }
+}
+
 public class Room
 {
     [BsonId]
@@ -24,7 +32,9 @@ public class Room
     [BsonElement("currentJoinToken")]
     public string? CurrentJoinToken { get; set; }
     [BsonElement("stage")] 
-    public int Stage { get; set; }
+    public required int Stage { get; set; }
     [BsonElement("roomId")] 
     public int RandomOrderSeed { get; set; }
+    [BsonElement("completedMap")]
+    public required CompletedMap CompletedMap { get; set; }
 }

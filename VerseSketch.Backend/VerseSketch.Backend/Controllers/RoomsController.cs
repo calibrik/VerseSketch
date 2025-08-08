@@ -88,6 +88,7 @@ public class RoomsController:ControllerBase
             isPlayerAdmin = playerId==room.AdminId,
             PlayerId = currPlayer.Nickname,
             Stage = room.Stage,
+            CurrDone = room.CompletedMap.CurrDone
         };
         List<Player> players = await _playerRepository.GetPlayersInRoomAsync(roomTitle);
         foreach (Player player in players)
@@ -179,7 +180,8 @@ public class RoomsController:ControllerBase
         {
             return StatusCode(500, new { message = "Something went wrong, please try again later." });
         }
-        Room room = new Room()
+
+        Room room = new Room
         {
             Title = model.Title,
             PlayersCount = 0,
@@ -187,8 +189,10 @@ public class RoomsController:ControllerBase
             AdminId = admin._Id,
             IsPublic = model.IsPublic,
             TimeToDraw = 10,
-            Stage = -1
+            Stage = -1,
+            CompletedMap = default,
         };
+        room.CompletedMap.IdToStage.Add(admin._Id,-1);
         string joinToken = CreateJoinLinkToken(room);
         try
         {
@@ -277,6 +281,9 @@ public class RoomsController:ControllerBase
             }
             else
                 await _playerRepository.CreatePlayerAsync(player);
+            room.CompletedMap.IdToStage.Add(player._Id,-1);
+            UpdateDefinition<Room> roomUpd = Builders<Room>.Update.Set(r=>r.CompletedMap.IdToStage,room.CompletedMap.IdToStage);
+            await _roomsRepository.UpdateRoomAsync(room.Title,roomUpd);
         }
         catch (Exception e)
         {

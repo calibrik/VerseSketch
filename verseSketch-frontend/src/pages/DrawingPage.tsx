@@ -160,8 +160,15 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         if (!signalRModel.roomModelRef.current||!signalRModel.connection.current)
             return;
         setIsTimeUp(true);
-        await signalRModel.connection.current.invoke("SendImage",{image:imageRef.current,playerId:signalRModel.roomModelRef.current.playerId,lyrics:lines},fromPlayerId.current);
-        setIsSubmitted(true);
+        setSubmitLoading(true);
+        try {
+                await signalRModel.connection.current.invoke("SendImage",{image:imageRef.current,playerId:signalRModel.roomModelRef.current.playerId,lyrics:lines},fromPlayerId.current);
+                setIsSubmitted(true);
+            }
+            catch (e:any) {
+                errorModals.errorModalClosable.current?.show("An error occured while trying to submit drawing.")
+            }
+        setSubmitLoading(false);
     }
 
     async function onStageSet(s:number) {

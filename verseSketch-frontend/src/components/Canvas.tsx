@@ -147,6 +147,10 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 		let currColor=getPixelColor(point,data);
 		if (currColor===targetColor)
 			return;
+		forwardRef.current=[];
+		backBuffer.current.push(new Uint8Array(context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT).data).buffer);
+		if (backBuffer.current.length>CANVAS_BUFFER_LIMIT)
+			backBuffer.current.shift();
 		let stack:Point[]=[point]
 		while (stack.length>0)
 		{
@@ -178,10 +182,6 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 		if (props.disabled||props.tool === "eyedropper" || !context)
 			return;
 		isDrawing.current = true;
-		forwardRef.current=[];
-		backBuffer.current.push(new Uint8Array(context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT).data).buffer);
-		if (backBuffer.current.length>CANVAS_BUFFER_LIMIT)
-			backBuffer.current.shift();
 		context.lineWidth = props.tool == "eraser" ? CANVAS_BASE_ERASER_SIZE * props.brushSize : CANVAS_BASE_BRUSH_SIZE * props.brushSize;
 		context.globalCompositeOperation = props.tool === 'eraser' ? 'destination-out' : 'source-over';
 		context.strokeStyle = props.color;
@@ -200,6 +200,10 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 		if (props.tool=="bucket")
 			floodFill(point);
 		else{
+			forwardRef.current=[];
+			backBuffer.current.push(new Uint8Array(context.getImageData(0,0,CANVAS_BASE_WIDTH,CANVAS_BASE_HEIGHT).data).buffer);
+			if (backBuffer.current.length>CANVAS_BUFFER_LIMIT)
+				backBuffer.current.shift();
 			drawTo(point);
 		}
 	};

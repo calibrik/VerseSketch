@@ -160,5 +160,7 @@ app.Run();
 //TODO Don't delete the player if he disconnected during the game
 //TODO Shuffle order of lyrics lines in future
 //TODO TTS pass as the audio file
-//TODO Sync the player playing
+//TODO Sync the player playing in the showcase
 //TODO All the leave/reconnect functionality during the game
+//TODO Map player complete to player to avoid double detection
+//TODO Image recording bug

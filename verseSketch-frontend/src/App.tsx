@@ -75,4 +75,4 @@ export default App;
 //TODO: remove "alpha" drawing from canvas
 //TODO: Need to interrupt showcase playing if admin clicked on showing next (tts as audiofile should cut it)
 //TODO: ColorPicker is bugged tf out
-//TODO: Showcase bugging if u fill the whole page many times+not fetching an image sometimes
+//TODO: Drawing page submitting images incorrectly (can't replicate tho)
