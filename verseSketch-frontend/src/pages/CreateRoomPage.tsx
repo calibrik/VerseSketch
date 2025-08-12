@@ -39,7 +39,6 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
     async function onSuccessfulSubmit(values:ICreateRoomModel) {
         setLoading(true);
         values.title=values.title.trim();
-        console.log("Form values:", JSON.stringify(values));
         let response=await fetch(`${ConnectionConfig.Api}/rooms/create`,{
             method:"POST",
             headers:{
@@ -53,12 +52,11 @@ export const CreateRoomPage: FC<ICreateRoomPageProps> = () => {
             });
         let data=await response?.json();
         if (!response?.ok) {
-            console.error("Error:", data);
+            errorModals.errorModalClosable.current?.show(data.message);
             setLoading(false);
             return;
         }
         sessionStorage.setItem("player",data.accessToken);
-        console.log("session storage after room submit: ", sessionStorage.getItem("player"));
         setLoading(false);
         historyStack.current.push(location.pathname);
         navigate(`/join-room/by-link/${data.joinToken}`,{replace:true});

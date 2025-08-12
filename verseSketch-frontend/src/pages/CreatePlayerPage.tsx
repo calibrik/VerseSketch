@@ -74,7 +74,6 @@ export const CreatePlayerPage: FC<ICreatePlayerPageProps> = () => {
             return;
         values.nickname=values.nickname.trim();
         setLoading(true);
-        console.log(`cookies before submit: ${sessionStorage.getItem("player")}`);
         let response=await fetch(`${ConnectionConfig.Api}/rooms/join`,{
             method:"POST",
             headers:{

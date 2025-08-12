@@ -10,6 +10,8 @@ public struct CompletedMap
     public int CurrDone { get; set; }
     [BsonElement("idToStage")]
     public Dictionary<string,int> IdToStage { get; set; }
+    [BsonElement("version")]
+    public int Version { get; set; }
 }
 
 public class Room

@@ -143,7 +143,7 @@ public class RoomHub:Hub<IRoomHub>
 
     private async Task PlayersDoneWithTask(Room room, Player player)
     {
-        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r => r.Stage,1).Set(r=>r.CompletedMap.CurrDone,0);
+        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r => r.Stage,1).Set(r=>r.CompletedMap.CurrDone,0).Set(r=>r.CompletedMap.IdToStage[player._Id], room.Stage);
         await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
         await Clients.Group(player.RoomTitle).StageSet(room.Stage+1);
     }
@@ -162,7 +162,7 @@ public class RoomHub:Hub<IRoomHub>
         if (room.AdminId!=playerId)
             throw new HubException("You are not an admin in this room.");
         
-        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage,-1);
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage,-1).Set(r=>r.CompletedMap.CurrDone,0).Set(r=>r.CompletedMap.Version,0);
         await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
         await _storylineRepository.DeleteRoomsStorylines(room.Title);
         await _instructionRepository.DeleteRoomsInstructions(room.Title);
@@ -186,18 +186,34 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Group(player.RoomTitle).StartShowcase();
     }
 
-    private async Task PlayerCompletedTask(Room room, Player player)
+    private async Task PlayerCompletedTask(Room? room, Player player)
     {
-        if (room.CompletedMap.IdToStage[player._Id] != room.Stage)
+        if (room.CompletedMap.IdToStage[player._Id] == room.Stage)
             return;
-        int currDone=int.Min(room.CompletedMap.CurrDone+1,room.PlayersCount);
+        int currDone =int.Min(room.CompletedMap.CurrDone+1,room.PlayersCount);
+        Console.WriteLine($"{player.Nickname} tries to update map for version {room.CompletedMap.Version} with currDone {room.CompletedMap.CurrDone+1}");
         if (currDone == room.PlayersCount)
         {
             await PlayersDoneWithTask(room, player);
             return;
         }
-        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.CompletedMap.CurrDone, currDone ).Set(r=>r.CompletedMap.IdToStage[player._Id], room.Stage );
-        await _roomsRepository.UpdateRoomAsync(room.Title,update);
+        bool res = await _roomsRepository.UpdateCompletedMap(room.Title,player._Id,room.Stage,currDone,room.CompletedMap.Version);
+        while (!res)
+        {
+            await Task.Delay(100);
+            room = await _roomsRepository.GetRoomAsync(room.Title);
+            if (room == null)
+                return;
+            currDone=int.Min(room.CompletedMap.CurrDone+1,room.PlayersCount);
+            Console.WriteLine($"{player.Nickname} tries to update map for version {room.CompletedMap.Version} with currDone {room.CompletedMap.CurrDone}");
+            if (currDone == room.PlayersCount)
+            {
+                await PlayersDoneWithTask(room, player);
+                return;
+            }
+            res = await _roomsRepository.UpdateCompletedMap(room.Title,player._Id,room.Stage,currDone,room.CompletedMap.Version);
+        }
+
         await Clients.Groups(room.Title).PlayerCompletedTask(currDone);
     }
 
@@ -215,7 +231,7 @@ public class RoomHub:Hub<IRoomHub>
         if (room.Stage<1)
             throw new HubException("You are in the wrong stage.");
         
-        Console.WriteLine($"{player.Nickname} sent image with size {image.Image.Length} on stage {room.Stage}");
+        Console.WriteLine($"{player.Nickname} sent image with size {image.Image.Length} on stage {room.Stage} with curr done {room.CompletedMap.CurrDone}");
         await _storylineRepository.UpdateImage(image,room.Stage,forPlayerId);
         await PlayerCompletedTask(room,player);
     }
@@ -359,8 +375,7 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("Invalid stage.");
         if (lyrics == "")
         {
-            await Clients.Group(room.Title).PlayerKicked(player._Id);
-            return;
+            throw new HubException("Nothing submitted.");
         }
         List<string> lyricsSubmitted=lyrics.Split('\n').ToList();
         int count = 0;

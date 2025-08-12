@@ -56,7 +56,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         }
         else {
             try {
-                await signalRModel.connection.current.invoke("PlayerCanceledTask", model?.title)
+                await signalRModel.connection.current.invoke("PlayerCanceledTask")
                 setIsSubmitted(false);
             }
             catch (e: any) {

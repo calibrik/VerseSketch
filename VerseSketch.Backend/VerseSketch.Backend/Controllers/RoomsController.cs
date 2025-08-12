@@ -190,7 +190,7 @@ public class RoomsController:ControllerBase
             IsPublic = model.IsPublic,
             TimeToDraw = 10,
             Stage = -1,
-            CompletedMap = default,
+            CompletedMap = new CompletedMap {CurrDone = 0,IdToStage = new Dictionary<string, int>(),Version = 0},
         };
         room.CompletedMap.IdToStage.Add(admin._Id,-1);
         string joinToken = CreateJoinLinkToken(room);
@@ -280,8 +280,10 @@ public class RoomsController:ControllerBase
                 await _playerRepository.UpdatePlayerAsync(player, update, true);
             }
             else
+            {
                 await _playerRepository.CreatePlayerAsync(player);
-            room.CompletedMap.IdToStage.Add(player._Id,-1);
+                room.CompletedMap.IdToStage.Add(player._Id,-1);
+            }
             UpdateDefinition<Room> roomUpd = Builders<Room>.Update.Set(r=>r.CompletedMap.IdToStage,room.CompletedMap.IdToStage);
             await _roomsRepository.UpdateRoomAsync(room.Title,roomUpd);
         }

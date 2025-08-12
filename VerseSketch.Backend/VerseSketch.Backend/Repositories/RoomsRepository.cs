@@ -56,6 +56,16 @@ public class RoomsRepository
         return await _rooms.Find(r=>r.AdminId==adminId).SingleOrDefaultAsync();
     }
 
+    public async Task<bool> UpdateCompletedMap(string roomTitle, string playerId, int stage, int currDone, int version)
+    {
+        FilterDefinition<Room> filter = Builders<Room>.Filter.And(Builders<Room>.Filter.Eq(r => r.Title, roomTitle),
+            Builders<Room>.Filter.Eq(r => r.CompletedMap.Version, version));
+        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r => r.CompletedMap.Version, 1)
+            .Set(r => r.CompletedMap.IdToStage[playerId], stage).Set(r => r.CompletedMap.CurrDone, currDone);
+        UpdateResult result = await _rooms.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
+    }
+
     public async Task DeleteRoomAsync(string roomTitle)
     {
         await _rooms.DeleteOneAsync(r=>r.Title==roomTitle);

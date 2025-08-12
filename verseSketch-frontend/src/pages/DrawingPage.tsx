@@ -3,10 +3,10 @@ import { Canvas, CanvasHandle, ILine } from "../components/Canvas";
 import { Col, ColorPicker, Divider, Flex, Row, Slider } from "antd";
 import { StageCounter } from "../components/StageCounter";
 import { DisabledColorPicker } from "../components/DisabledColorPicker";
-import { getWidthLevel, leave, WindowLevel } from "../misc/MiscFunctions";
+import { delay, getWidthLevel, leave, WindowLevel } from "../misc/MiscFunctions";
 import { BrushIcon, BucketIcon, EraserIcon, EyedropperIcon } from "../components/Icons";
 import { SubmitButton } from "../components/buttons/SubmitButton";
-import { IPlayerCompleteCounterHandle, PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
+import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
 import { ITimerHandle, Timer } from "../components/Timer";
 import { useRecentColorsContext } from "../components/RecentColorsProvider";
 import { ToolButton } from "../components/buttons/ToolButton";
@@ -47,7 +47,6 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const [isSubmitted,setIsSubmitted]=useState<boolean>(false);
     const [isTimeUp,setIsTimeUp]=useState<boolean>(false);
     const timerRef=useRef<ITimerHandle|null>(null);
-    const playerCompleteCounterRef=useRef<IPlayerCompleteCounterHandle | null>(null);
     const [stage,setStage]=useState<number>(signalRModel.roomModelRef.current?.stage??0);
 
 
@@ -110,7 +109,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         setSubmitLoading(true);
         if (isSubmitted){
             try {
-                await signalRModel.connection.current.invoke("PlayerCanceledTask",signalRModel.roomModelRef.current.title);
+                await signalRModel.connection.current.invoke("PlayerCanceledTask");
                 setIsSubmitted(false);
             }
             catch (e:any) {
@@ -157,7 +156,13 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
 
     async function forceSubmit()
     {
-        if (!signalRModel.roomModelRef.current||!signalRModel.connection.current)
+        console.log("forceSubmit called with:", {
+            roomModel: signalRModel.roomModelRef.current,
+            connection: signalRModel.connection.current,
+            isSubmitted:isSubmitted,
+            tool:tool
+        });
+        if (!signalRModel.roomModelRef.current||!signalRModel.connection.current||isSubmitted)
             return;
         setIsTimeUp(true);
         setSubmitLoading(true);
@@ -176,10 +181,10 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
             return;
         await getLines();
         setStage(s);
-        timerRef.current?.reset();
-        playerCompleteCounterRef.current?.reset();
         setIsTimeUp(false);
         setIsSubmitted(false);
+        await delay(150);
+        timerRef.current?.reset();
     }
 
     useEffect(() => {
@@ -206,7 +211,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         <>
             <Timer ref={timerRef} onTimeIsUp={forceSubmit} />
             <StageCounter stage={stage} maxStage={signalRModel.roomModelRef.current?.playersCount??0}/>
-            <PlayerCompleteCounter ref={playerCompleteCounterRef}/>
+            <PlayerCompleteCounter/>
             <div className="container-mid">
                 <div style={{ marginTop: "3vh" }} className="lyrics-container">
                     <h1 className="lyrics-2line">{lines[0]}</h1>
