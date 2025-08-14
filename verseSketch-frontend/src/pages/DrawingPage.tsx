@@ -183,7 +183,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         setStage(s);
         setIsTimeUp(false);
         setIsSubmitted(false);
-        await delay(150);
+        await delay(200);
         timerRef.current?.reset();
     }
 
@@ -225,7 +225,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
                         <div className={widthLevel <= WindowLevel.SM ? "palette-mobile" : "palette"}>
                             {widthLevel <= WindowLevel.SM ? "" : <Divider type={"horizontal"} className="palette-divider">Color</Divider>}
                             <div className="palette-current">
-                                <ColorPicker className="current-color" value={color} onChangeComplete={(value)=>{setColor(value.toHexString())}} onOpenChange={(open) => {
+                                <ColorPicker className="current-color" value={color} onChange={(value)=>{setColor(value.toHexString())}} onOpenChange={(open) => {
                                      if (!open)
                                         updateRecent(color,bufferColor.current);
                                     else

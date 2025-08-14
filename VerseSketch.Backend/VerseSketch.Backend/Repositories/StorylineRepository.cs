@@ -30,6 +30,11 @@ public class StorylineRepository
         return await _storylines.Find(s => s.PlayerId==playerId).Project(s=>s.Images).FirstOrDefaultAsync();
     }
 
+    public async Task<List<string>> GetPlayersLyrics(string playerId, int num)
+    {
+        return await _storylines.Find(s => s.PlayerId == playerId).Project(s => s.Images[num].Lyrics).FirstOrDefaultAsync();
+    }
+
     public async Task DeleteRoomsStorylines(string roomTitle)
     {
         await _storylines.DeleteManyAsync(s=>s.RoomTitle==roomTitle);

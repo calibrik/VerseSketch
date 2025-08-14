@@ -21,7 +21,7 @@ public interface IRoomHub
     Task PlayerJoined(PlayerViewModel player);
     Task StageSet(int stage);
     Task PlayerCompletedTask(int completedNum);
-    Task StartShowcase();
+    Task StartShowcase(string playerId);
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -169,21 +169,20 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Group(player.RoomTitle).StageSet(-1);
     }
     
-    public async Task StartShowcase()
+    public async Task StartShowcase(string playerId)
     {
         if (!Context.User.Identity.IsAuthenticated)
-            throw new HubException("You are not an admin in this room.");
-        string playerId = Context.User.FindFirst("PlayerId").Value;
-        Player? player = await _playerRepository.GetPlayerAsync(playerId);
+            throw new HubException("You are not in this room.");
+        Player? player = await _playerRepository.GetPlayerAsync(Context.User.FindFirst("PlayerId").Value);
         if (player == null)
             throw new HubException("You are not an admin in this room.");
         Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
         if (room == null)
             throw new HubException("Room not found.");
-        if (room.AdminId!=playerId)
+        if (room.AdminId!=player._Id)
             throw new HubException("You are not an admin in this room.");
 
-        await Clients.Group(player.RoomTitle).StartShowcase();
+        await Clients.Group(player.RoomTitle).StartShowcase(playerId);
     }
 
     private async Task PlayerCompletedTask(Room? room, Player player)
@@ -191,7 +190,6 @@ public class RoomHub:Hub<IRoomHub>
         if (room.CompletedMap.IdToStage[player._Id] == room.Stage)
             return;
         int currDone =int.Min(room.CompletedMap.CurrDone+1,room.PlayersCount);
-        Console.WriteLine($"{player.Nickname} tries to update map for version {room.CompletedMap.Version} with currDone {room.CompletedMap.CurrDone+1}");
         if (currDone == room.PlayersCount)
         {
             await PlayersDoneWithTask(room, player);
@@ -205,7 +203,6 @@ public class RoomHub:Hub<IRoomHub>
             if (room == null)
                 return;
             currDone=int.Min(room.CompletedMap.CurrDone+1,room.PlayersCount);
-            Console.WriteLine($"{player.Nickname} tries to update map for version {room.CompletedMap.Version} with currDone {room.CompletedMap.CurrDone}");
             if (currDone == room.PlayersCount)
             {
                 await PlayersDoneWithTask(room, player);

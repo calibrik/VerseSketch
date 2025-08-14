@@ -71,8 +71,7 @@ export default App;
 //TODO: Width slider on drawing canvas
 //TODO: Tinker with showcase canvas size
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
-//TODO: Player complete counter won't update after reconnecting
 //TODO: remove "alpha" drawing from canvas
-//TODO: Need to interrupt showcase playing if admin clicked on showing next (tts as audiofile should cut it)
-//TODO: ColorPicker is bugged tf out
+//TODO: ColorPicker is bugged tf out(kinda fixed)
 //TODO: Drawing page submitting images incorrectly (can't replicate tho)
+//TODO: bugg with timer reset

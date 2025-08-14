@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using VerseSketch.Backend.Models;
 using VerseSketch.Backend.Repositories;
+using System.Speech.Synthesis;
 
 namespace VerseSketch.Backend.Controllers;
 
@@ -49,5 +50,21 @@ public class GameController : ControllerBase
             return Unauthorized(new { message = $"Invalid request." });
 
         return Ok(new { lyricImages = await _storylineRepository.GetPlayersStoryline(playerId) });
+    }
+
+    [HttpGet("/api/game/getAudio")]
+    public async Task<IActionResult> GetAudio(string text)
+    {
+        if (!User.Identity.IsAuthenticated)
+            return Unauthorized(new { message = $"You are not part of this game." });
+        
+        using var synth = new SpeechSynthesizer();
+        using var stream = new MemoryStream();
+        synth.SetOutputToWaveStream(stream);
+        synth.Rate = 2;
+        synth.Speak(text);
+        stream.Position = 0;
+
+        return File(stream.ToArray(), "audio/wav");
     }
 }

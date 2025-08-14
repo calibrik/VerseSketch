@@ -21,7 +21,7 @@ type LyricImage = {
 export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     const signalRModel = useSignalRConnectionContext();
     const [loading, setLoading] = useState(false);
-    const [currPlayerPlaying, setCurrPlayerPlaying] = useState<number>(0);
+    const [currPlayerPlaying, setCurrPlayerPlaying] = useState<string>(signalRModel.roomModelRef.current?.players[0]?.id ?? "");
     const currPlayerPlayingRef = useRef<number>(0);
     const navigate = useNavigate();
     const [currLyrics, setCurrLyrics] = useState<string[]>(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
@@ -29,10 +29,10 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     const [isShowcaseStarted, setIsShowcaseStarted] = useState<boolean>(false);
     const [isWaiting, setIsWaiting] = useState<boolean>(false);
     const [isFinished, setIsFinished] = useState<boolean>(false);
-    const canvas=useRef<ShowcaseCanvasHandle>(null);
+    const canvas = useRef<ShowcaseCanvasHandle>(null);
 
 
-    async function getStoryline(): Promise<LyricImage[]> {
+    async function getStoryline(playerId: string): Promise<LyricImage[]> {
         // return [
         //     {
         //     lyrics: ["Hello","dick"],
@@ -49,7 +49,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         let response;
         try {
             response = await fetch(`${ConnectionConfig.Api}/game/getPlayersStoryline?${new URLSearchParams({
-                playerId: signalRModel.roomModelRef.current?.players[currPlayerPlayingRef.current].id ?? "",
+                playerId: playerId,
             })}`, {
                 method: "GET",
                 headers: {
@@ -78,7 +78,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         if (!signalRModel.roomModelRef.current?.isPlayerAdmin)
             return;
         try {
-            await signalRModel.connection.current?.invoke("StartShowcase");
+            await signalRModel.connection.current?.invoke("StartShowcase", signalRModel.roomModelRef.current?.players[currPlayerPlayingRef.current].id);
         }
         catch (e: any) {
             errorModals.errorModalClosable.current?.show("Failed to start showcase.");
@@ -97,12 +97,38 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         }
     }
 
-    async function playStoryline() {
+    async function getAudio(text: string): Promise<Blob | null> {
+        let response;
+        try {
+            response = await fetch(`${ConnectionConfig.Api}/game/getAudio?${new URLSearchParams({
+                text: text,
+            })}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${sessionStorage.getItem("player")}`
+                }
+            });
+        }
+        catch (e: any) {
+            errorModals.errorModalClosable.current?.show("Could not get audio for the lyrics.");
+            return null;
+        }
+        if (!response.ok) {
+            let data = await response.json();
+            errorModals.errorModalClosable.current?.show(data.message);
+            return null;
+        }
+        return await response.blob();
+    }
+
+    async function playStoryline(playerId: string) {
         if (!signalRModel.roomModelRef.current)
             return;
         setIsShowcaseStarted(true);
+        setCurrPlayerPlaying(playerId);
         window.speechSynthesis.cancel();
-        const lyricImages = await getStoryline();
+        const lyricImages = await getStoryline(playerId);
         if (lyricImages.length === 0) {
             setIsShowcaseStarted(false);
             return;
@@ -118,18 +144,21 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             if (!lyricImage.image)
                 break;
             setCurrLyrics([lyricImage.lyrics[0], lyricImage.lyrics[1]]);
-            const msg = new SpeechSynthesisUtterance(lyricImage.lyrics[0] + '\n' + lyricImage.lyrics[1]);
-            const voice = window.speechSynthesis.getVoices()[0];
-            if (voice) {
-                msg.voice = voice;
+            const blob = await getAudio(lyricImage.lyrics.join('\n'));
+            let msgEnd: Promise<void> = Promise.resolve();
+            if (blob) {
+                const audio = new Audio(URL.createObjectURL(blob));
+                msgEnd = new Promise<void>((resolve) => {
+                    audio.onended= () => {
+                        resolve();
+                    }
+                });
+                audio.play().catch((_) => {
+                    errorModals.errorModalClosable.current?.show("Failed to play audio for the lyrics.");
+                    msgEnd = Promise.resolve();
+                });
             }
-            let msgEnd = new Promise<void>((resolve) => {
-                msg.onend = () => {
-                    resolve();
-                };
-            });
-            let drawingEnd=canvas.current?.draw(lyricImage.image);
-            window.speechSynthesis.speak(msg);
+            let drawingEnd = canvas.current?.draw(lyricImage.image);
             await msgEnd;
             console.log("msg end");
             await drawingEnd;
@@ -139,16 +168,16 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         setIsShowcaseStarted(false);
         setCurrLyrics(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
         canvas.current?.reset();
-        if (currPlayerPlayingRef.current+1 >= signalRModel.roomModelRef.current.players.length) {
+        if (currPlayerPlayingRef.current + 1 >= signalRModel.roomModelRef.current.players.length) {
             if (signalRModel.roomModelRef.current.isPlayerAdmin)
                 setIsFinished(true);
             return;
         }
         currPlayerPlayingRef.current++;
-        setCurrPlayerPlaying((prev) => prev + 1);
+        setCurrPlayerPlaying(signalRModel.roomModelRef.current.players[currPlayerPlayingRef.current].id);
         if (signalRModel.roomModelRef.current.isPlayerAdmin) {
             setIsWaiting(true);
-            await delay(3000);
+            await delay(1500);
             setIsWaiting(false);
         }
     }
@@ -187,7 +216,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                         loading={false}
                         playersCount={signalRModel.roomModelRef.current?.players.length ?? 0}
                         maxPlayersCount={signalRModel.roomModelRef.current?.maxPlayersCount ?? 0}
-                        selectedPlayerId={signalRModel.roomModelRef.current?.players[currPlayerPlaying].id ?? ""} />
+                        selectedPlayerId={currPlayerPlaying} />
                 </Col>
                 <Col xs={24} md={18} xxl={20}>
                     <div className="showcase-container">
