@@ -25,6 +25,12 @@ public class RoomsRepository
     {
         await _rooms.InsertOneAsync(room);
     }
+
+    public async Task<bool> DeleteNotActivePlayers(string roomTitle)
+    {
+        DeleteResult res = await _players.DeleteManyAsync(p => p.RoomTitle == roomTitle && p.ConnectionID == null);
+        return res.DeletedCount>0;
+    }
     
     public async Task<bool> IsJoinTokenValid(string token, string title, CancellationToken ct)
     {
@@ -37,12 +43,24 @@ public class RoomsRepository
 
     public async Task<List<Room>> SearchRoomsAsync(int page, int pageSize,string roomTitle="",CancellationToken cancelToken=default)
     {
-        return await _rooms.Find(r => r.IsPublic && r.Title.Contains(roomTitle) && r.PlayersCount>0 && r.Stage==-1).SortBy(r=>r.Title).Skip(page * pageSize).Limit(pageSize).ToListAsync(cancelToken);
+        return await _rooms.Find(r => r.IsPublic && r.Title.Contains(roomTitle) && r.ActualPlayersCount>0 && r.Stage==-1).SortBy(r=>r.Title).Skip(page * pageSize).Limit(pageSize).ToListAsync(cancelToken);
     }
 
-    public async Task IncrementPlayersCountAsync(string roomTitle,int amount)
+    public async Task IncrementPlayingPlayersCountAsync(string roomTitle,int amount)
     {
-        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r=>r.PlayersCount,amount);
+        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r=>r.PlayingPlayersCount,amount);
+        await _rooms.UpdateOneAsync(r=>r.Title==roomTitle,update);
+    }
+
+    public async Task IncrementBothPlayersCounts(string roomTitle, int amount)
+    {
+        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r => r.ActualPlayersCount, amount)
+            .Inc(r => r.PlayingPlayersCount, amount);
+        await _rooms.UpdateOneAsync(r=>r.Title==roomTitle,update);
+    }
+    public async Task IncrementActualPlayersCountAsync(string roomTitle,int amount)
+    {
+        UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r=>r.ActualPlayersCount,amount);
         await _rooms.UpdateOneAsync(r=>r.Title==roomTitle,update);
     }
 

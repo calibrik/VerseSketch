@@ -21,8 +21,15 @@ public class PlayerRepository
     public async Task CreatePlayerAsync(Player player)
     {
         if (player.RoomTitle!=null)
-            await _roomsRepository.IncrementPlayersCountAsync(player.RoomTitle, 1);
+        {
+            await _roomsRepository.IncrementBothPlayersCounts(player.RoomTitle,1);
+        }
         await _players.InsertOneAsync(player);
+    }
+
+    public async Task<List<string>> GetSubmittedLyrics(string playerId)
+    {
+        return await _players.Find(p => p._Id == playerId).Project(p => p.SubmittedLyrics).FirstOrDefaultAsync();
     }
 
     public async Task<Player?> GetPlayerByNicknameInRoomAsync(string nickname,string roomTitle,CancellationToken ct=default)
@@ -38,19 +45,22 @@ public class PlayerRepository
     public async Task DeletePlayerAsync(Player player)
     {
         Room? room = null;
-        if (player.RoomTitle==null)
-            room=await _roomsRepository.GetRoomByAdminId(player._Id);
+        if (player.RoomTitle == null)
+            room = await _roomsRepository.GetRoomByAdminId(player._Id);
         else
-            room=await _roomsRepository.GetRoomAsync(player.RoomTitle);
-        
+            room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+
         if (room != null)
         {
             if (room.AdminId == player._Id)
                 await _roomsRepository.DeleteRoomAsync(room.Title);
             else
-                await _roomsRepository.IncrementPlayersCountAsync(player.RoomTitle, -1);
+            {
+                await _roomsRepository.IncrementBothPlayersCounts(player.RoomTitle,-1);
+            }
         }
-        await _players.DeleteOneAsync(p=>p._Id == player._Id);
+
+        await _players.DeleteOneAsync(p => p._Id == player._Id);
     }
 
     public async Task DeletePlayerAsync(string playerId)
@@ -72,7 +82,9 @@ public class PlayerRepository
     public async Task UpdatePlayerAsync(Player player,UpdateDefinition<Player> update,bool isRoomTitleChanged)
     {
         if (isRoomTitleChanged)
-            await _roomsRepository.IncrementPlayersCountAsync(player.RoomTitle, 1);
+        {
+            await _roomsRepository.IncrementBothPlayersCounts(player.RoomTitle,1);
+        }
         await _players.UpdateOneAsync(p=>p._Id==player._Id,update);
     }
 }

@@ -8,14 +8,14 @@ interface IPlayerCompleteCounterProps {
 export const PlayerCompleteCounter: FC<IPlayerCompleteCounterProps> = (props) => {
     const signalRModel = useSignalRConnectionContext();
     const [completedPlayers, setCompletedPlayers] = useState(0);
-    const [totalPlayers, setTotalPlayers] = useState(signalRModel.roomModelRef.current?.playersCount ?? 0);
+    const [totalPlayers, setTotalPlayers] = useState(signalRModel.roomModelRef.current?.playingPlayersCount ?? 0);
     const totalPlayersRef = useRef<number>(totalPlayers);
 
     function handlePlayerCompletedTask(completed:number) {
         setCompletedPlayers(completed);
     }
 
-    function handlePlayerLeft(_: string) {
+    function handlePlayerLeft(_: string, __: boolean) {
         totalPlayersRef.current--;
         setTotalPlayers(totalPlayersRef.current);
     }

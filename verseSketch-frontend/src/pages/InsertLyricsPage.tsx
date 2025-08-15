@@ -28,8 +28,8 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         }
         lyrics.current = value.trim();
         let lines: string[] = value.split("\n").filter(line => line.trim() !== "");
-        if (lines.length != ((model?.playersCount ?? 2) - 1) * 2) {
-            setErrorMsg(`Please enter exactly ${((model?.playersCount ?? 2) - 1) * 2} lines of lyrics. (You have ${lines.length} ${lines.length == 1 ? "line" : "lines"}.)`);
+        if (lines.length != ((model?.playingPlayersCount ?? 2) - 1) * 2) {
+            setErrorMsg(`Please enter exactly ${((model?.playingPlayersCount ?? 2) - 1) * 2} lines of lyrics. (You have ${lines.length} ${lines.length == 1 ? "line" : "lines"}.)`);
             return;
         }
         for (let i = 0; i < lines.length; i++) {
@@ -66,8 +66,11 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         setSubmitLoading(false);
     }
 
-    function triggerUpdate(model: RoomModel | null) {
-        setModel(model);
+    function triggerUpdate() {
+        if (!signalRModel.roomModelRef.current)
+            setModel(null);
+        else
+            setModel({ ...signalRModel.roomModelRef.current });
     }
 
     useEffect(() => {
@@ -88,10 +91,10 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
 
     return (
         <>
-            <StageCounter stage={signalRModel.roomModelRef.current?.stage??0} maxStage={signalRModel.roomModelRef.current?.playersCount??0} />
+            <StageCounter stage={model.stage} maxStage={model.playingPlayersCount} />
             <PlayerCompleteCounter />
             <div className="container-small">
-                <PageTitle style={{ marginTop: "6vh" }}>Past {(model.playersCount - 1) * 2} lines of lyrics of your song!</PageTitle>
+                <PageTitle style={{ marginTop: "6vh" }}>Past {(model.playingPlayersCount - 1) * 2} lines of lyrics of your song!</PageTitle>
                 <TextArea onChange={validateLyrics} style={{ marginTop: "5vh" }} placeholder="Insert your lyrics here..." />
                 <div style={{width:"100%",height:"4vh"}}>
                     <label style={{color:"red"}}>{errorMsg}</label>

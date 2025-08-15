@@ -10,7 +10,8 @@ interface ISignalRProviderProps {
 };
 export type RoomModel = {
     title: string;
-    playersCount: number;
+    playingPlayersCount: number;
+    actualPlayersCount: number;
     maxPlayersCount: number;
     players: PlayerModel[];
     timeToDraw: number;
@@ -51,7 +52,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         connection.current = new signalR.HubConnectionBuilder()
             .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${accessToken}`)
             // .configureLogging("none")
-            .withAutomaticReconnect([0, 5000, 10000, 10000])
+            .withAutomaticReconnect([0, 3000, 3000, 3000, 3000])
             .build();
         connection.current.on("PlayerJoined", onPlayerJoined);
         connection.current.on("PlayerLeft", onPlayerLeft);
@@ -59,9 +60,21 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         connection.current.on("PlayerKicked", onPlayerKicked);
         connection.current.on("ReceiveRoom", onRoomReceive);
         connection.current.on("StageSet", onStageSet);
+        connection.current.on("ReceivePlayerList", onReceivePlayerList);
+        connection.current.on("InterruptGame",onInterruptGame);
         connection.current.onreconnecting(onRecconnect);
         connection.current.onreconnected(onRecconnected);
         connection.current.onclose(onConnectionClose);
+    }
+
+    function onInterruptGame(reason: string) {
+        errorModals.errorModalClosable.current?.show(reason);
+    }
+    function onReceivePlayerList(players: PlayerModel[]) {
+        if (!roomModelRef.current)
+            return;
+        roomModelRef.current.players = players
+        updateTrigger.current.invoke();
     }
     function stopConnection() {
         if (connection.current) {
@@ -70,12 +83,17 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
             roomModelRef.current = null;
         }
     }
+    function onRoomDeleted(reason: string) {
+        leave({ connection: connection, roomModelRef: roomModelRef, createConnection: createConnection, stopConnection: stopConnection, updateTrigger: updateTrigger });
+        errorModals.errorModal.current?.show(reason);
+    }
     function onPlayerJoined(data: PlayerModel) {
         if (!roomModelRef.current || roomModelRef.current.playerId == data.id)
             return;
         console.log("Player joined", data);
         roomModelRef.current.players.push(data);
-        roomModelRef.current.playersCount++;
+        roomModelRef.current.playingPlayersCount++;
+        roomModelRef.current.actualPlayersCount++;
         updateTrigger.current.invoke(roomModelRef.current);
     }
 
@@ -84,7 +102,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         if (roomModelRef.current && data.stage != roomModelRef.current.stage)
             onStageSet(data.stage);
         roomModelRef.current = data;
-        updateTrigger.current.invoke(roomModelRef.current);
+        updateTrigger.current.invoke();
     }
 
     function onPlayerKicked(playerId: string) {
@@ -94,22 +112,25 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         errorModals.errorModal.current?.show("You have been kicked out of room.");
     }
 
-    function onPlayerLeft(playerId: string) {
+    function onPlayerLeft(playerId: string, isInGame: boolean) {
         if (!roomModelRef.current)
             return;
+        if (isInGame) {
+            roomModelRef.current.playingPlayersCount--;
+            updateTrigger.current.invoke();
+            return;
+        }
         let i = 0;
         for (; i < roomModelRef.current.players.length; i++) {
             if (roomModelRef.current.players[i].id == playerId)
                 break;
         }
-        roomModelRef.current.playersCount--;
+        roomModelRef.current.playingPlayersCount--;
+        roomModelRef.current.actualPlayersCount--;
         roomModelRef.current.players.splice(i, 1);
-        updateTrigger.current.invoke(roomModelRef.current);
+        updateTrigger.current.invoke();
     }
-    function onRoomDeleted() {
-        leave({ connection: connection, roomModelRef: roomModelRef, createConnection: createConnection, stopConnection: stopConnection, updateTrigger: updateTrigger });
-        errorModals.errorModal.current?.show("Admin has left the room.");
-    }
+
     function onConnectionClose(error?: any) {
         connection.current = null;
         roomModelRef.current = null;
@@ -141,7 +162,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
             navigate("/insert-lyrics", { replace: true });
             return;
         }
-        if (stage == roomModelRef.current.playersCount) {
+        if (stage == roomModelRef.current.playingPlayersCount) {
             navigate("/showcase", { replace: true });
             return;
         }

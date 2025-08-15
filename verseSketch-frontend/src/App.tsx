@@ -72,6 +72,6 @@ export default App;
 //TODO: Tinker with showcase canvas size
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
 //TODO: remove "alpha" drawing from canvas
-//TODO: ColorPicker is bugged tf out(kinda fixed)
+//TODO: ColorPicker is bugged tf out(kinda fixed, but not optimal tbf)
 //TODO: Drawing page submitting images incorrectly (can't replicate tho)
-//TODO: bugg with timer reset
+//TODO: bug with timer reset (inconsistent, maybe fixed)

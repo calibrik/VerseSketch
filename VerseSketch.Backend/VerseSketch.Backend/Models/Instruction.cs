@@ -16,9 +16,9 @@ public class Instruction
     [BsonRepresentation(BsonType.ObjectId)]
     public string _Id { get; set; }
     [BsonElement("playerId")]
-    public string PlayerId { get; set; }
+    public required string PlayerId { get; set; }
     [BsonElement("lyricsToDraw")]
     public List<Lyrics> LyrycsToDraw { get; set; }
     [BsonElement("roomTitle")]
-    public string RoomTitle { get; set; }
+    public required string RoomTitle { get; set; }
 }

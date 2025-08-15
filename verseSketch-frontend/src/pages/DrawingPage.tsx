@@ -35,7 +35,6 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     const fromPlayerId=useRef<string>("");
     const [lines,setLines]=useState<string[]>([]);
     const navigate=useNavigate();
-    // Change activeToolButton to an object with tool names as keys and booleans as values
     const [activeToolButton, setActiveToolButton] = useState<{ [key: string]: boolean }>({
         pen: true,
         eraser: false,
@@ -177,7 +176,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     }
 
     async function onStageSet(s:number) {
-        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current || s==signalRModel.roomModelRef.current.playersCount)
+        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current || s==signalRModel.roomModelRef.current.playingPlayersCount)
             return;
         await getLines();
         setStage(s);
@@ -210,7 +209,7 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
     return (
         <>
             <Timer ref={timerRef} onTimeIsUp={forceSubmit} />
-            <StageCounter stage={stage} maxStage={signalRModel.roomModelRef.current?.playersCount??0}/>
+            <StageCounter stage={stage} maxStage={signalRModel.roomModelRef.current?.playingPlayersCount??0}/>
             <PlayerCompleteCounter/>
             <div className="container-mid">
                 <div style={{ marginTop: "3vh" }} className="lyrics-container">

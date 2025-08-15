@@ -37,7 +37,7 @@ public class SearchHub:Hub<ISearchHub>
             {
                 Title = room.Title,
                 MaxPlayersCount = room.MaxPlayersCount,
-                PlayersCount = room.PlayersCount,
+                PlayingPlayersCount = room.PlayingPlayersCount,
             };
             roomsVM.Add(roomVM);
         }

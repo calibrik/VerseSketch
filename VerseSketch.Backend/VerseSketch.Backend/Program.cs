@@ -156,9 +156,14 @@ app.Run();
 //TODO Browser caching
 //TODO Figure out how to pass errors to client from room hub (tbf, not that important?)
 //TODO Bg service to delete empty rooms and unused players(only for players that didnt connect, the rest it taken care of by signalr disconnect function)
-//TODO ValidationLink function????(tf is that for bro)
-//TODO Don't delete the player if he disconnected during the game
 //TODO Shuffle order of lyrics lines in future
 //TODO We need separate server for tts potentially
 //TODO All the leave/reconnect functionality during the game
+//Test Cases:
+//Player leaves/disconnects from lobby
+//Player leaves/disconnects from lyrics writing
+//Player leaves/disconnects from lyrics writing submitted
+//Player leaves/disconnects from drawing 
+//Player leaves/disconnects from drawing submitted
+//Player reconnects during any stage, he should waited for
 //TODO Image recording bug

@@ -213,7 +213,7 @@ export const Canvas = forwardRef<CanvasHandle,ICanvasProps>((props,ref) => {
 	};
 
 	const handleMouseMove = async (e: any) => {
-		if (!isDrawing.current || !context) {
+		if (!isDrawing.current || !context||(props.tool!= "pen" && props.tool != "eraser")) {
 			return;
 		}
 		const stage: KonvaStage = e.target.getStage();

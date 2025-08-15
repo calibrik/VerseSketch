@@ -64,7 +64,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         if (!signalRModel.roomModelRef.current) return;
 
         if (data.maxPlayersCount && data.maxPlayersCount!=signalRModel.roomModelRef.current.maxPlayersCount) {
-            if (signalRModel.roomModelRef.current.playersCount>data.maxPlayersCount) {
+            if (signalRModel.roomModelRef.current.playingPlayersCount>data.maxPlayersCount) {
                 throw ("Cannot set max players count lower than current players count!"); 
             }
         }
@@ -142,7 +142,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
             errorModals.errorModalClosable.current?.show("Room is not loaded yet.");
             return;
         }
-        if (signalRModel.roomModelRef.current?.playersCount<2) {
+        if (signalRModel.roomModelRef.current?.playingPlayersCount<2) {
             errorModals.errorModalClosable.current?.show("You need at least 2 players to start the game.");
             return;
         }
@@ -220,7 +220,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                         roomTitle={model?.title ?? ""}
                         players={model?.players ?? []}
                         loading={loading}
-                        playersCount={model?.playersCount ?? 0}
+                        playersCount={model?.actualPlayersCount ?? 0}
                         maxPlayersCount={model?.maxPlayersCount ?? 0}
                         selectedPlayerId={model?.playerId ?? ""}
                         showKickButton/>
@@ -247,7 +247,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                     <label className="input-field-label">Time to draw</label>
                                     <Select
                                         className="input-field"
-                                        options={[{label:"10s",value:10},{label:"15s",value:15},{label:"30s",value:30},{label:"1m",value:60}]}
+                                        options={[{label:"10s",value:10},{label:"20s",value:20},{label:"30s",value:30},{label:"45s",value:45},{label:"1m",value:60}]}
                                         value={model?.timeToDraw ?? 10}
                                         disabled={loading||!model?.isPlayerAdmin}
                                         onChange={onTimeToDrawChange}/>

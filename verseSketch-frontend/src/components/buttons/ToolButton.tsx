@@ -9,7 +9,7 @@ interface IToolButtonProps {
 export const ToolButton: FC<IToolButtonProps> = (props) => {
     let className="tool-button"+(props.active ? " active" : "");
     return (
-        <div onClick={props.onClick} onTouchStart={props.onClick} className={className} style={props.style}>
+        <div onClick={props.onClick} className={className} style={props.style}>
             {props.icon}
         </div>
     );

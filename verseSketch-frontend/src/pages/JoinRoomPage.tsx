@@ -16,7 +16,7 @@ interface IJoinRoomPageProps {
 
 interface IRoomModel{
     title:string;
-    playersCount:number;
+    actualPlayersCount:number;
     maxPlayersCount:number;
 };
 
@@ -162,7 +162,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
                             <div className="scrollable-list-item" key={index}>
                                 <label className="item-title"><b>{room.title}</b></label>
                                 <div className="sub-item">
-                                    <label>{room.playersCount}/{room.maxPlayersCount}</label>
+                                    <label>{room.actualPlayersCount}/{room.maxPlayersCount}</label>
                                     <JoinToRoomNavigationButton roomName={room.title} style={{marginLeft:"13vw"}}/>
                                 </div>
                             </div>

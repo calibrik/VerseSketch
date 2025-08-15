@@ -16,4 +16,6 @@ public class Player
     public string? ConnectionID { get; set; }
     [BsonElement("roomTitle")]
     public string? RoomTitle { get; set; }
+    [BsonElement("submittedLyrics")]
+    public List<string> SubmittedLyrics { get; set; }
 }

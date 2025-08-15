@@ -22,7 +22,9 @@ public class Room
     [BsonElement("title")]
     public required string Title { get; set; }
     [BsonElement("playersCount")]
-    public required int PlayersCount { get; set; }
+    public required int PlayingPlayersCount { get; set; }
+    [BsonElement("actualPlayersCount")] 
+    public required int ActualPlayersCount { get; set; }
     [BsonElement("maxPlayersCount")]
     public required int MaxPlayersCount { get; set; }
     [BsonElement("timeToDraw")]

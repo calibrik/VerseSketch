@@ -15,13 +15,15 @@ public interface IRoomHub
     Task ReceiveRoom(RoomViewModel model);
     Task ReceiveParams(SetParamsViewModel model);
     Task ReceivePlayerList(List<PlayerViewModel> players);
-    Task RoomDeleted();
-    Task PlayerLeft(string playerId);
+    Task RoomDeleted(string reason);
+    Task PlayerLeft(string playerId,bool isRemoved);
     Task PlayerKicked(string playerId);
     Task PlayerJoined(PlayerViewModel player);
     Task StageSet(int stage);
     Task PlayerCompletedTask(int completedNum);
     Task StartShowcase(string playerId);
+    Task ShowcaseFinished();
+    Task InterruptGame(string reason);
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -69,7 +71,8 @@ public class RoomHub:Hub<IRoomHub>
             Title = room.Title,
             isPublic = room.IsPublic,
             MaxPlayersCount = room.MaxPlayersCount,
-            PlayersCount = room.PlayersCount,
+            PlayingPlayersCount = room.PlayingPlayersCount,
+            ActualPlayersCount = room.ActualPlayersCount,
             TimeToDraw = room.TimeToDraw,
             isPlayerAdmin = playerId==room.AdminId,
             PlayerId = player._Id,
@@ -141,8 +144,51 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Groups(room.Title).PlayerCompletedTask(currDone);
     }
 
+    private async Task GenerateInstructions(Room room)
+    {
+        List<string> playerIds = await _storylineRepository.GetPlayersIds();
+        List<Instruction> instructions = new List<Instruction>();
+        Dictionary<string,List<string>> lyricsMap=new Dictionary<string, List<string>>();
+        foreach (string playerId in playerIds)
+        {
+            lyricsMap[playerId] = await _playerRepository.GetSubmittedLyrics(playerId);
+        }
+        playerIds.Shuffle(room.RandomOrderSeed);
+        foreach (string id in playerIds)
+        {
+            Instruction instruction=new Instruction
+            {
+                PlayerId = id,
+                LyrycsToDraw = Enumerable.Repeat(new Lyrics
+                {
+                    FromPlayerId = "",
+                    Lines = ["",""]
+                }, room.ActualPlayersCount - 1).ToList(),
+                RoomTitle=room.Title,
+            };
+            int i = playerIds.FindIndex(s => s == id);
+            int lyricsI = 0;
+            for (int j = 1; playerIds.Count > j; j++)
+            {
+                if (--i<=0)
+                    i = playerIds.Count-1;
+                instruction.LyrycsToDraw[j - 1] = new Lyrics
+                {
+                    FromPlayerId = id,
+                    Lines = {lyricsMap[playerIds[i]][lyricsI], lyricsMap[playerIds[i]][lyricsI + 1]}
+                };
+                lyricsI += 2;
+            }
+            instructions.Add(instruction);
+        }
+        await _instructionRepository.CreateManyAsync(instructions);
+    }
     private async Task PlayersDoneWithTask(Room room, Player player)
     {
+        if (room.Stage == 0)
+        {
+            await GenerateInstructions(room);
+        }
         UpdateDefinition<Room> update = Builders<Room>.Update.Inc(r => r.Stage,1).Set(r=>r.CompletedMap.CurrDone,0).Set(r=>r.CompletedMap.IdToStage[player._Id], room.Stage);
         await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
         await Clients.Group(player.RoomTitle).StageSet(room.Stage+1);
@@ -161,12 +207,38 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("Room not found.");
         if (room.AdminId!=playerId)
             throw new HubException("You are not an admin in this room.");
-        
-        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage,-1).Set(r=>r.CompletedMap.CurrDone,0).Set(r=>r.CompletedMap.Version,0);
-        await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
+
+        await ResetRoomState(room);
+    }
+
+    private async Task ResetRoomState(Room room)
+    {
+        CompletedMap newMap = new CompletedMap
+        {
+            CurrDone = 0,
+            IdToStage = { { room.AdminId, -1 } },
+            Version = 0,
+        };
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage,-1).Set(r=>r.CompletedMap,newMap);
+        await _roomsRepository.UpdateRoomAsync(room.Title,update);
+        if (await _roomsRepository.DeleteNotActivePlayers(room.Title))
+        {
+            List<Player> players = await _playerRepository.GetPlayersInRoomAsync(room.Title);
+            List<PlayerViewModel> playerViewModels = new List<PlayerViewModel>();
+            foreach (Player p in players)
+            {
+                playerViewModels.Add(new  PlayerViewModel
+                {
+                    Nickname = p.Nickname,
+                    isAdmin = p._Id==room.AdminId,
+                    Id = p._Id
+                });
+            }
+            await Clients.Group(room.Title).ReceivePlayerList(playerViewModels);
+        }
         await _storylineRepository.DeleteRoomsStorylines(room.Title);
         await _instructionRepository.DeleteRoomsInstructions(room.Title);
-        await Clients.Group(player.RoomTitle).StageSet(-1);
+        await Clients.Group(room.Title).StageSet(-1);
     }
     
     public async Task StartShowcase(string playerId)
@@ -185,14 +257,45 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Group(player.RoomTitle).StartShowcase(playerId);
     }
 
-    private async Task PlayerCompletedTask(Room? room, Player player)
+    private async Task ShowcaseFinished(Room room, Player player)
+    {
+        CompletedMap newMap = new CompletedMap
+        {
+            CurrDone = 0,
+            IdToStage = new Dictionary<string, int>(),
+            Version = room.CompletedMap.Version,
+        };
+        foreach (string playerId in room.CompletedMap.IdToStage.Keys)
+        {
+            newMap.IdToStage.Add(playerId, -1);
+        }
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r=>r.CompletedMap,newMap);
+        await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
+        await Clients.Group(room.Title).ShowcaseFinished();
+    }
+
+    public async Task PlayerFinishedShowcase()
+    {
+        if (!Context.User.Identity.IsAuthenticated)
+            throw new HubException("You are not in this room.");
+        Player? player = await _playerRepository.GetPlayerAsync(Context.User.FindFirst("PlayerId").Value);
+        if (player == null)
+            throw new HubException("You are not an admin in this room.");
+        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (room == null)
+            throw new HubException("Room not found.");
+        
+        await PlayerCompletedTask(room,player,ShowcaseFinished);
+    }
+
+    private async Task PlayerCompletedTask(Room? room, Player player,Func<Room,Player,Task> onPlayersDone)
     {
         if (room.CompletedMap.IdToStage[player._Id] == room.Stage)
             return;
-        int currDone =int.Min(room.CompletedMap.CurrDone+1,room.PlayersCount);
-        if (currDone == room.PlayersCount)
+        int currDone =int.Min(room.CompletedMap.CurrDone+1,room.PlayingPlayersCount);
+        if (currDone == room.PlayingPlayersCount)
         {
-            await PlayersDoneWithTask(room, player);
+            await onPlayersDone(room, player);
             return;
         }
         bool res = await _roomsRepository.UpdateCompletedMap(room.Title,player._Id,room.Stage,currDone,room.CompletedMap.Version);
@@ -202,10 +305,10 @@ public class RoomHub:Hub<IRoomHub>
             room = await _roomsRepository.GetRoomAsync(room.Title);
             if (room == null)
                 return;
-            currDone=int.Min(room.CompletedMap.CurrDone+1,room.PlayersCount);
-            if (currDone == room.PlayersCount)
+            currDone=int.Min(room.CompletedMap.CurrDone+1,room.PlayingPlayersCount);
+            if (currDone == room.PlayingPlayersCount)
             {
-                await PlayersDoneWithTask(room, player);
+                await onPlayersDone(room, player);
                 return;
             }
             res = await _roomsRepository.UpdateCompletedMap(room.Title,player._Id,room.Stage,currDone,room.CompletedMap.Version);
@@ -230,7 +333,7 @@ public class RoomHub:Hub<IRoomHub>
         
         Console.WriteLine($"{player.Nickname} sent image with size {image.Image.Length} on stage {room.Stage} with curr done {room.CompletedMap.CurrDone}");
         await _storylineRepository.UpdateImage(image,room.Stage,forPlayerId);
-        await PlayerCompletedTask(room,player);
+        await PlayerCompletedTask(room,player,PlayersDoneWithTask);
     }
     
     public async Task SendParams(SetParamsViewModel model)
@@ -259,7 +362,12 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("One or more parameters are invalid.");
         }
 
-        if (model.MaxPlayersCount != null && model.MaxPlayersCount < room.PlayersCount)
+        if (model.TimeToDraw != null && (model.TimeToDraw.Value <= 0 || model.TimeToDraw.Value > 60))
+        {
+            throw new HubException("Time to draw is invalid.");
+        }
+
+        if (model.MaxPlayersCount != null && model.MaxPlayersCount < room.ActualPlayersCount)
         {
             throw new HubException("Max Players Count can't be greater than room players.");
         }
@@ -327,36 +435,12 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("Room not found.");
         if (room.AdminId!=playerId)
             throw new HubException("You are not an admin in this room.");
-        if (room.PlayersCount <2)
+        if (room.ActualPlayersCount <2)
             throw new HubException("Room players count must be greater than 2 to start the game.");
 
         
         UpdateDefinition<Room> update = Builders<Room>.Update.Set(r => r.Stage, 0).Set(r=>r.RandomOrderSeed,Random.Shared.Next());
         await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
-        List<string> playerIds = await _playerRepository.GetPlayersIdsInRoomAsync(room.Title);
-        List<Instruction> instructions = new List<Instruction>();
-        List<Storyline> storylines = new List<Storyline>();
-        foreach (string id in playerIds)
-        {
-            instructions.Add(new Instruction
-            {
-                PlayerId = id,
-                LyrycsToDraw = Enumerable.Repeat(new Lyrics
-                {
-                    FromPlayerId = "",
-                    Lines = ["",""]
-                }, room.PlayersCount - 1).ToList(),
-                RoomTitle=room.Title,
-            });
-            storylines.Add(new Storyline
-            {
-                PlayerId = id,
-                Images=Enumerable.Repeat(new LyricsImage(),room.PlayersCount-1).ToList(),
-                RoomTitle=room.Title,
-            });
-        }
-        await _instructionRepository.CreateManyAsync(instructions);
-        await _storylineRepository.CreateManyAsync(storylines);
         await Clients.Group(player.RoomTitle).StageSet(0);
     }
 
@@ -382,30 +466,21 @@ public class RoomHub:Hub<IRoomHub>
                 continue;
             count++;
         }
-        if  (count!=(room.PlayersCount-1)*2)
+        if  (count!=(room.PlayingPlayersCount-1)*2)
             throw new HubException("Wrong amount of lines.");
         foreach (string line in lyricsSubmitted)
         {
             if (line.Length>95)
                 throw new HubException("Line is too long.");
         }
-        List<string> players=await _playerRepository.GetPlayersIdsInRoomAsync(room.Title);
-        players.Shuffle(room.RandomOrderSeed);
-        int i = players.FindIndex(s => s == player._Id);
-        int lyricsI = 0;
-        for (int j = 1; players.Count > j; j++)
+        UpdateDefinition<Player> upd= Builders<Player>.Update.Set(r=>r.SubmittedLyrics,lyricsSubmitted);
+        await _playerRepository.UpdatePlayerAsync(player,upd,false);
+        await _storylineRepository.CreateAsync(new Storyline
         {
-            if (++i >= players.Count)
-                i = 0;
-            await _instructionRepository.UpdatePlayersLyricsAsync(players[i],new Lyrics
-            {
-                FromPlayerId = player._Id,
-                Lines = [lyricsSubmitted[lyricsI],lyricsSubmitted[lyricsI+1]]
-            },j-1);
-            lyricsI+=2;
-        }
-        
-        await PlayerCompletedTask(room,player);
+            PlayerId = player._Id,
+            RoomTitle = room._Id,
+        });
+        await PlayerCompletedTask(room,player,PlayersDoneWithTask);
     }
 
     public async Task Leave()
@@ -426,26 +501,62 @@ public class RoomHub:Hub<IRoomHub>
     async Task RemovePlayer(Player player)
     {
         Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        bool isInGame = await _storylineRepository.IsPlayerStorylineExists(player._Id);
         try
         {
-            await _playerRepository.DeletePlayerAsync(player);
+            if (!isInGame || player._Id == room.AdminId)
+            {
+                await _playerRepository.DeletePlayerAsync(player);
+                room.ActualPlayersCount--;
+                room.PlayingPlayersCount--;
+            }
+            else
+            {
+                UpdateDefinition<Player> update = Builders<Player>.Update.Set(p => p.ConnectionID, null);
+                await _playerRepository.UpdatePlayerAsync(player, update, false);
+                await _roomsRepository.IncrementPlayingPlayersCountAsync(room.Title, -1);
+                room.PlayingPlayersCount--;
+            }
+
+            if (room.AdminId != player._Id)
+            {
+                if (room.Stage != -1 && room.ActualPlayersCount <= 1)
+                {
+                    await ResetRoomState(room);
+                }
+                else
+                {
+                    room.CompletedMap.IdToStage.Remove(player._Id);
+                    UpdateDefinition<Room> update =
+                        Builders<Room>.Update.Set(r => r.CompletedMap.IdToStage, room.CompletedMap.IdToStage);
+                    await _roomsRepository.UpdateRoomAsync(player.RoomTitle, update);
+                }
+            }
         }
         catch (Exception e)
         {
-            // player will stay in db, or he is not there already
+            //uhhh uhhhmmmm uhhhh
         }
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId,room.Title);
+
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, room.Title);
         if (room.AdminId == player._Id)
         {
-            await Clients.Groups(player.RoomTitle).RoomDeleted();
+            await Clients.Groups(player.RoomTitle).RoomDeleted("Admin left the room.");
             return;
         }
 
-        if (room.CompletedMap.CurrDone == room.PlayersCount)
+        if (room.Stage != -1 && room.ActualPlayersCount <= 1)
+        {
+            room.Stage = -1;
+            await Clients.Groups(player.RoomTitle).InterruptGame("Not enough players left to play.");
+            return;
+        }
+
+        if (room.Stage != -1 && room.CompletedMap.CurrDone == room.PlayingPlayersCount)
             await PlayersDoneWithTask(room, player);
-        await Clients.Groups(player.RoomTitle).PlayerLeft(player._Id);
+        await Clients.Groups(player.RoomTitle).PlayerLeft(player._Id, isInGame);
     }
-    
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         if (!Context.User.Identity.IsAuthenticated)
@@ -457,7 +568,7 @@ public class RoomHub:Hub<IRoomHub>
         if (player.ConnectionID != null)
         {
             string currConnectionId = player.ConnectionID;
-            await Task.Delay(27000);
+            await Task.Delay(15000);
             Player? currPlayer=await _playerRepository.GetPlayerAsync(playerId);
             if (currPlayer == null || currConnectionId != currPlayer.ConnectionID)
                 return;

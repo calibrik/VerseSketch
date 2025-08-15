@@ -83,7 +83,8 @@ public class RoomsController:ControllerBase
             Title = room.Title,
             isPublic = room.IsPublic,
             MaxPlayersCount = room.MaxPlayersCount,
-            PlayersCount = room.PlayersCount,
+            PlayingPlayersCount = room.PlayingPlayersCount,
+            ActualPlayersCount = room.ActualPlayersCount,
             TimeToDraw = room.TimeToDraw,
             isPlayerAdmin = playerId==room.AdminId,
             PlayerId = currPlayer.Nickname,
@@ -125,7 +126,7 @@ public class RoomsController:ControllerBase
 
     [HttpGet("/api/rooms/validateJoinLink")]
     [ResponseCache(NoStore = true)]
-    public async Task<IActionResult> ValidateJoinLink([FromQuery] string? roomTitle, [FromQuery] string? joinToken)//this function is dumpster fire
+    public async Task<IActionResult> ValidateJoinLink([FromQuery] string? roomTitle, [FromQuery] string? joinToken)
     {
         if (roomTitle == null && joinToken == null)
             return BadRequest(new {message = "At least one argument is required"});
@@ -136,7 +137,7 @@ public class RoomsController:ControllerBase
                 return NotFound(new {message = $"Sorry, room called {roomTitle} is not found"});
             if (room.Stage!=-1)
                 return Unauthorized(new  {message = $"Game has already started in this room."});
-            if (room.PlayersCount==0||!room.IsPublic)
+            if (room.PlayingPlayersCount==0||!room.IsPublic)
                 return BadRequest(new {message = $"Sorry, room {roomTitle} is private"});
             return Ok();
         }
@@ -184,7 +185,8 @@ public class RoomsController:ControllerBase
         Room room = new Room
         {
             Title = model.Title,
-            PlayersCount = 0,
+            PlayingPlayersCount = 0,
+            ActualPlayersCount = 0,
             MaxPlayersCount = model.MaxPlayersCount,
             AdminId = admin._Id,
             IsPublic = model.IsPublic,
@@ -215,7 +217,7 @@ public class RoomsController:ControllerBase
             roomTitle=await ValidateJoinToken(joinToken,ct);
         
         if (roomTitle==null)
-            return BadRequest(new {message="Join link is not valid"});
+            return BadRequest(new {message="Sorry, this join link is invalid or expired"});
 
         return Ok(new { isExist = await _playerRepository.GetPlayerByNicknameInRoomAsync(nickname, roomTitle, ct) });
     }
@@ -233,13 +235,13 @@ public class RoomsController:ControllerBase
         if (model.RoomTitle == null&&model.JoinToken==null)
             return BadRequest(new {message="Room title is required"});//check if user passed at least smth
         if (roomTitle==null)
-            return BadRequest(new {message="Join link is not valid"});//check if join link is valid if room title is not present
+            return BadRequest(new {message="Sorry, this join link is invalid or expired"});//check if join link is valid if room title is not present
         if (Regex.IsMatch(model.Nickname,@"[^\p{L}\p{N}_ ]"))
             return BadRequest(new {message = "Nickname cannot contain special characters!"});
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         if (room == null)
             return BadRequest(new {message="Room you trying to join doesn't exist"});//check if room exists
-        if ((room.PlayersCount==0||!room.IsPublic)&&model.JoinToken==null)
+        if ((room.ActualPlayersCount==0||!room.IsPublic)&&model.JoinToken==null)
             return BadRequest(new {message="You can't join private room."});//check user provides join token for rooms with 0 players or private
         if (room.Stage!=-1)
             return Unauthorized(new  {message = $"Game has already started in this room."});
@@ -252,11 +254,11 @@ public class RoomsController:ControllerBase
         }
         // if (await _playerRepository.GetPlayerByNicknameInRoomAsync(model.Nickname, roomTitle) != null)
         //     return BadRequest(new {message="Nickname already exists in this room."});//check if username exists
-        if (room.PlayersCount==0&&(player==null||player._Id!=room.AdminId))
+        if (room.ActualPlayersCount==0&&(player==null||player._Id!=room.AdminId))
             return BadRequest(new {message="Only creator of the room is allowed to join."});//check if only admin can join room with 0 players
         if (!ModelState.IsValid)
             return BadRequest(new {message="One or more fields in the form are invalid."});//any invalidations on model
-        if (room.PlayersCount>=room.MaxPlayersCount)
+        if (room.ActualPlayersCount>=room.MaxPlayersCount)
             return BadRequest(new {message="Room is full."});//check if room is full
         
         
@@ -294,34 +296,6 @@ public class RoomsController:ControllerBase
         string accessToken=JWTHandler.CreateToken(player._Id,_configuration);
         return Ok(new { accessToken = accessToken, roomTitle=room.Title });
     }
-
-    [HttpPut("/api/rooms/setParams")]
-    public async Task<IActionResult> SetParams([FromBody] SetParamsViewModel model)
-    {
-        Room? room = await _roomsRepository.GetRoomAsync(model.RoomTitle);
-        if (room == null)
-            return BadRequest();
-        if (!User.Identity.IsAuthenticated)
-            return Unauthorized(new {message = $"You must be the admin of the room {model.RoomTitle} to change it parameters."});
-        string playerId = User.FindFirst("PlayerId")?.Value;
-        if (playerId != room.AdminId)
-            return Unauthorized(new {message = $"You must be the admin of the room {model.RoomTitle} to change it parameters."});
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-        try
-        {
-            UpdateDefinition<Room> update = Builders<Room>.Update
-                .Set(r => r.IsPublic, model.IsPublic)
-                .Set(r => r.MaxPlayersCount, model.MaxPlayersCount)
-                .Set(r => r.TimeToDraw, model.TimeToDraw);
-            await _roomsRepository.UpdateRoomAsync(room.Title,update);
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500,new {message="Something went wrong, please try again later."});   
-        }
-        return Ok(new {message=$"Successfully changed parameters of the room {model.RoomTitle}."});
-    }
     
     [HttpGet("/api/rooms/search")]
     public async Task<IActionResult> Search([FromQuery] int page,[FromQuery] int pageSize,[FromQuery] string? roomTitle,CancellationToken ct)
@@ -334,7 +308,7 @@ public class RoomsController:ControllerBase
             {
                 Title = room.Title,
                 MaxPlayersCount = room.MaxPlayersCount,
-                PlayersCount = room.PlayersCount,
+                ActualPlayersCount = room.ActualPlayersCount,
             };
             roomsVM.Add(roomVM);
         }
