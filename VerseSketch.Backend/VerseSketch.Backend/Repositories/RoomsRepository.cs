@@ -29,6 +29,8 @@ public class RoomsRepository
     public async Task<bool> DeleteNotActivePlayers(string roomTitle)
     {
         DeleteResult res = await _players.DeleteManyAsync(p => p.RoomTitle == roomTitle && p.ConnectionID == null);
+        if (res.DeletedCount>0)
+            await IncrementActualPlayersCountAsync(roomTitle,-(int)res.DeletedCount);
         return res.DeletedCount>0;
     }
     

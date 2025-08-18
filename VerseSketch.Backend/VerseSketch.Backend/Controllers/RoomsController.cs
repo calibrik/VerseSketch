@@ -172,6 +172,7 @@ public class RoomsController:ControllerBase
         Player admin = new Player()
         {
             CreatedTime = DateTime.UtcNow,
+            SubmittedLyrics = []
         };
         try
         {
@@ -267,6 +268,7 @@ public class RoomsController:ControllerBase
             player = new Player()
             {
                 CreatedTime = DateTime.UtcNow,
+                SubmittedLyrics = []
             };
         }
 

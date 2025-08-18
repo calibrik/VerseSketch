@@ -2,6 +2,7 @@ import { FC } from "react";
 import { HomeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router";
 import { BaseButton } from "./BaseButton";
+import { leave } from "../../misc/MiscFunctions";
 interface IGoToWelcomePageButtonProps {
     style?:React.CSSProperties;
     onClick:()=>void;
@@ -15,6 +16,7 @@ export const GoToWelcomePageButton: FC<IGoToWelcomePageButtonProps> = (props) =>
             style={props.style} 
             onClick={async ()=>{
                 props.onClick();
+                await leave();
                 navigate("/",{replace:true});
             }} 
             icon={<HomeOutlined style={{fontSize:20}}/>}>

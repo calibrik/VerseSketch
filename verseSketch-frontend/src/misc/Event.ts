@@ -1,4 +1,4 @@
-type EventCallback<T extends any[] = any[]> = (...args: T) => void;
+type EventCallback<T extends any[] = any[]> = (...args: T) => void|Promise<void>;
 
 export class Event<T extends any[] = any[]> {
   private subs: Set<EventCallback<T>> = new Set();

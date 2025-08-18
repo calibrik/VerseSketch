@@ -149,9 +149,10 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         await delay(1500);
         setIsShowcaseStarted(false);
         setCurrLyrics(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
+        setDrawingAuthor("");
         canvas.current?.reset();
         await signalRModel.connection.current?.invoke("PlayerFinishedShowcase");
-        if (currPlayerPlayingRef.current + 1 >= signalRModel.roomModelRef.current.playingPlayersCount) {
+        if (currPlayerPlayingRef.current + 1 >= signalRModel.roomModelRef.current.actualPlayersCount) {
             if (signalRModel.roomModelRef.current.isPlayerAdmin)
                 setIsFinished(true);
             return;

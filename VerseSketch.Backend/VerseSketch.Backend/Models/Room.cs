@@ -37,7 +37,7 @@ public class Room
     public string? CurrentJoinToken { get; set; }
     [BsonElement("stage")] 
     public required int Stage { get; set; }
-    [BsonElement("roomId")] 
+    [BsonElement("randomOrderSeed")] 
     public int RandomOrderSeed { get; set; }
     [BsonElement("completedMap")]
     public required CompletedMap CompletedMap { get; set; }

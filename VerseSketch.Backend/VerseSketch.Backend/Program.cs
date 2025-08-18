@@ -161,6 +161,7 @@ app.Run();
 //TODO All the leave/reconnect functionality during the game
 //Test Cases:
 //Player leaves/disconnects from lobby
+//if player leaves, and enough people have completed task, move onto next stage
 //Player leaves/disconnects from lyrics writing
 //Player leaves/disconnects from lyrics writing submitted
 //Player leaves/disconnects from drawing 

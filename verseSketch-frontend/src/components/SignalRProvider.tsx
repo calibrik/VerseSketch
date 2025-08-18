@@ -19,6 +19,7 @@ export type RoomModel = {
     isPlayerAdmin: boolean;
     playerId: string;
     stage: number;
+    currDone:number
 }
 export type PlayerModel = {
     nickname: string;
@@ -61,7 +62,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         connection.current.on("ReceiveRoom", onRoomReceive);
         connection.current.on("StageSet", onStageSet);
         connection.current.on("ReceivePlayerList", onReceivePlayerList);
-        connection.current.on("InterruptGame",onInterruptGame);
+        connection.current.on("InterruptGame", onInterruptGame);
         connection.current.onreconnecting(onRecconnect);
         connection.current.onreconnected(onRecconnected);
         connection.current.onclose(onConnectionClose);
@@ -120,11 +121,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
             updateTrigger.current.invoke();
             return;
         }
-        let i = 0;
-        for (; i < roomModelRef.current.players.length; i++) {
-            if (roomModelRef.current.players[i].id == playerId)
-                break;
-        }
+        let i = roomModelRef.current.players.findIndex(p => p.id === playerId);
         roomModelRef.current.playingPlayersCount--;
         roomModelRef.current.actualPlayersCount--;
         roomModelRef.current.players.splice(i, 1);
@@ -135,9 +132,10 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         connection.current = null;
         roomModelRef.current = null;
         errorModals.statusModal.current?.close();
-        if (error || isRecconecting.current)
+        if (error || isRecconecting.current) {
             errorModals.errorModal.current?.show("Lost connection to the server.");
-        sessionStorage.removeItem("player")
+        }
+        leave({ connection: connection, roomModelRef: roomModelRef, createConnection: createConnection, stopConnection: stopConnection, updateTrigger: updateTrigger });
     }
     function onRecconnect() {
         console.log("Reconnecting to the server...");
@@ -171,7 +169,6 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
             return;
         }
     }
-
 
     return (
         <SignalRContext.Provider value={{

@@ -35,16 +35,6 @@ public class StorylineRepository
         return await _storylines.Find(s => s.PlayerId==playerId).Project(s=>s.Images).FirstOrDefaultAsync();
     }
 
-    public async Task<bool> IsPlayerStorylineExists(string playerId)
-    {
-        return await _storylines.Find(s => s.PlayerId == playerId).CountDocumentsAsync() > 0;
-    }
-
-    public async Task<List<string>> GetPlayersIds()
-    {
-        return await _storylines.Find(s => s.PlayerId != null).Project(s => s.PlayerId).ToListAsync();
-    }
-
     public async Task DeleteRoomsStorylines(string roomTitle)
     {
         await _storylines.DeleteManyAsync(s=>s.RoomTitle==roomTitle);

@@ -16,39 +16,47 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     const [model, setModel] = useState<RoomModel | null>(signalRModel.roomModelRef.current);
     const [submitLoading, setSubmitLoading] = useState<boolean>(false);
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+    const isSubmittedRef = useRef<boolean>(false);
     const errorModals = useErrorDisplayContext();
     const navigate = useNavigate();
     const lyrics=useRef<string>("");
     const [errorMsg, setErrorMsg] = useState<string>("");
+    const isValid = useRef<boolean>(true);
 
-    async function validateLyrics(value: string) {
+    function validateLyrics(value: string) {
         if (!value || value.trim() === "") {
             setErrorMsg("Lyrics cannot be empty");
+            isValid.current = false;
             return;
         }
         lyrics.current = value.trim();
         let lines: string[] = value.split("\n").filter(line => line.trim() !== "");
         if (lines.length != ((model?.playingPlayersCount ?? 2) - 1) * 2) {
             setErrorMsg(`Please enter exactly ${((model?.playingPlayersCount ?? 2) - 1) * 2} lines of lyrics. (You have ${lines.length} ${lines.length == 1 ? "line" : "lines"}.)`);
+            isValid.current = false;
             return;
         }
         for (let i = 0; i < lines.length; i++) {
             if (lines[i].length > 95) {
                 setErrorMsg(`Each line of lyrics must be 95 characters or less. (Line ${i + 1} is ${lines[i].length} characters long.)`);
+                isValid.current = false;
                 return;
             }
         }
+        isValid.current = true;
         setErrorMsg("");
     }
 
     async function onSubmit() {
-        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current||errorMsg!="")
+        validateLyrics(lyrics.current);
+        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current||!isValid.current)
             return;
         setSubmitLoading(true);
-        if (!isSubmitted) {
+        if (!isSubmittedRef.current) {
             try {
                 await signalRModel.connection.current.invoke("SendLyrics", lyrics.current);
                 setIsSubmitted(true);
+                isSubmittedRef.current=true;
             }
             catch (e: any) {
                 errorModals.errorModalClosable.current?.show("Failed to send lyrics to the server.");
@@ -58,6 +66,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
             try {
                 await signalRModel.connection.current.invoke("PlayerCanceledTask")
                 setIsSubmitted(false);
+                isSubmittedRef.current=false;
             }
             catch (e: any) {
                 errorModals.errorModalClosable.current?.show("Failed to cancel submission.");
@@ -66,7 +75,13 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         setSubmitLoading(false);
     }
 
-    function triggerUpdate() {
+    async function triggerUpdate() {
+        if (isSubmittedRef.current)
+        {
+            validateLyrics(lyrics.current);
+            isSubmittedRef.current=false;
+            setIsSubmitted(false);
+        }
         if (!signalRModel.roomModelRef.current)
             setModel(null);
         else
@@ -95,7 +110,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
             <PlayerCompleteCounter />
             <div className="container-small">
                 <PageTitle style={{ marginTop: "6vh" }}>Past {(model.playingPlayersCount - 1) * 2} lines of lyrics of your song!</PageTitle>
-                <TextArea onChange={validateLyrics} style={{ marginTop: "5vh" }} placeholder="Insert your lyrics here..." />
+                <TextArea onChange={validateLyrics} style={{ marginTop: "5vh" }} disabled={isSubmitted} placeholder="Insert your lyrics here..." />
                 <div style={{width:"100%",height:"4vh"}}>
                     <label style={{color:"red"}}>{errorMsg}</label>
                 </div>
