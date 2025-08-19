@@ -15,7 +15,7 @@ interface IShowcasePageProps { };
 type LyricImage = {
     lyrics: string[];
     image: ILine[];
-    playerId: string;
+    byPlayerId: string;
 }
 
 export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
@@ -119,12 +119,13 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         const lyricImages = await getStoryline(playerId);
         if (lyricImages.length === 0) {
             setIsShowcaseStarted(false);
+            await signalRModel.connection.current?.invoke("PlayerFinishedShowcase");
             return;
         }
         for (const lyricImage of lyricImages) {
-            if (!lyricImage.playerId)
+            if (!lyricImage.byPlayerId)
                 break;
-            setDrawingAuthor(signalRModel.roomModelRef.current?.players.find(p => p.id === lyricImage.playerId)?.nickname ?? "Unknown");
+            setDrawingAuthor(signalRModel.roomModelRef.current?.players.find(p => p.id === lyricImage.byPlayerId)?.nickname ?? "Unknown");
             setCurrLyrics([lyricImage.lyrics[0], lyricImage.lyrics[1]]);
             const blob = await getAudio(lyricImage.lyrics.join('\n'));
             let msgEnd: Promise<void> = Promise.resolve();
@@ -166,6 +167,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     }
 
     useEffect(() => {
+        document.title = "Showcase";
         if (!signalRModel.roomModelRef.current || signalRModel.roomModelRef.current.stage < 1 || !signalRModel.connection.current) {
             leave(signalRModel);
             navigate("/", { replace: true });
@@ -198,7 +200,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                         players={signalRModel.roomModelRef.current?.players ?? []}
                         roomTitle={signalRModel.roomModelRef.current?.title ?? ""}
                         loading={false}
-                        playersCount={signalRModel.roomModelRef.current?.playingPlayersCount ?? 0}
+                        playersCount={signalRModel.roomModelRef.current?.actualPlayersCount ?? 0}
                         maxPlayersCount={signalRModel.roomModelRef.current?.maxPlayersCount ?? 0}
                         selectedPlayerId={currPlayerPlaying} />
                 </Col>

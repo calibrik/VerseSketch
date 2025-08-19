@@ -14,6 +14,7 @@ interface IPlayersListProps {
     isPlayerAdmin?:boolean;
     selectedPlayerId:string;
     showKickButton?:boolean;
+    showEmptySlots?:boolean
 };
 
 export const PlayersList: FC<IPlayersListProps> = (props) => {
@@ -33,9 +34,12 @@ export const PlayersList: FC<IPlayersListProps> = (props) => {
     , []);
 
     let players=[...props.players];
-    for (let i=players.length;i<props.maxPlayersCount;i++) {
-        players.push({nickname:"",id:"",isAdmin:false});
-    }
+    if (props.showEmptySlots)
+    {
+        for (let i=players.length;i<props.maxPlayersCount;i++) {
+            players.push({nickname:"",id:"",isAdmin:false});
+        }
+    }   
 
     if (widthLevel <= WindowLevel.SM) 
         return(

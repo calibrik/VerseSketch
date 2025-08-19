@@ -223,7 +223,8 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                         playersCount={model?.actualPlayersCount ?? 0}
                         maxPlayersCount={model?.maxPlayersCount ?? 0}
                         selectedPlayerId={model?.playerId ?? ""}
-                        showKickButton/>
+                        showKickButton
+                        showEmptySlots/>
                 </Col>
                 <Col xs={24} md={18} xxl={20}>
                     <Card className="room-card" title={<Title className="card-title">Rules:</Title>}>

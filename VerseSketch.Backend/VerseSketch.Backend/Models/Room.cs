@@ -21,7 +21,7 @@ public class Room
     public string _Id { get; set; }
     [BsonElement("title")]
     public required string Title { get; set; }
-    [BsonElement("playersCount")]
+    [BsonElement("playingPlayersCount")]
     public required int PlayingPlayersCount { get; set; }
     [BsonElement("actualPlayersCount")] 
     public required int ActualPlayersCount { get; set; }

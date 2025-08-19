@@ -157,14 +157,6 @@ app.Run();
 //TODO Figure out how to pass errors to client from room hub (tbf, not that important?)
 //TODO Bg service to delete empty rooms and unused players(only for players that didnt connect, the rest it taken care of by signalr disconnect function)
 //TODO Shuffle order of lyrics lines in future
-//TODO We need separate server for tts potentially
-//TODO All the leave/reconnect functionality during the game
-//Test Cases:
-//Player leaves/disconnects from lobby
-//if player leaves, and enough people have completed task, move onto next stage
-//Player leaves/disconnects from lyrics writing
-//Player leaves/disconnects from lyrics writing submitted
-//Player leaves/disconnects from drawing 
-//Player leaves/disconnects from drawing submitted
-//Player reconnects during any stage, he should waited for
+//TODO We need separate server for tts potentially if prod won't support it, cuz we use windows installed voice to do it
 //TODO Image recording bug
+//TODO Deploy using AWS if possible (also fuck around with Docker, kinda interesting)

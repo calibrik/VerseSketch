@@ -69,9 +69,7 @@ export default App;
 
 //TODO: Ban album orientation
 //TODO: Width slider on drawing canvas
-//TODO: Tinker with showcase canvas size
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
 //TODO: remove "alpha" drawing from canvas
 //TODO: ColorPicker is bugged tf out(kinda fixed, but not optimal tbf)
 //TODO: Drawing page submitting images incorrectly (can't replicate tho)
-//TODO: bug with timer reset (inconsistent, maybe fixed)

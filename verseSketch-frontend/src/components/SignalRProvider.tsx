@@ -75,6 +75,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         if (!roomModelRef.current)
             return;
         roomModelRef.current.players = players
+        roomModelRef.current.playingPlayersCount=roomModelRef.current.actualPlayersCount=players.length;
         updateTrigger.current.invoke();
     }
     function stopConnection() {
@@ -160,7 +161,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
             navigate("/insert-lyrics", { replace: true });
             return;
         }
-        if (stage == roomModelRef.current.playingPlayersCount) {
+        if (stage == roomModelRef.current.actualPlayersCount) {
             navigate("/showcase", { replace: true });
             return;
         }

@@ -16,7 +16,6 @@ export const PlayerCompleteCounter: FC<IPlayerCompleteCounterProps> = (props) =>
 
     function handleUpdateTrigger() {
         setTotalPlayers(signalRModel.roomModelRef.current?.playingPlayersCount ?? 0);
-        setCompletedPlayers(signalRModel.roomModelRef.current?.currDone ?? 0);
     }
 
     function onStageSet(_:number) {

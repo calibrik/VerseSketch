@@ -19,7 +19,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     const isSubmittedRef = useRef<boolean>(false);
     const errorModals = useErrorDisplayContext();
     const navigate = useNavigate();
-    const lyrics=useRef<string>("");
+    const lyrics = useRef<string>("");
     const [errorMsg, setErrorMsg] = useState<string>("");
     const isValid = useRef<boolean>(true);
 
@@ -31,8 +31,8 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         }
         lyrics.current = value.trim();
         let lines: string[] = value.split("\n").filter(line => line.trim() !== "");
-        if (lines.length != ((model?.playingPlayersCount ?? 2) - 1) * 2) {
-            setErrorMsg(`Please enter exactly ${((model?.playingPlayersCount ?? 2) - 1) * 2} lines of lyrics. (You have ${lines.length} ${lines.length == 1 ? "line" : "lines"}.)`);
+        if (lines.length != ((signalRModel.roomModelRef.current?.playingPlayersCount ?? 2) - 1) * 2) {
+            setErrorMsg(`Please enter exactly ${((signalRModel.roomModelRef.current?.playingPlayersCount ?? 2) - 1) * 2} lines of lyrics. (You have ${lines.length} ${lines.length == 1 ? "line" : "lines"}.)`);
             isValid.current = false;
             return;
         }
@@ -49,14 +49,14 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
 
     async function onSubmit() {
         validateLyrics(lyrics.current);
-        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current||!isValid.current)
+        if (!signalRModel.roomModelRef.current || !signalRModel.connection.current || !isValid.current)
             return;
         setSubmitLoading(true);
         if (!isSubmittedRef.current) {
             try {
                 await signalRModel.connection.current.invoke("SendLyrics", lyrics.current);
                 setIsSubmitted(true);
-                isSubmittedRef.current=true;
+                isSubmittedRef.current = true;
             }
             catch (e: any) {
                 errorModals.errorModalClosable.current?.show("Failed to send lyrics to the server.");
@@ -66,7 +66,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
             try {
                 await signalRModel.connection.current.invoke("PlayerCanceledTask")
                 setIsSubmitted(false);
-                isSubmittedRef.current=false;
+                isSubmittedRef.current = false;
             }
             catch (e: any) {
                 errorModals.errorModalClosable.current?.show("Failed to cancel submission.");
@@ -75,13 +75,16 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         setSubmitLoading(false);
     }
 
-    async function triggerUpdate() {
-        if (isSubmittedRef.current)
-        {
-            validateLyrics(lyrics.current);
-            isSubmittedRef.current=false;
+    async function onPlayerLeft(_: string, __: boolean) {
+        validateLyrics(lyrics.current);
+        if (isSubmittedRef.current) {
+
+            isSubmittedRef.current = false;
             setIsSubmitted(false);
         }
+    }
+
+    async function triggerUpdate() {
         if (!signalRModel.roomModelRef.current)
             setModel(null);
         else
@@ -89,14 +92,16 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     }
 
     useEffect(() => {
+        document.title = "Insert Lyrics";
         if (!signalRModel.roomModelRef.current || signalRModel.roomModelRef.current.stage != 0 || !signalRModel.connection.current) {
             leave(signalRModel);
             navigate("/", { replace: true });
             return;
         }
+        signalRModel.connection.current.on("PlayerLeft",onPlayerLeft);
         signalRModel.updateTrigger.current.on(triggerUpdate);
-        document.title = "Insert Lyrics";
         return () => {
+            signalRModel.connection.current?.off("PlayerLeft",onPlayerLeft);
             signalRModel.updateTrigger.current.off(triggerUpdate);
         }
     }, []);
@@ -106,15 +111,15 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
 
     return (
         <>
-            <StageCounter stage={model.stage} maxStage={model.playingPlayersCount} />
+            <StageCounter stage={model.stage} maxStage={model.actualPlayersCount} />
             <PlayerCompleteCounter />
             <div className="container-small">
                 <PageTitle style={{ marginTop: "6vh" }}>Past {(model.playingPlayersCount - 1) * 2} lines of lyrics of your song!</PageTitle>
                 <TextArea onChange={validateLyrics} style={{ marginTop: "5vh" }} disabled={isSubmitted} placeholder="Insert your lyrics here..." />
-                <div style={{width:"100%",height:"4vh"}}>
-                    <label style={{color:"red"}}>{errorMsg}</label>
+                <div style={{ width: "100%", height: "4vh" }}>
+                    <label style={{ color: "red" }}>{errorMsg}</label>
                 </div>
-                <SubmitButton onClick={onSubmit} loading={submitLoading} isSubmitted={isSubmitted}/>
+                <SubmitButton onClick={onSubmit} loading={submitLoading} isSubmitted={isSubmitted} />
             </div>
         </>
     );

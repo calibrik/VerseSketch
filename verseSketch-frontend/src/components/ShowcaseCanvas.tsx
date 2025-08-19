@@ -22,7 +22,7 @@ export const ShowcaseCanvas = forwardRef<any, IShowcaseCanvasProps>((props, ref)
 	const [scale, setScale] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
 	const lastPos = useRef<Point>({ x: 0, y: 0 });
 	const imageRef = useRef<KonvaImage>(null);
-	const timeToDraw = 1500;
+	const timeToDraw = 1300;
 	const backBufferRef = useRef<ArrayBuffer[]>([]);
 	const forwardBufferRef = useRef<ArrayBuffer[]>([]);
 
@@ -158,13 +158,13 @@ export const ShowcaseCanvas = forwardRef<any, IShowcaseCanvasProps>((props, ref)
 		for (const line of lines) {
 			if (line.tool === "forward") {
 				goForward();
-				await delay(150);
+				await delay(100);
 				continue;
 			}
 
 			if (line.tool === "back") {
 				goBack();
-				await delay(150);
+				await delay(100);
 				continue;
 			}
 			
@@ -175,7 +175,7 @@ export const ShowcaseCanvas = forwardRef<any, IShowcaseCanvasProps>((props, ref)
 
 			if (line.tool === "bucket") {
 				floodFill(line.points[0], line.color);
-				await delay(150);
+				await delay(100);
 				continue;
 			}
 

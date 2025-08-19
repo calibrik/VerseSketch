@@ -30,7 +30,7 @@ public struct LyricsImage
     [BsonElement("image")]
     public ImageLine[] Image { get; set; }
     [BsonElement("playerId")]
-    public string PlayerId { get; set; }
+    public string ByPlayerId { get; set; }
 }
 
 public class Storyline

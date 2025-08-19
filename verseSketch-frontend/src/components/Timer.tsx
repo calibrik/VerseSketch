@@ -18,7 +18,6 @@ export const Timer = forwardRef<ITimerHandle, ITimerProps>((props, ref) => {
 
     async function onTimeIsUp() {
         await delay(1000);
-        console.log("Timer callback");
         props.onTimeIsUp();
     }
 
