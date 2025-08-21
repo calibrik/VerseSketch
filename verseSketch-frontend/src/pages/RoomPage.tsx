@@ -248,7 +248,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                                     <label className="input-field-label">Time to draw</label>
                                     <Select
                                         className="input-field"
-                                        options={[{label:"10s",value:10},{label:"20s",value:20},{label:"30s",value:30},{label:"45s",value:45},{label:"1m",value:60}]}
+                                        options={[{label:"10s",value:10},{label:"20s",value:20},{label:"30s",value:30},{label:"45s",value:45},{label:"1m",value:60},{label:"1.5m",value:90}]}
                                         value={model?.timeToDraw ?? 10}
                                         disabled={loading||!model?.isPlayerAdmin}
                                         onChange={onTimeToDrawChange}/>

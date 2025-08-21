@@ -109,7 +109,7 @@ public class RoomsController:ControllerBase
     public async Task<IActionResult> IsRoomAccessible([FromQuery] string roomTitle)
     {
         if (!User.Identity.IsAuthenticated)
-            return Unauthorized(new {message = $"You are not part of the {roomTitle}."});
+            return Unauthorized(new {message = $"You are not part of the room {roomTitle}."});
         string? playerId = User.FindFirst("PlayerId")?.Value;
         Player? currPlayer = await _playerRepository.GetPlayerAsync(playerId);
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
@@ -117,7 +117,7 @@ public class RoomsController:ControllerBase
             return NotFound(new {message = $"The room {roomTitle} is not found."});
         if (room.Stage!=-1)
             return Unauthorized(new  {message = $"Game has already started in this room."});
-        if (currPlayer == null)
+        if (currPlayer == null||!currPlayer.IsActive)
             return StatusCode(500,new {message = "Something went wrong, please try again later."});
         if (currPlayer.RoomTitle!=room.Title)
             return Unauthorized(new {message = $"You are not part of the {roomTitle}."});
@@ -172,7 +172,8 @@ public class RoomsController:ControllerBase
         Player admin = new Player()
         {
             CreatedTime = DateTime.UtcNow,
-            SubmittedLyrics = []
+            SubmittedLyrics = [],
+            IsActive = true,
         };
         try
         {
@@ -250,7 +251,7 @@ public class RoomsController:ControllerBase
         {
             string playerId=User.FindFirst("PlayerId").Value;
             player = await _playerRepository.GetPlayerAsync(playerId);
-            if (player == null)
+            if (player == null||!player.IsActive)
                 return StatusCode(500,new {message="Something went wrong, please try again later."});
         }
         // if (await _playerRepository.GetPlayerByNicknameInRoomAsync(model.Nickname, roomTitle) != null)
@@ -268,7 +269,8 @@ public class RoomsController:ControllerBase
             player = new Player()
             {
                 CreatedTime = DateTime.UtcNow,
-                SubmittedLyrics = []
+                SubmittedLyrics = [],
+                IsActive = true,
             };
         }
 

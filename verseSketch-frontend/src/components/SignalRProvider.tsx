@@ -62,14 +62,17 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         connection.current.on("ReceiveRoom", onRoomReceive);
         connection.current.on("StageSet", onStageSet);
         connection.current.on("ReceivePlayerList", onReceivePlayerList);
-        connection.current.on("InterruptGame", onInterruptGame);
+        connection.current.on("ReceiveErrorMessage", onReceiveErrorMessage);
         connection.current.onreconnecting(onRecconnect);
         connection.current.onreconnected(onRecconnected);
         connection.current.onclose(onConnectionClose);
     }
 
-    function onInterruptGame(reason: string) {
-        errorModals.errorModalClosable.current?.show(reason);
+    function onReceiveErrorMessage(msg: string,isTerminal:boolean) {
+        if (isTerminal)
+            errorModals.errorModal.current?.show(msg);
+        else
+            errorModals.errorModalClosable.current?.show(msg);
     }
     function onReceivePlayerList(players: PlayerModel[]) {
         if (!roomModelRef.current)
@@ -136,6 +139,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         if (error || isRecconecting.current) {
             errorModals.errorModal.current?.show("Lost connection to the server.");
         }
+        updateTrigger.current.invoke();
         leave({ connection: connection, roomModelRef: roomModelRef, createConnection: createConnection, stopConnection: stopConnection, updateTrigger: updateTrigger });
     }
     function onRecconnect() {

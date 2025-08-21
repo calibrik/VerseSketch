@@ -158,5 +158,6 @@ app.Run();
 //TODO Bg service to delete empty rooms and unused players(only for players that didnt connect, the rest it taken care of by signalr disconnect function)
 //TODO Shuffle order of lyrics lines in future
 //TODO We need separate server for tts potentially if prod won't support it, cuz we use windows installed voice to do it
+//TODO AI is the must for tts in future
 //TODO Image recording bug
 //TODO Deploy using AWS if possible (also fuck around with Docker, kinda interesting)

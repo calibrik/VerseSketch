@@ -18,4 +18,6 @@ public class Player
     public string? RoomTitle { get; set; }
     [BsonElement("submittedLyrics")] 
     public List<string> SubmittedLyrics { get; set; } = [];
+    [BsonElement("isActive")]
+    public required bool IsActive { get; set; }
 }

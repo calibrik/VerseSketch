@@ -23,7 +23,7 @@ public interface IRoomHub
     Task PlayerCompletedTask(int completedNum);
     Task StartShowcase(string playerId);
     Task ShowcaseFinished();
-    Task InterruptGame(string reason);
+    Task ReceiveErrorMessage(string msg, bool isTerminal);
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -42,17 +42,19 @@ public class RoomHub:Hub<IRoomHub>
     }
     public override async Task OnConnectedAsync()
     {
+        string roomTitle=Context.GetHttpContext().Request.Query["roomTitle"];
         if (!Context.User.Identity.IsAuthenticated)
         {
+            await Clients.Clients(Context.ConnectionId).ReceiveErrorMessage($"You are not part of the room {roomTitle}.",true);
             Context.Abort();
             return;
         }
-        string roomTitle=Context.GetHttpContext().Request.Query["roomTitle"];
         Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
         string playerId = Context.User.FindFirst("PlayerId").Value;
         Player? player = await _playerRepository.GetPlayerAsync(playerId);
-        if (room == null||player==null)
+        if (room == null||player==null||!player.IsActive)
         {
+            await Clients.Clients(Context.ConnectionId).ReceiveErrorMessage($"You are not part of the room {roomTitle}.",true);
             Context.Abort();
             return;
         }
@@ -63,6 +65,7 @@ public class RoomHub:Hub<IRoomHub>
         }
         catch (Exception e)
         {
+            await Clients.Clients(Context.ConnectionId).ReceiveErrorMessage("Something went wrong, please try again later.",true);
             Context.Abort();
             return;
         }
@@ -495,7 +498,7 @@ public class RoomHub:Hub<IRoomHub>
             return;
         string playerId = Context.User.FindFirst("PlayerId").Value;
         Player? player = await _playerRepository.GetPlayerAsync(playerId);
-        if (player == null)
+        if (player == null||!player.IsActive)
         {
             Context.Abort();
             return;
@@ -506,6 +509,7 @@ public class RoomHub:Hub<IRoomHub>
 
     async Task RemovePlayer(Player player)
     {
+        // Console.WriteLine($"Removing player {player.Nickname} at {DateTime.Now}");
         Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
         bool isInGame = await _playerRepository.HasPlayerSubmitLyrics(player._Id);
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, room.Title);
@@ -517,7 +521,7 @@ public class RoomHub:Hub<IRoomHub>
         }
         else
         {
-            UpdateDefinition<Player> update = Builders<Player>.Update.Set(p => p.ConnectionID, null);
+            UpdateDefinition<Player> update = Builders<Player>.Update.Set(p => p.ConnectionID, null).Set(p=>p.IsActive,false);
             await _playerRepository.UpdatePlayerAsync(player, update, false);
             await _roomsRepository.IncrementPlayingPlayersCountAsync(room.Title, -1);
         }
@@ -532,7 +536,7 @@ public class RoomHub:Hub<IRoomHub>
             if (room.Stage != -1 && room.ActualPlayersCount <= 1)
             {
                 await ResetRoomState(room);
-                await Clients.Groups(player.RoomTitle).InterruptGame("Not enough players left to play.");
+                await Clients.Groups(player.RoomTitle).ReceiveErrorMessage("Not enough players left to play.",false);
                 room.Stage = -1;
             }
             else
@@ -578,12 +582,12 @@ public class RoomHub:Hub<IRoomHub>
             return;
         string playerId = Context.User.FindFirst("PlayerId").Value;
         Player? player = await _playerRepository.GetPlayerAsync(playerId);
-        if (player == null||player.RoomTitle!=null && player.ConnectionID==null)
+        if (player == null||!player.IsActive)
             return;
         if (player.ConnectionID != null)
         {
             string currConnectionId = player.ConnectionID;
-            await Task.Delay(13000);
+            await Task.Delay(16000);
             Player? currPlayer=await _playerRepository.GetPlayerAsync(playerId);
             if (currPlayer == null || currPlayer.ConnectionID==null || currConnectionId != currPlayer.ConnectionID)
                 return;
