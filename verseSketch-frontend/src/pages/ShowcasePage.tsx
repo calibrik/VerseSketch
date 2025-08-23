@@ -27,10 +27,12 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     const [currLyrics, setCurrLyrics] = useState<string[]>(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
     const errorModals = useErrorDisplayContext();
     const [isShowcaseStarted, setIsShowcaseStarted] = useState<boolean>(false);
+    const isShowcaseStartedRef = useRef<boolean>(false);
     const [isWaiting, setIsWaiting] = useState<boolean>(false);
     const [isFinished, setIsFinished] = useState<boolean>(false);
     const canvas = useRef<ShowcaseCanvasHandle>(null);
     const [drawingAuthor, setDrawingAuthor] = useState<string>("");
+    const timeoutRef = useRef<number>(0);
 
 
     async function getStoryline(playerId: string): Promise<LyricImage[]> {
@@ -114,8 +116,10 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         if (!signalRModel.roomModelRef.current)
             return;
         setIsShowcaseStarted(true);
+        isShowcaseStartedRef.current = true;
         setIsWaiting(true);
         setCurrPlayerPlaying(playerId);
+        currPlayerPlayingRef.current = signalRModel.roomModelRef.current?.players.findIndex(p => p.id === playerId);
         const lyricImages = await getStoryline(playerId);
         if (lyricImages.length === 0) {
             setIsShowcaseStarted(false);
@@ -132,7 +136,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             if (blob) {
                 const audio = new Audio(URL.createObjectURL(blob));
                 msgEnd = new Promise<void>((resolve) => {
-                    audio.onended= () => {
+                    audio.onended = () => {
                         resolve();
                     }
                 });
@@ -149,10 +153,21 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         }
         await delay(1500);
         setIsShowcaseStarted(false);
+        isShowcaseStartedRef.current = false;
         setCurrLyrics(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
         setDrawingAuthor("");
         canvas.current?.reset();
-        await signalRModel.connection.current?.invoke("PlayerFinishedShowcase");
+        try {
+            await signalRModel.connection.current?.invoke("PlayerFinishedShowcase");
+        }
+        catch (e:any){
+
+        }
+        if (signalRModel.roomModelRef.current.isPlayerAdmin) {
+            timeoutRef.current = setTimeout(() => {
+                setIsWaiting(false);
+            }, 5000);
+        }
         if (currPlayerPlayingRef.current + 1 >= signalRModel.roomModelRef.current.actualPlayersCount) {
             if (signalRModel.roomModelRef.current.isPlayerAdmin)
                 setIsFinished(true);
@@ -162,8 +177,14 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         setCurrPlayerPlaying(signalRModel.roomModelRef.current.players[currPlayerPlayingRef.current].id);
     }
 
-    function onShowcaseFinished(){
+    function onShowcaseFinished() {
+        clearTimeout(timeoutRef.current);
         setIsWaiting(false);
+    }
+
+    async function onReconnected() {
+        if (!isShowcaseStartedRef.current)
+            await signalRModel.connection.current?.invoke("PlayerFinishedShowcase");
     }
 
     useEffect(() => {
@@ -174,10 +195,12 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             return;
         }
         signalRModel.connection.current.on("StartShowcase", playStoryline);
-        signalRModel.connection.current.on("ShowcaseFinished",onShowcaseFinished);
+        signalRModel.connection.current.on("ShowcaseFinished", onShowcaseFinished);
+        signalRModel.connection.current.onreconnected(onReconnected);
         return () => {
+            signalRModel.connection.current?.off("onreconnected", onReconnected);
             signalRModel.connection.current?.off("StartShowcase", playStoryline);
-            signalRModel.connection.current?.off("ShowcaseFinished",onShowcaseFinished);
+            signalRModel.connection.current?.off("ShowcaseFinished", onShowcaseFinished);
         }
     }, []);
 
@@ -191,7 +214,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     else
         playButtonText = "PLAY";
 
-    let button = isFinished&&!isWaiting ? <FinishButton disabled={!signalRModel.roomModelRef.current?.isPlayerAdmin} onClick={onFinish} /> : <PlayButton style={{ marginRight: 10 }} disabled={isWaiting || !signalRModel.roomModelRef.current?.isPlayerAdmin || isShowcaseStarted} onClick={onPlayClick}>{playButtonText}</PlayButton>
+    let button = isFinished && !isWaiting ? <FinishButton disabled={!signalRModel.roomModelRef.current?.isPlayerAdmin} onClick={onFinish} /> : <PlayButton style={{ marginRight: 10 }} disabled={isWaiting || !signalRModel.roomModelRef.current?.isPlayerAdmin || isShowcaseStarted} onClick={onPlayClick}>{playButtonText}</PlayButton>
     return (
         <div className="container-mid">
             <Row style={{ marginTop: "2vh", width: "100%" }} gutter={[20, 5]}>
@@ -211,9 +234,9 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
                             <h1 className="lyrics-2line">{currLyrics[1]}</h1>
                         </div>
                         <ShowcaseCanvas ref={canvas} style={{ marginTop: "auto" }} loading={loading} />
-                        {drawingAuthor!=""?<div style={{width: "100%", display: "flex", justifyContent: "end"}}>
+                        {drawingAuthor != "" ? <div style={{ width: "100%", display: "flex", justifyContent: "end" }}>
                             <label className="showcase-player-name">Drawn by {drawingAuthor}</label>
-                        </div>:""}
+                        </div> : ""}
                     </div>
                 </Col>
             </Row>

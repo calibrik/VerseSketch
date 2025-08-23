@@ -6,9 +6,9 @@ interface IErrorPageProps {};
 
 export const ErrorPage: FC<IErrorPageProps> = () => {
     const navigate = useNavigate();
-    const connection=useSignalRConnectionContext();
+    const signalRModel=useSignalRConnectionContext();
     useEffect(() => {
-        leave(connection);
+        leave(signalRModel);
         navigate("/");
     }, []);
 

@@ -10,14 +10,19 @@ using VerseSketch.Backend.ViewModels;
 
 namespace VerseSketch.Backend.Hubs;
 
+public enum LeaveReason
+{
+    Disconnected,
+    Kicked
+}
+
 public interface IRoomHub
 {
     Task ReceiveRoom(RoomViewModel model);
     Task ReceiveParams(SetParamsViewModel model);
     Task ReceivePlayerList(List<PlayerViewModel> players);
     Task RoomDeleted(string reason);
-    Task PlayerLeft(string playerId,bool isRemoved);
-    Task PlayerKicked(string playerId);
+    Task PlayerLeft(string playerId,bool isRemoved,LeaveReason reason);
     Task PlayerJoined(PlayerViewModel player);
     Task StageSet(int stage);
     Task PlayerCompletedTask(int completedNum);
@@ -274,24 +279,24 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("Room not found.");
         if (room.AdminId!=player._Id)
             throw new HubException("You are not an admin in this room.");
-
+        
+        CompletedMap newMap = new CompletedMap
+        {
+            CurrDone = 0,
+            IdToStage = room.CompletedMap.IdToStage,
+            Version = room.CompletedMap.Version,
+        };
+        foreach (string id in room.CompletedMap.IdToStage.Keys)
+        {
+            newMap.IdToStage[id] = -1;
+        }
+        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r=>r.CompletedMap,newMap);
+        await _roomsRepository.UpdateRoomAsync(room.Title,update);
         await Clients.Group(player.RoomTitle).StartShowcase(playerId);
     }
 
     private async Task ShowcaseFinished(Room room, Player player)
     {
-        CompletedMap newMap = new CompletedMap
-        {
-            CurrDone = 0,
-            IdToStage = new Dictionary<string, int>(),
-            Version = room.CompletedMap.Version,
-        };
-        foreach (string playerId in room.CompletedMap.IdToStage.Keys)
-        {
-            newMap.IdToStage.Add(playerId, -1);
-        }
-        UpdateDefinition<Room> update = Builders<Room>.Update.Set(r=>r.CompletedMap,newMap);
-        await _roomsRepository.UpdateRoomAsync(player.RoomTitle,update);
         await Clients.Group(room.Title).ShowcaseFinished();
     }
 
@@ -417,7 +422,10 @@ public class RoomHub:Hub<IRoomHub>
         Player? player = await _playerRepository.GetPlayerAsync(playerId);
         if (player == null||player.RoomTitle!=roomTitle)
             throw new HubException("Player is not in this room.");
-        await Clients.Group(roomTitle).PlayerKicked(playerId);
+        if (room.Stage!=-1)
+            throw new HubException("You can't kick in this stage.");
+        
+        await RemovePlayer(player,room, LeaveReason.Kicked);
     }
     public async Task<string> GenerateJoinToken(string roomTitle)
     {
@@ -503,16 +511,21 @@ public class RoomHub:Hub<IRoomHub>
             Context.Abort();
             return;
         }
-        await RemovePlayer(player);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, player.RoomTitle);
+        await RemovePlayer(player,LeaveReason.Disconnected);
         Context.Abort();
     }
 
-    async Task RemovePlayer(Player player)
+    async Task RemovePlayer(Player player, LeaveReason reason)
+    {
+        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        await RemovePlayer(player,room,reason);
+    }
+
+    async Task RemovePlayer(Player player,Room room,LeaveReason reason)
     {
         // Console.WriteLine($"Removing player {player.Nickname} at {DateTime.Now}");
-        Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
         bool isInGame = await _playerRepository.HasPlayerSubmitLyrics(player._Id);
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, room.Title);
         
         if (!isInGame || player._Id == room.AdminId)
         {
@@ -558,7 +571,12 @@ public class RoomHub:Hub<IRoomHub>
         }
 
         if (isInGame && room.Stage != -1 && currDone == room.PlayingPlayersCount)
-            await PlayersDoneWithTask(room, player);
+        {
+            if (room.Stage == room.ActualPlayersCount)
+                await ShowcaseFinished(room, player);
+            else
+                await PlayersDoneWithTask(room, player);
+        }
         if (!isInGame && room.Stage == 0)
         {
             CompletedMap newMap = new CompletedMap
@@ -573,7 +591,7 @@ public class RoomHub:Hub<IRoomHub>
             await _roomsRepository.UpdateRoomAsync(room.Title, update);
             await Clients.Groups(player.RoomTitle).PlayerCompletedTask(0);
         }
-        await Clients.Groups(player.RoomTitle).PlayerLeft(player._Id, isInGame);
+        await Clients.Groups(player.RoomTitle).PlayerLeft(player._Id, isInGame,reason);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -587,11 +605,12 @@ public class RoomHub:Hub<IRoomHub>
         if (player.ConnectionID != null)
         {
             string currConnectionId = player.ConnectionID;
-            await Task.Delay(16000);
+            await Task.Delay(15000);
             Player? currPlayer=await _playerRepository.GetPlayerAsync(playerId);
             if (currPlayer == null || currPlayer.ConnectionID==null || currConnectionId != currPlayer.ConnectionID)
                 return;
         }
-        await RemovePlayer(player);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, player.RoomTitle);
+        await RemovePlayer(player,LeaveReason.Disconnected);
     }
 }

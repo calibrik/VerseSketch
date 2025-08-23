@@ -230,7 +230,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
                     <Card className="room-card" title={<Title className="card-title">Rules:</Title>}>
                         <div className="card-content">
                             <p className="card-text">Each player picks a song they love and selects 2 × (n - 1) lines from the lyrics, where n is the number of players. Then, everyone takes turns drawing pictures based on two lines from each other’s songs.</p>
-                            <p className="card-text">Once all the drawings are done, the final compilation plays—each song is showcased along with the images created by the group, bringing the lyrics to life!</p>
+                            <p className="card-text">Once all the drawings are done, the final compilation plays, each song is showcased along with the images created by the group, bringing the lyrics to life!</p>
                         </div>
                         <div className="card-footer">
                             <Divider style={{background:Color.Secondary}}/>

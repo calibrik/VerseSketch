@@ -8,6 +8,10 @@ import { useNavigate } from "react-router";
 interface ISignalRProviderProps {
     children: ReactNode
 };
+enum LeaveReasons{
+    Disconnected,
+    Kicked
+}
 export type RoomModel = {
     title: string;
     playingPlayersCount: number;
@@ -58,7 +62,6 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         connection.current.on("PlayerJoined", onPlayerJoined);
         connection.current.on("PlayerLeft", onPlayerLeft);
         connection.current.on("RoomDeleted", onRoomDeleted);
-        connection.current.on("PlayerKicked", onPlayerKicked);
         connection.current.on("ReceiveRoom", onRoomReceive);
         connection.current.on("StageSet", onStageSet);
         connection.current.on("ReceivePlayerList", onReceivePlayerList);
@@ -92,6 +95,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         leave({ connection: connection, roomModelRef: roomModelRef, createConnection: createConnection, stopConnection: stopConnection, updateTrigger: updateTrigger });
         errorModals.errorModal.current?.show(reason);
     }
+
     function onPlayerJoined(data: PlayerModel) {
         if (!roomModelRef.current || roomModelRef.current.playerId == data.id)
             return;
@@ -110,16 +114,16 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         updateTrigger.current.invoke();
     }
 
-    function onPlayerKicked(playerId: string) {
-        if (!roomModelRef.current || playerId != roomModelRef.current.playerId)
-            return;
-        leave({ connection: connection, roomModelRef: roomModelRef, createConnection: createConnection, stopConnection: stopConnection, updateTrigger: updateTrigger });
-        errorModals.errorModal.current?.show("You have been kicked out of room.");
-    }
-
-    function onPlayerLeft(playerId: string, isInGame: boolean) {
+    function onPlayerLeft(playerId: string, isInGame: boolean,reason:LeaveReasons) {
         if (!roomModelRef.current)
             return;
+        if (playerId==roomModelRef.current.playerId) {
+            leave({ connection: connection, roomModelRef: roomModelRef, createConnection: createConnection, stopConnection: stopConnection, updateTrigger: updateTrigger });
+            if (reason==LeaveReasons.Disconnected)
+                errorModals.errorModal.current?.show("Lost connection to server.");
+            if (reason==LeaveReasons.Kicked)
+                errorModals.errorModal.current?.show("You have been kicked.");
+        }
         if (isInGame) {
             roomModelRef.current.playingPlayersCount--;
             updateTrigger.current.invoke();

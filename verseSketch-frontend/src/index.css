@@ -134,7 +134,7 @@ html {
 }
 
 .lyrics-2line {
-    font-size: clamp(0.9rem, 3.5vmin, 2.7rem) !important;
+    font-size: clamp(0.9rem, 3vmin, 2.7rem) !important;
 }
 
 .page-title,
@@ -808,7 +808,7 @@ html {
 }
 
 .showcase-container .header {
-    padding: 0 4vw;
+    padding: 0 2vw;
 }
 
 @media (max-width: 575px) {

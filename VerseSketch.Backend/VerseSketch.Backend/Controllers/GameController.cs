@@ -60,11 +60,17 @@ public class GameController : ControllerBase
         
         using var synth = new SpeechSynthesizer();
         using var stream = new MemoryStream();
-        synth.SetOutputToWaveStream(stream);
-        synth.Rate = 2;
-        synth.Speak(text);
-        stream.Position = 0;
-
+        try
+        {
+            synth.SetOutputToWaveStream(stream);
+            synth.Rate = 2;
+            synth.Speak(text);
+            stream.Position = 0;
+        }
+        catch (Exception)
+        {
+            return StatusCode(500,new {message = "Something went wrong while creating audio."});
+        }
         return File(stream.ToArray(), "audio/wav");
     }
 }

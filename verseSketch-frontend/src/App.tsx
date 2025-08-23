@@ -14,7 +14,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     Component: MainLayout,
-    // errorElement: <ErrorPage/>,
+    errorElement: <ErrorPage/>,
     children: [
       {
         index: true,
@@ -72,4 +72,4 @@ export default App;
 //TODO: Fix player list scrolling on md (ugly ass when list is not scrollable)
 //TODO: remove "alpha" drawing from canvas
 //TODO: ColorPicker is bugged tf out(kinda fixed, but not optimal tbf)
-//TODO: Drawing page submitting images incorrectly (can't replicate tho)
+//TODO: Drawing page submitting images incorrectly (can't replicate tho, maybe gone)

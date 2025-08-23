@@ -42,10 +42,6 @@ builder.Services.AddCors(options =>
         });
 });
 #endif
-// builder.Services.AddDbContext<VerseSketchDbContext>(options =>
-// {
-//     options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection"));
-// });
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
