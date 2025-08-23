@@ -56,7 +56,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         }
         connection.current = new signalR.HubConnectionBuilder()
             .withUrl(`${ConnectionConfig.Api}/rooms/roomHub?roomTitle=${roomTitle}&access_token=${accessToken}`)
-            // .configureLogging("none")
+            .configureLogging("none")
             .withAutomaticReconnect([0, 3000, 3000, 3000, 3000])
             .build();
         connection.current.on("PlayerJoined", onPlayerJoined);
@@ -99,7 +99,6 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
     function onPlayerJoined(data: PlayerModel) {
         if (!roomModelRef.current || roomModelRef.current.playerId == data.id)
             return;
-        console.log("Player joined", data);
         roomModelRef.current.players.push(data);
         roomModelRef.current.playingPlayersCount++;
         roomModelRef.current.actualPlayersCount++;
@@ -107,7 +106,6 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
     }
 
     async function onRoomReceive(data: RoomModel) {
-        console.log("Room received", data);
         if (roomModelRef.current && data.stage != roomModelRef.current.stage)
             onStageSet(data.stage);
         roomModelRef.current = data;

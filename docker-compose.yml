@@ -1,0 +1,32 @@
+services:
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - MongoDBSettings:ConnectionString=mongodb://mongo-db:27017
+      - ASPNETCORE_URLS=http://+:80
+    depends_on:
+      - mongo-db
+    networks:
+      - app-network
+
+
+  mongo-db:
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local

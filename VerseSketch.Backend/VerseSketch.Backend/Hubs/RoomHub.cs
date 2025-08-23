@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using MongoDB.Driver;
 using VerseSketch.Backend.Controllers;
 using VerseSketch.Backend.Misc;
@@ -134,11 +133,11 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("You are not in this room.");
         }
         Player? player = await _playerRepository.GetPlayerAsync(Context.User.FindFirst("PlayerId").Value);
-        Room? room=await _roomsRepository.GetRoomAsync(player.RoomTitle);
         if (player == null)
         {
             throw new HubException("Player not found.");
         }
+        Room? room=await _roomsRepository.GetRoomAsync(player.RoomTitle);
         if (room == null)
         {
             throw new HubException("Room not found.");
@@ -519,6 +518,8 @@ public class RoomHub:Hub<IRoomHub>
     async Task RemovePlayer(Player player, LeaveReason reason)
     {
         Room? room = await _roomsRepository.GetRoomAsync(player.RoomTitle);
+        if (room == null)
+            return;
         await RemovePlayer(player,room,reason);
     }
 

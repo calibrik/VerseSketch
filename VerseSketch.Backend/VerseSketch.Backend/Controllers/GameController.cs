@@ -57,20 +57,19 @@ public class GameController : ControllerBase
     {
         if (!User.Identity.IsAuthenticated)
             return Unauthorized(new { message = $"You are not part of this game." });
-        
-        using var synth = new SpeechSynthesizer();
-        using var stream = new MemoryStream();
         try
         {
+            using var synth = new SpeechSynthesizer();
+            using var stream = new MemoryStream();
             synth.SetOutputToWaveStream(stream);
             synth.Rate = 2;
             synth.Speak(text);
             stream.Position = 0;
+            return File(stream.ToArray(), "audio/wav");
         }
-        catch (Exception)
+        catch (Exception e)
         {
             return StatusCode(500,new {message = "Something went wrong while creating audio."});
         }
-        return File(stream.ToArray(), "audio/wav");
     }
 }

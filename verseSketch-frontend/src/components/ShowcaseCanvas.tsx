@@ -154,7 +154,7 @@ export const ShowcaseCanvas = forwardRef<any, IShowcaseCanvasProps>((props, ref)
 			pointsCount += line.points.length;
 		const batch = Math.ceil((pointsCount * 5) / timeToDraw);
 
-		let start = Date.now();
+		// let start = Date.now();
 		for (const line of lines) {
 			if (line.tool === "forward") {
 				goForward();
@@ -197,7 +197,7 @@ export const ShowcaseCanvas = forwardRef<any, IShowcaseCanvasProps>((props, ref)
 			drawTo(line.points[line.points.length - 1]);
 			imageRef.current?.getLayer()?.batchDraw();
 		}
-		console.log(Date.now() - start);
+		// console.log(Date.now() - start);
 	}
 
 	function reset() {

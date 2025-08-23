@@ -60,7 +60,6 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             errorModals.errorModalClosable.current?.show(data.message);
             return [];
         }
-        console.log(data);
         setLoading(false);
         return data.lyricImages;
     }
@@ -147,9 +146,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
             }
             let drawingEnd = canvas.current?.draw(lyricImage.image);
             await msgEnd;
-            console.log("msg end");
             await drawingEnd;
-            console.log("drawing end");
         }
         await delay(1500);
         setIsShowcaseStarted(false);

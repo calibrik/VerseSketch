@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>baaecd1f-5c23-46b5-a771-ce36be4cf247</UserSecretsId>
+        <!-- <OutputType>Exe</OutputType> -->
     </PropertyGroup>
 
     <ItemGroup>
@@ -73,10 +74,6 @@
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-nzrTiN6r.js" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-TCFSRkPj.js" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-TXmmMHHl.js" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="wwwroot\" />
     </ItemGroup>
 
 </Project>
