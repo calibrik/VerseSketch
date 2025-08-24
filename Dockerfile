@@ -13,7 +13,7 @@ COPY ./VerseSketch.Backend .
 COPY --from=frontend ./src/frontend/dist ./VerseSketch.Backend/wwwroot
 RUN dotnet publish "/src/backend/VerseSketch.Backend/VerseSketch.Backend.csproj" -c Release -o /app
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
 WORKDIR /app
 EXPOSE 80
 COPY --from=backend ./app .

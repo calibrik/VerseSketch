@@ -27,7 +27,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
     const isMoreDataAvailable=useRef<boolean>(true);
     const pageNumber=useRef<number>(0);
     const [loading, setLoading] = useState<boolean>(false);
-    const debounceTimeoutRef = useRef<number | null>(null);
+    const debounceTimeoutRef = useRef<NodeJS.Timeout>(undefined);
     const loadMoreAbortController=useRef<AbortController | null>(null);
     const searchAbortController=useRef<AbortController | null>(null);
     const errorModals=useErrorDisplayContext();
@@ -129,7 +129,7 @@ export const JoinRoomPage: FC<IJoinRoomPageProps> = () => {
             }
             console.log("search finished");
             setLoading(false);
-            debounceTimeoutRef.current = null;
+            debounceTimeoutRef.current = undefined;
             searchAbortController.current = null;
         }, 300);
     }

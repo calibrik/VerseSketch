@@ -27,7 +27,7 @@ public static class DBSetup
         await rooms.Indexes.CreateOneAsync(CreateIndexOn<Room>(r=>r.Title,new  CreateIndexOptions { Unique = true }));
         List<CreateIndexModel<Player>> playerIndexes=
         [
-            CreateIndexOn<Player>([p => p.RoomTitle, p => p.Nickname], new CreateIndexOptions { Unique = true }),
+            CreateIndexOn<Player>([p => p.RoomTitle, p => p.Nickname]),
             CreateIndexOn<Player>(p => p.CreatedTime)
         ];
         await players.Indexes.CreateManyAsync(playerIndexes);

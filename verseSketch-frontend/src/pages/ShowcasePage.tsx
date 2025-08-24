@@ -32,7 +32,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     const [isFinished, setIsFinished] = useState<boolean>(false);
     const canvas = useRef<ShowcaseCanvasHandle>(null);
     const [drawingAuthor, setDrawingAuthor] = useState<string>("");
-    const timeoutRef = useRef<number>(0);
+    const timeoutRef = useRef<NodeJS.Timeout>(undefined);
 
 
     async function getStoryline(playerId: string): Promise<LyricImage[]> {

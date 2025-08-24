@@ -14,7 +14,7 @@ export interface ITimerHandle {
 export const Timer = forwardRef<ITimerHandle, ITimerProps>((props, ref) => {
     const [percent, setPercent] = useState<number>(0);
     const signalRModel = useSignalRConnectionContext();
-    const intervalRef=useRef<number>(0);
+    const intervalRef=useRef<NodeJS.Timeout>(undefined);
 
     async function onTimeIsUp() {
         await delay(1000);

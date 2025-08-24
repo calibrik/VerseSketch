@@ -1,3 +1,4 @@
+name: verseSketch-dev
 services:
   webapp:
     build:
@@ -8,10 +9,11 @@ services:
     environment:
       - MongoDBSettings:ConnectionString=mongodb://mongo-db:27017
       - ASPNETCORE_URLS=http://+:80
+      - JwtConfig:Key=super-duper-long-and-awesome-secret-key
     depends_on:
       - mongo-db
     networks:
-      - app-network
+      - app-dev-network
 
 
   mongo-db:
@@ -21,10 +23,10 @@ services:
     volumes:
       - mongo-data:/data/db
     networks:
-      - app-network
+      - app-dev-network
 
 networks:
-  app-network:
+  app-dev-network:
     driver: bridge
 
 volumes:

@@ -1,9 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using MongoDB.Bson;
+﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using VerseSketch.Backend.Models;
-using ZstdSharp.Unsafe;
 
 namespace VerseSketch.Backend.Repositories;
 
