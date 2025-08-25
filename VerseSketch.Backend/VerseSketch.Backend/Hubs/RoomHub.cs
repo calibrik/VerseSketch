@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver;
 using VerseSketch.Backend.Controllers;
@@ -28,6 +30,8 @@ public interface IRoomHub
     Task StartShowcase(string playerId);
     Task ShowcaseFinished();
     Task ReceiveErrorMessage(string msg, bool isTerminal);
+    Task ReceiveStoryline(List<LyricsImage> storyline);
+    Task ReceiveAudioFile(byte[] file,int index);
 }
 
 public class RoomHub:Hub<IRoomHub>
@@ -291,7 +295,49 @@ public class RoomHub:Hub<IRoomHub>
         }
         UpdateDefinition<Room> update = Builders<Room>.Update.Set(r=>r.CompletedMap,newMap);
         await _roomsRepository.UpdateRoomAsync(room.Title,update);
+
+        List<LyricsImage> lyricsImages = await _storylineRepository.GetPlayersStoryline(playerId);
+        await Clients.Group(room.Title).ReceiveStoryline(lyricsImages);
+        for (int i = 0; i < lyricsImages.Count; i++)
+        {
+            byte[] audioFile = await GetAudio($"{lyricsImages[i].Lyrics[0]}\n{lyricsImages[i].Lyrics[1]}");
+            await Clients.Groups(room.Title).ReceiveAudioFile(audioFile,i);
+        }
+        
         await Clients.Group(player.RoomTitle).StartShowcase(playerId);
+    }
+    
+    private async Task<byte[]> GetAudio(string text)
+    {
+        try
+        {
+            ProcessStartInfo processStartInfo = new ProcessStartInfo("espeak-ng")
+            {
+                Arguments = $"\"{text}\" --stdout",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+
+            Process? process = Process.Start(processStartInfo);
+            if (process == null)
+                throw new Exception("Failed to start espeak-ng process");
+            using MemoryStream memoryStream = new MemoryStream();
+            await process.StandardOutput.BaseStream.CopyToAsync(memoryStream);
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0)
+            {
+                string error = await process.StandardError.ReadToEndAsync();
+                throw new Exception(error);
+            }
+            return memoryStream.ToArray();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return [];
+        }
     }
 
     private async Task ShowcaseFinished(Room room, Player player)

@@ -98,7 +98,6 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         }
         activeToolButton[tool] = false;
         activeToolButton[t] = true;
-        console.log(activeToolButton, tool, t)
         setTool(t);
         setActiveToolButton({ ...activeToolButton });
     }
@@ -151,7 +150,6 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         if (!response.ok) {
             errorModals.errorModal.current?.show(data.message);
         }
-        console.log("Data received", data);
         forPlayerId.current = data.lyrics.fromPlayerId;
         setLines(data.lyrics.lines);
         linesRef.current=data.lyrics.lines;

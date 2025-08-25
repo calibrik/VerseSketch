@@ -145,19 +145,16 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
         leave({ connection: connection, roomModelRef: roomModelRef, createConnection: createConnection, stopConnection: stopConnection, updateTrigger: updateTrigger });
     }
     function onRecconnect() {
-        console.log("Reconnecting to the server...");
         isRecconecting.current = true;
         errorModals.statusModal.current?.show("Reconnecting to the server...");
     }
     function onRecconnected() {
-        console.log("Reconnected to the server.");
         isRecconecting.current = false;
         errorModals.statusModal.current?.close();
     }
     function onStageSet(stage: number) {
         if (!roomModelRef.current)
             return;
-        console.log("Stage set to", stage);
         roomModelRef.current.stage = stage;
         if (stage == -1) {
             navigate(`/room/${roomModelRef.current?.title}`, { replace: true });

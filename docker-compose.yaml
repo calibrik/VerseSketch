@@ -1,3 +1,4 @@
+name: verseSketch
 services:
   webapp:
     build:
@@ -11,9 +12,9 @@ services:
       - JwtConfig:Key=super-duper-long-and-awesome-secret-key
     depends_on:
       - mongo-db
+    restart: unless-stopped
     networks:
       - app-network
-
 
   mongo-db:
     image: mongo:latest
@@ -21,6 +22,7 @@ services:
       - "27018:27017"
     volumes:
       - mongo-data:/data/db
+    restart: unless-stopped
     networks:
       - app-network
 

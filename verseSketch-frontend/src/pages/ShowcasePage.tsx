@@ -6,7 +6,6 @@ import { useSignalRConnectionContext } from "../components/SignalRProvider";
 import { ILine } from "../components/Canvas";
 import { delay, leave } from "../misc/MiscFunctions";
 import { useNavigate } from "react-router";
-import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import { PlayButton } from "../components/buttons/PlayButton";
 import { FinishButton } from "../components/buttons/FinishButton";
@@ -16,6 +15,7 @@ type LyricImage = {
     lyrics: string[];
     image: ILine[];
     byPlayerId: string;
+    voiceOverBlob: Blob;
 }
 
 export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
@@ -24,6 +24,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     const [currPlayerPlaying, setCurrPlayerPlaying] = useState<string>(signalRModel.roomModelRef.current?.players[0]?.id ?? "");
     const currPlayerPlayingRef = useRef<number>(0);
     const navigate = useNavigate();
+    const storyline = useRef<LyricImage[] | null>(null)
     const [currLyrics, setCurrLyrics] = useState<string[]>(["Prepare to see your own drawings", "for the lyrics you wrote!"]);
     const errorModals = useErrorDisplayContext();
     const [isShowcaseStarted, setIsShowcaseStarted] = useState<boolean>(false);
@@ -33,36 +34,6 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     const canvas = useRef<ShowcaseCanvasHandle>(null);
     const [drawingAuthor, setDrawingAuthor] = useState<string>("");
     const timeoutRef = useRef<NodeJS.Timeout>(undefined);
-
-
-    async function getStoryline(playerId: string): Promise<LyricImage[]> {
-        setLoading(true);
-        let response;
-        try {
-            response = await fetch(`${ConnectionConfig.Api}/game/getPlayersStoryline?${new URLSearchParams({
-                playerId: playerId,
-            })}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionStorage.getItem("player")}`
-                }
-            });
-        }
-        catch (e: any) {
-            setLoading(false);
-            errorModals.errorModalClosable.current?.show("Something went wrong.");
-            return [];
-        }
-        let data = await response.json();
-        if (!response.ok) {
-            setLoading(false);
-            errorModals.errorModalClosable.current?.show(data.message);
-            return [];
-        }
-        setLoading(false);
-        return data.lyricImages;
-    }
 
     async function onPlayClick() {
         if (!signalRModel.roomModelRef.current?.isPlayerAdmin)
@@ -86,63 +57,56 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         }
     }
 
-    async function getAudio(text: string): Promise<Blob | null> {
-        let response;
-        try {
-            response = await fetch(`${ConnectionConfig.Api}/game/getAudio?${new URLSearchParams({
-                text: text,
-            })}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionStorage.getItem("player")}`
-                }
-            });
+    async function onReceiveStoryline(s: LyricImage[]) {
+        setLoading(true);
+        storyline.current = s;
+    }
+
+    async function onReceiveAudioFile(file: string, index: number) {
+        if (!storyline.current)
+            return;
+        const binaryString = atob(file);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
         }
-        catch (e: any) {
-            errorModals.errorModalClosable.current?.show("Could not get audio for the lyrics.");
-            return null;
-        }
-        if (!response.ok) {
-            let data = await response.json();
-            errorModals.errorModalClosable.current?.show(data.message);
-            return null;
-        }
-        return await response.blob();
+        storyline.current[index].voiceOverBlob = new Blob([bytes], { type: 'audio/wav' });
     }
 
     async function playStoryline(playerId: string) {
         if (!signalRModel.roomModelRef.current)
             return;
+        setLoading(false);
         setIsShowcaseStarted(true);
         isShowcaseStartedRef.current = true;
         setIsWaiting(true);
         setCurrPlayerPlaying(playerId);
         currPlayerPlayingRef.current = signalRModel.roomModelRef.current?.players.findIndex(p => p.id === playerId);
-        const lyricImages = await getStoryline(playerId);
-        if (lyricImages.length === 0) {
+        if (!storyline.current || storyline.current.length === 0) {
             setIsShowcaseStarted(false);
             await signalRModel.connection.current?.invoke("PlayerFinishedShowcase");
             return;
         }
-        for (const lyricImage of lyricImages) {
+        for (const lyricImage of storyline.current) {
             if (!lyricImage.byPlayerId)
                 break;
             setDrawingAuthor(signalRModel.roomModelRef.current?.players.find(p => p.id === lyricImage.byPlayerId)?.nickname ?? "Unknown");
             setCurrLyrics([lyricImage.lyrics[0], lyricImage.lyrics[1]]);
-            const blob = await getAudio(lyricImage.lyrics.join('\n'));
             let msgEnd: Promise<void> = Promise.resolve();
-            if (blob) {
-                const audio = new Audio(URL.createObjectURL(blob));
+            if (lyricImage.voiceOverBlob) {
+                const audio = new Audio(URL.createObjectURL(lyricImage.voiceOverBlob));
                 msgEnd = new Promise<void>((resolve) => {
                     audio.onended = () => {
                         resolve();
                     }
                 });
-                audio.play().catch((_) => {
+                try{
+                    await audio.play();
+                }
+                catch (e:any){
                     errorModals.errorModalClosable.current?.show("Failed to play audio for the lyrics.");
                     msgEnd = Promise.resolve();
-                });
+                }
             }
             let drawingEnd = canvas.current?.draw(lyricImage.image);
             await msgEnd;
@@ -157,7 +121,7 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         try {
             await signalRModel.connection.current?.invoke("PlayerFinishedShowcase");
         }
-        catch (e:any){
+        catch (e: any) {
 
         }
         if (signalRModel.roomModelRef.current.isPlayerAdmin) {
@@ -193,10 +157,14 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         }
         signalRModel.connection.current.on("StartShowcase", playStoryline);
         signalRModel.connection.current.on("ShowcaseFinished", onShowcaseFinished);
+        signalRModel.connection.current.on("ReceiveStoryline", onReceiveStoryline);
+        signalRModel.connection.current.on("ReceiveAudioFile", onReceiveAudioFile);
         signalRModel.connection.current.onreconnected(onReconnected);
         return () => {
             signalRModel.connection.current?.off("onreconnected", onReconnected);
             signalRModel.connection.current?.off("StartShowcase", playStoryline);
+            signalRModel.connection.current?.off("ReceiveStoryline", onReceiveStoryline);
+            signalRModel.connection.current?.off("ReceiveAudioFile", onReceiveAudioFile);
             signalRModel.connection.current?.off("ShowcaseFinished", onShowcaseFinished);
         }
     }, []);
