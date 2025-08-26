@@ -263,7 +263,6 @@ public class RoomsController:ControllerBase
         if (room.ActualPlayersCount>=room.MaxPlayersCount)
             return BadRequest(new {message="Room is full."});//check if room is full
         
-        
         if (player == null) 
         {
             player = new Player()

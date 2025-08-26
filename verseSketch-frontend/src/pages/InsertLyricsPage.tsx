@@ -114,7 +114,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
             <StageCounter stage={model.stage} maxStage={model.actualPlayersCount} />
             <PlayerCompleteCounter />
             <div className="container-small">
-                <PageTitle style={{ marginTop: "6vh" }}>Past {(model.playingPlayersCount - 1) * 2} lines of lyrics of your song!</PageTitle>
+                <PageTitle style={{ marginTop: "6vh" }}>Past {(model.playingPlayersCount - 1) * 2} lines of lyrics from your song!</PageTitle>
                 <TextArea onChange={validateLyrics} style={{ marginTop: "5vh" }} disabled={isSubmitted} placeholder="Insert your lyrics here..." />
                 <div style={{ width: "100%", height: "4vh" }}>
                     <label style={{ color: "red" }}>{errorMsg}</label>
