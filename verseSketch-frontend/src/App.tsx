@@ -73,3 +73,4 @@ export default App;
 //TODO: remove "alpha" drawing from canvas
 //TODO: ColorPicker is bugged tf out(kinda fixed, but not optimal tbf)
 //TODO: Drawing page submitting images incorrectly (can't replicate tho, maybe gone)
+//TODO: Canvas bug where u can draw after submit if u don't release ur mouse (doesn't affect much tho)

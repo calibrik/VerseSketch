@@ -120,6 +120,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
                     <label style={{ color: "red" }}>{errorMsg}</label>
                 </div>
                 <SubmitButton onClick={onSubmit} loading={submitLoading} isSubmitted={isSubmitted} />
+                <label style={{marginTop:"20vh"}} className="input-field-label">Please use a single language for a better voice over.</label>
             </div>
         </>
     );

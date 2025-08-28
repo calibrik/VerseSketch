@@ -40,13 +40,15 @@ public class RoomHub:Hub<IRoomHub>
     private readonly RoomsRepository _roomsRepository;
     private readonly InstructionRepository _instructionRepository;
     private readonly StorylineRepository _storylineRepository;
+    private readonly PiperService _piperService;
 
-    public RoomHub(PlayerRepository playerRepository,RoomsRepository roomsRepository,InstructionRepository instructionRepository,StorylineRepository storylineRepository)
+    public RoomHub(PlayerRepository playerRepository,RoomsRepository roomsRepository,InstructionRepository instructionRepository,StorylineRepository storylineRepository,PiperService piperService)
     {
         _playerRepository = playerRepository;
         _roomsRepository = roomsRepository;
         _instructionRepository = instructionRepository;
         _storylineRepository = storylineRepository;
+        _piperService = piperService;
     }
     public override async Task OnConnectedAsync()
     {
@@ -300,25 +302,26 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Group(room.Title).ReceiveStoryline(lyricsImages);
         for (int i = 0; i < lyricsImages.Count; i++)
         {
-            byte[] audioFile = await GetAudio($"{lyricsImages[i].Lyrics[0]}\n{lyricsImages[i].Lyrics[1]}");
+            byte[] audioFile = await GetAudioPiper($"{lyricsImages[i].Lyrics[0]},\n{lyricsImages[i].Lyrics[1]},","EN");
             await Clients.Groups(room.Title).ReceiveAudioFile(audioFile,i);
         }
         
         await Clients.Group(player.RoomTitle).StartShowcase(playerId);
     }
     
-    private async Task<byte[]> GetAudio(string text)
+    private async Task<byte[]> GetAudioEspeak(string text)
     {
         try
         {
             ProcessStartInfo processStartInfo = new ProcessStartInfo("espeak-ng")
             {
-                Arguments = $"\"{text}\" --stdout",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };
+            processStartInfo.ArgumentList.Add(text);
+            processStartInfo.ArgumentList.Add("--stdout");
 
             Process? process = Process.Start(processStartInfo);
             if (process == null)
@@ -332,6 +335,19 @@ public class RoomHub:Hub<IRoomHub>
                 throw new Exception(error);
             }
             return memoryStream.ToArray();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return [];
+        }
+    }
+
+    private async Task<byte[]> GetAudioPiper(string text,string lang)
+    {
+        try
+        {
+            return await _piperService.GetAudio(text, lang);
         }
         catch (Exception e)
         {

@@ -23,6 +23,7 @@ builder.Services.AddScoped<RoomsRepository>();
 builder.Services.AddScoped<PlayerRepository>();
 builder.Services.AddScoped<InstructionRepository>();
 builder.Services.AddScoped<StorylineRepository>();
+builder.Services.AddHttpClient<PiperService>();
 
 #if DEBUG
 builder.Services.AddCors(options =>
@@ -155,3 +156,4 @@ app.Run();
 //TODO AI is the must for tts in future (mb piper with custom voice)
 //TODO Image recording bug
 //TODO Deploy using AWS if possible (also fuck around with Docker, kinda interesting)
+//TODO Add language selector in lyrics

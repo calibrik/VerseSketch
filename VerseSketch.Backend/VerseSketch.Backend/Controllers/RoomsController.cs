@@ -17,7 +17,7 @@ public class RoomsController:ControllerBase
     private readonly PlayerRepository _playerRepository;
     private readonly IConfiguration _configuration;
 
-    record JoinTokenData
+    struct JoinTokenData
     {
         public string CurrentJoinToken { get; set; }
         public string RoomTitle { get; set; }
@@ -38,7 +38,7 @@ public class RoomsController:ControllerBase
             JoinTokenData? data = JsonSerializer.Deserialize<JoinTokenData>(Encoding.UTF8.GetString(bytes));
             if (data==null)
                 return null;
-            return await _roomsRepository.IsJoinTokenValid(data.CurrentJoinToken,data.RoomTitle,ct)?data.RoomTitle:null;
+            return await _roomsRepository.IsJoinTokenValid(data.Value.CurrentJoinToken,data.Value.RoomTitle,ct)?data.Value.RoomTitle:null;
         }
         catch (Exception ex)
         {
