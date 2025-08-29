@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using VerseSketch.Backend.Models;
 
@@ -24,7 +25,7 @@ public class PlayerRepository
         await _players.InsertOneAsync(player);
     }
 
-    public async Task<List<string>> GetSubmittedLyrics(string playerId)
+    public async Task<Lyrics?> GetSubmittedLyrics(string playerId)
     {
         return await _players.Find(p => p._Id == playerId).Project(p => p.SubmittedLyrics).FirstOrDefaultAsync();
     }
@@ -62,14 +63,14 @@ public class PlayerRepository
 
     public async Task ResetLyricsForPlayersInRoom(string roomTitle)
     {
-        UpdateDefinition<Player>  update = Builders<Player>.Update.Set(p=>p.SubmittedLyrics,[]);
+        UpdateDefinition<Player>  update = Builders<Player>.Update.Set(p=>p.SubmittedLyrics,null);
         await _players.UpdateManyAsync(p => p.RoomTitle == roomTitle, update);
     }
 
     public async Task<bool> HasPlayerSubmitLyrics(string playerId)
     {
-        List<string> lyrics = await _players.Find(p => p._Id == playerId).Project(p => p.SubmittedLyrics).FirstOrDefaultAsync();
-        return  lyrics.Count > 0;
+        Lyrics? lyrics = await _players.Find(p => p._Id == playerId).Project(p => p.SubmittedLyrics).FirstOrDefaultAsync();
+        return  lyrics!=null;
     }
 
     public async Task DeletePlayerAsync(string playerId)

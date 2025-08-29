@@ -221,7 +221,6 @@ export const Canvas = forwardRef<CanvasHandle, ICanvasProps>((props, ref) => {
 	};
 
 	const handleMouseMove = async (e: any) => {
-		console.log(props.disabled);
 		if (props.disabled || !isDrawing.current || !context || (props.tool != "pen" && props.tool != "eraser")) {
 			return;
 		}

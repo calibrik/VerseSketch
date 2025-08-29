@@ -3,13 +3,14 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace VerseSketch.Backend.Models;
 
-public struct Lyrics
+public struct InstructionLyrics
 {
+    [BsonElement("indexesToDraw")]
+    public int IndexToDraw { get; set; }
     [BsonElement("fromPlayerId")]
     public string FromPlayerId { get; set; }
-    [BsonElement("lines")]
-    public List<string> Lines { get; set; }
 }
+
 public class Instruction
 {
     [BsonId]
@@ -18,7 +19,7 @@ public class Instruction
     [BsonElement("playerId")]
     public required string PlayerId { get; set; }
     [BsonElement("lyricsToDraw")]
-    public List<Lyrics> LyrycsToDraw { get; set; }
+    public required List<InstructionLyrics> LyricsIndexesToDraw { get; set; }
     [BsonElement("roomTitle")]
     public required string RoomTitle { get; set; }
 }

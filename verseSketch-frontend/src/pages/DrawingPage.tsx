@@ -150,9 +150,9 @@ export const DrawingPage: FC<IDrawingPageProps> = (_) => {
         if (!response.ok) {
             errorModals.errorModal.current?.show(data.message);
         }
-        forPlayerId.current = data.lyrics.fromPlayerId;
-        setLines(data.lyrics.lines);
-        linesRef.current=data.lyrics.lines;
+        forPlayerId.current = data.fromPlayerId;
+        setLines(data.lines);
+        linesRef.current=data.lines;
     }
 
     async function onReconnected() {

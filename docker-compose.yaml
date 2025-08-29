@@ -13,6 +13,7 @@ services:
       - JwtConfig:Key=super-duper-long-and-awesome-secret-key
     depends_on:
       - mongo-db
+      - piper-tts
     restart: unless-stopped
     networks:
       - app-network

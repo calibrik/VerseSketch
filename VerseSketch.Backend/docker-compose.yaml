@@ -12,8 +12,8 @@ services:
       - ASPNETCORE_URLS=http://+:80
       - JwtConfig:Key=super-duper-long-and-awesome-secret-key
     depends_on:
-      - mongo-db
-      - piper-tts
+     - mongo-db
+     - piper-tts
     networks:
       - app-dev-network
 
@@ -27,9 +27,7 @@ services:
       - app-dev-network
 
   piper-tts:
-    build:
-      context: ../PiperSetup
-      dockerfile: Dockerfile
+    image: versesketch-piper-tts
     restart: unless-stopped
     networks:
       - app-dev-network

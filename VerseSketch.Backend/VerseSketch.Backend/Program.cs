@@ -70,7 +70,7 @@ builder.Services.AddSwaggerGen(options =>
     options.AddSecurityDefinition("Bearer", jwtSecurityScheme);
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        { jwtSecurityScheme, new string[] { } }
+        { jwtSecurityScheme, [] }
     });
 });
 #endif
@@ -118,7 +118,7 @@ using (var scope = app.Services.CreateScope())
 {
     IMongoClient client = scope.ServiceProvider.GetRequiredService<IMongoClient>();
     IOptions<MongoDBSettings> settings = scope.ServiceProvider.GetRequiredService<IOptions<MongoDBSettings>>();
-    DBSetup.InitializeIndexes(client,settings);
+    await DBSetup.InitializeIndexes(client,settings);
 }
 
 app.UseHttpsRedirection();

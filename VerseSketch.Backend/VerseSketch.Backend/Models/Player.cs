@@ -3,6 +3,15 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace VerseSketch.Backend.Models;
 
+public struct Lyrics
+{
+    [BsonElement("fromPlayerId")]
+    public string FromPlayerId { get; set; }
+    [BsonElement("lines")]
+    public List<string> Lines { get; set; }
+    [BsonElement("lang")]
+    public string Lang { get; set; }
+}
 public class Player
 {
     [BsonId]
@@ -17,7 +26,7 @@ public class Player
     [BsonElement("roomTitle")]
     public string? RoomTitle { get; set; }
     [BsonElement("submittedLyrics")] 
-    public List<string> SubmittedLyrics { get; set; } = [];
+    public Lyrics? SubmittedLyrics { get; set; }
     [BsonElement("isActive")]
     public required bool IsActive { get; set; }
 }

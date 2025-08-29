@@ -9,16 +9,31 @@ import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
 import { useNavigate } from "react-router";
 import { leave } from "../misc/MiscFunctions";
 import { TextArea } from "../components/TextArea";
+import { Select } from "antd";
 interface IInsertLyricsPageProps { };
 
 export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     const signalRModel = useSignalRConnectionContext();
+    // const testModel: RoomModel = {
+    //     title: "",
+    //     stage: 0,
+    //     playingPlayersCount: 2,
+    //     actualPlayersCount: 2,
+    //     maxPlayersCount: 8,
+    //     players: [],
+    //     isPlayerAdmin: false,
+    //     timeToDraw: 10,
+    //     isPublic: false,
+    //     playerId: "",
+    //     currDone: 0
+    // };
     const [model, setModel] = useState<RoomModel | null>(signalRModel.roomModelRef.current);
     const [submitLoading, setSubmitLoading] = useState<boolean>(false);
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
     const isSubmittedRef = useRef<boolean>(false);
     const errorModals = useErrorDisplayContext();
     const navigate = useNavigate();
+    const [lang,setLang]=useState<string>("EN");
     const lyrics = useRef<string>("");
     const [errorMsg, setErrorMsg] = useState<string>("");
     const isValid = useRef<boolean>(true);
@@ -54,7 +69,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         setSubmitLoading(true);
         if (!isSubmittedRef.current) {
             try {
-                await signalRModel.connection.current.invoke("SendLyrics", lyrics.current);
+                await signalRModel.connection.current.invoke("SendLyrics", lyrics.current,lang);
                 setIsSubmitted(true);
                 isSubmittedRef.current = true;
             }
@@ -113,14 +128,23 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
         <>
             <StageCounter stage={model.stage} maxStage={model.actualPlayersCount} />
             <PlayerCompleteCounter />
-            <div className="container-small">
+            <div className="container-small" style={{height:"100%"}}>
                 <PageTitle style={{ marginTop: "6vh" }}>Past {(model.playingPlayersCount - 1) * 2} lines of lyrics from your song!</PageTitle>
                 <TextArea onChange={validateLyrics} style={{ marginTop: "5vh" }} disabled={isSubmitted} placeholder="Insert your lyrics here..." />
                 <div style={{ width: "100%", height: "4vh" }}>
                     <label style={{ color: "red" }}>{errorMsg}</label>
                 </div>
-                <SubmitButton onClick={onSubmit} loading={submitLoading} isSubmitted={isSubmitted} />
-                <label style={{marginTop:"20vh"}} className="input-field-label">Please use a single language for a better voice over.</label>
+                <div style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"flex-start"}}>
+                    <label className="input-field-label">Language</label>
+                    <Select
+                        className="input-field"
+                        options={[{ value: "EN" }, { value: "RU" }]}
+                        value={lang}
+                        onChange={(value)=>setLang(value)}
+                        disabled={isSubmitted} />
+                </div>
+                <SubmitButton onClick={onSubmit} style={{marginTop:"2vh"}} loading={submitLoading} isSubmitted={isSubmitted} />
+                <label style={{ marginTop: "auto", marginBottom:"3vh" }} className="input-field-label">Please use a single language for a better voice over.</label>
             </div>
         </>
     );

@@ -30,7 +30,7 @@ public interface IRoomHub
     Task StartShowcase(string playerId);
     Task ShowcaseFinished();
     Task ReceiveErrorMessage(string msg, bool isTerminal);
-    Task ReceiveStoryline(List<LyricsImage> storyline);
+    Task ReceiveStoryline(List<StorylineImageViewModel> storyline);
     Task ReceiveAudioFile(byte[] file,int index);
 }
 
@@ -162,19 +162,14 @@ public class RoomHub:Hub<IRoomHub>
         List<string> playerIds = room.CompletedMap.IdToStage.Keys.ToList();
         List<Instruction> instructions = new List<Instruction>();
         List<Storyline> storylines = new List<Storyline>();
-        Dictionary<string,List<string>> lyricsMap=new Dictionary<string, List<string>>();
-        foreach (string playerId in playerIds)
-        {
-            lyricsMap.Add(playerId,await _playerRepository.GetSubmittedLyrics(playerId));
-        }
         playerIds.Shuffle(room.RandomOrderSeed);
         foreach (string id in playerIds)
         {
             Instruction instruction=new Instruction
             {
                 PlayerId = id,
-                LyrycsToDraw = [],
-                RoomTitle=room.Title,
+                RoomTitle = room.Title,
+                LyricsIndexesToDraw = [],
             };
             Storyline storyline = new Storyline
             {
@@ -188,15 +183,14 @@ public class RoomHub:Hub<IRoomHub>
             {
                 if (--i<0)
                     i = playerIds.Count-1;
-                instruction.LyrycsToDraw.Add(new Lyrics
+                instruction.LyricsIndexesToDraw.Add(new InstructionLyrics
                 {
+                    IndexToDraw = lyricsI,
                     FromPlayerId = playerIds[i],
-                    Lines = [lyricsMap[playerIds[i]][lyricsI], lyricsMap[playerIds[i]][lyricsI + 1]]
                 });
-                storyline.Images[playerIds.Count - 2 - j] = new LyricsImage()
+                storyline.Images[playerIds.Count - 2 - j] = new LyricsImage
                 {
                     ByPlayerId = playerIds[i],
-                    Lyrics = [lyricsMap[id][lyricsMap[id].Count-1-lyricsI], lyricsMap[id][lyricsMap[id].Count-1-lyricsI - 1]]
                 };
                 lyricsI += 2;
             }
@@ -299,10 +293,23 @@ public class RoomHub:Hub<IRoomHub>
         await _roomsRepository.UpdateRoomAsync(room.Title,update);
 
         List<LyricsImage> lyricsImages = await _storylineRepository.GetPlayersStoryline(playerId);
-        await Clients.Group(room.Title).ReceiveStoryline(lyricsImages);
+        Lyrics? lyrics=await _playerRepository.GetSubmittedLyrics(playerId);
+        if (lyrics == null)
+            throw new HubException("Lyrics not found.");
+        List<StorylineImageViewModel> vm=new List<StorylineImageViewModel>();
         for (int i = 0; i < lyricsImages.Count; i++)
         {
-            byte[] audioFile = await GetAudioPiper($"{lyricsImages[i].Lyrics[0]},\n{lyricsImages[i].Lyrics[1]},","EN");
+            vm.Add(new  StorylineImageViewModel
+            {
+                Lyrics = [lyrics.Value.Lines[2*i],lyrics.Value.Lines[2*i+1]],
+                byPlayerId = lyricsImages[i].ByPlayerId,
+                Image = lyricsImages[i].Image,
+            });
+        }
+        await Clients.Group(room.Title).ReceiveStoryline(vm);
+        for (int i = 0; i < lyricsImages.Count; i++)
+        {
+            byte[] audioFile = await GetAudioPiper($"{lyrics.Value.Lines[2*i]},\n{lyrics.Value.Lines[2*i+1]},",lyrics.Value.Lang);
             await Clients.Groups(room.Title).ReceiveAudioFile(audioFile,i);
         }
         
@@ -533,7 +540,7 @@ public class RoomHub:Hub<IRoomHub>
         await Clients.Group(player.RoomTitle).StageSet(0);
     }
 
-    public async Task SendLyrics(string lyrics)
+    public async Task SendLyrics(string lyrics,string lang)
     {
         if (!Context.User.Identity.IsAuthenticated)
             throw new HubException("You are not in this room.");
@@ -556,7 +563,12 @@ public class RoomHub:Hub<IRoomHub>
             if (line.Length>95)
                 throw new HubException("Line is too long.");
         }
-        UpdateDefinition<Player> upd= Builders<Player>.Update.Set(r=>r.SubmittedLyrics,lyricsSubmitted);
+        UpdateDefinition<Player> upd= Builders<Player>.Update.Set(r=>r.SubmittedLyrics,new Lyrics
+        {
+            FromPlayerId = player._Id,
+            Lang = lang,
+            Lines=lyricsSubmitted
+        });
         await _playerRepository.UpdatePlayerAsync(player,upd,false);
         await PlayerCompletedTask(room,player,PlayersDoneWithTask,true);
     }

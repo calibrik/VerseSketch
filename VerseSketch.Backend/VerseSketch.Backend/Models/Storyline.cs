@@ -25,10 +25,8 @@ public struct ImageLine
 
 public struct LyricsImage
 {
-    [BsonElement("lyrics")]
-    public List<string> Lyrics { get; set; }
     [BsonElement("image")]
-    public ImageLine[] Image { get; set; }
+    public ImageLine[]? Image { get; set; }
     [BsonElement("playerId")]
     public string ByPlayerId { get; set; }
 }

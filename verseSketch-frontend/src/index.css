@@ -484,7 +484,7 @@ html {
 
 .container-layout {
     background-color: #C886D9;
-    /* height: calc(100vh - clamp(40px,8vh,64px)); */
+    height: calc(100vh - clamp(40px,8vh,64px));
 }
 
 .room-card {
@@ -871,7 +871,7 @@ html {
 
 @media (min-width: 1400px) {
     .container-small {
-        padding: 0 35%;
+        padding: 0 32%;
     }
 
     .canvas-brush-size {
