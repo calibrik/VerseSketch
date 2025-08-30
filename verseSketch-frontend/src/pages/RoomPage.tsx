@@ -111,12 +111,19 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     {
         if (!signalRModel.roomModelRef.current||!signalRModel.roomModelRef.current.isPlayerAdmin)
             return;
+        let data;
         try {
-            let data=await signalRModel.connection.current?.invoke<string>("GenerateJoinToken", roomTitle);
-            await navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data}`);
+            data=await signalRModel.connection.current?.invoke<string>("GenerateJoinToken", roomTitle);
         }
         catch (error:any) {
             errorModals.errorModalClosable.current?.show("An error occurred while trying to generate join link.");
+            return;
+        }
+        try{
+            await navigator.clipboard.writeText(`${window.location.origin}/join-room/by-link/${data}`);
+        }
+        catch (e:any) {
+            errorModals.errorModalClosable.current?.show(`Link: ${window.location.origin}/join-room/by-link/${data}`);
             return;
         }
     }

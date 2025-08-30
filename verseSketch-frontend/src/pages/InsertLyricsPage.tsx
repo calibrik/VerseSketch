@@ -7,7 +7,7 @@ import { RoomModel, useSignalRConnectionContext } from "../components/SignalRPro
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
 import { PlayerCompleteCounter } from "../components/PlayerCompleteCounter";
 import { useNavigate } from "react-router";
-import { leave } from "../misc/MiscFunctions";
+import { getHeightLevel, getWidthLevel, leave, WindowLevel } from "../misc/MiscFunctions";
 import { TextArea } from "../components/TextArea";
 import { Select } from "antd";
 interface IInsertLyricsPageProps { };
@@ -124,6 +124,8 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
     if (model === null)
         return (<Spinner style={{ marginTop: "3vh" }} />);
 
+    let warningMB=getWidthLevel()<=WindowLevel.SM || getHeightLevel()>WindowLevel.SM?"13vh":"2vh";
+
     return (
         <>
             <StageCounter stage={model.stage} maxStage={model.actualPlayersCount} />
@@ -143,8 +145,8 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
                         onChange={(value)=>setLang(value)}
                         disabled={isSubmitted} />
                 </div>
-                <SubmitButton onClick={onSubmit} style={{marginTop:"2vh"}} loading={submitLoading} isSubmitted={isSubmitted} />
-                <label style={{ marginTop: "auto", marginBottom:"3vh" }} className="input-field-label">Please use a single language for a better voice over.</label>
+                <SubmitButton onClick={onSubmit} style={{marginTop:"1vh"}} loading={submitLoading} isSubmitted={isSubmitted} />
+                <label style={{ marginTop: "auto", marginBottom:warningMB }} className="input-field-label">Please use a single language for a better voice over.</label>
             </div>
         </>
     );

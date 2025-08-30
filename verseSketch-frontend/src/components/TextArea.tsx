@@ -9,8 +9,8 @@ interface ITextAreaProps {
 
 export const TextArea: FC<ITextAreaProps> = (props) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const maxLines = 16;
-    const minLines = 10;
+    const maxLines = 12;
+    const minLines = 9;
 
     const handleInput = (e:any) => {
         if (!textareaRef.current)

@@ -602,7 +602,8 @@ html {
 
 .error-modal-text {
     color: #7C009B;
-    font-size: 1rem;
+    font-size: clamp(0.9rem, 1.5vmin, 1rem);
+    word-break: break-all;
 }
 
 .error-modal-button {

@@ -39,6 +39,8 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         if (!signalRModel.roomModelRef.current?.isPlayerAdmin)
             return;
         try {
+            setLoading(true);
+            setIsWaiting(true);
             await signalRModel.connection.current?.invoke("StartShowcase", signalRModel.roomModelRef.current?.players[currPlayerPlayingRef.current].id);
         }
         catch (e: any) {
@@ -58,7 +60,6 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     }
 
     async function onReceiveStoryline(s: LyricImage[]) {
-        setLoading(true);
         storyline.current = s;
     }
 
