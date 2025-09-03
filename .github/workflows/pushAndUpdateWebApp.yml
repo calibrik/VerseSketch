@@ -8,6 +8,7 @@ on:
       - 'verseSketch-frontend/**'
       - 'VerseSketch.Backend/**'
       - 'Dockerfile'
+      - 'webapp-version.txt'
 
 env:
   ACR_NAME: docker.io/sircalibrik
@@ -27,7 +28,6 @@ jobs:
         run: |
           current_version=$(cat webapp-version.txt)
           echo "Current version is: $current_version"
-          new_minor=$(echo $current_version | awk -F. '{print $2+1}')
           new_version=$(echo $current_version | awk -F. '{$2++; print $1"."$2}')
           echo $new_version > webapp-version.txt
           echo "IMAGE_TAG=$current_version" >> $GITHUB_ENV
