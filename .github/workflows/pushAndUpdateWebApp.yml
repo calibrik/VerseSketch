@@ -12,6 +12,7 @@ on:
 
 env:
   ACR_NAME: docker.io/sircalibrik
+  IMAGE_NAME: versesketch
   APP_NAME: VerseSketch
   RESOURCE_GROUP: VerseSketch
 
@@ -44,7 +45,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.ACR_NAME }}/${{ env.APP_NAME }}:webapp-${{ env.IMAGE_TAG }}
+          tags: ${{ env.ACR_NAME }}/${{ env.IMAGE_NAME }}:webapp-${{ env.IMAGE_TAG }}
           file: ./Dockerfile
           
       - name: Build and push Docker image with lates
@@ -52,7 +53,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.ACR_NAME }}/${{ env.APP_NAME }}:webapp-latest
+          tags: ${{ env.ACR_NAME }}/${{ env.IMAGE_NAME }}:webapp-latest
           file: ./Dockerfile
 
       - name: Log in to Azure
@@ -65,5 +66,5 @@ jobs:
           az webapp sitecontainers update \
           --name ${{ env.APP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
-          --container-name main --image ${{ env.ACR_NAME }}/${{ env.APP_NAME }}:webapp-${{ env.IMAGE_TAG }} \
+          --container-name main --image ${{ env.ACR_NAME }}/${{ env.IMAGE_NAME }}:webapp-${{ env.IMAGE_TAG }} \
           --target-port 80 --is-main true
