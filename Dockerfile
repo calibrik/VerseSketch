@@ -1,4 +1,4 @@
-FROM node:20-alpine AS frontend
+FROM node:24-alpine AS frontend
 WORKDIR /src/frontend
 COPY ./verseSketch-frontend/package*.json ./
 RUN npm install

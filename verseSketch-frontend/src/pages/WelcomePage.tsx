@@ -15,7 +15,7 @@ export const WelcomePage: FC<IWelcomePageProps> = () => {
     return (
         <>
             <div style={{ marginTop: "20vh" }} className="container-small">
-                <PageTitle style={{ width: "80%" }}>Welcome to the VerseSketch!(TEST)</PageTitle>
+                <PageTitle style={{ width: "80%" }}>Welcome to the VerseSketch!</PageTitle>
                 <Row style={{ marginTop: "6vh" }} gutter={{ xs: 8, sm: 16, md: 24, lg: 46 }}>
                     <Col span={12}>
                         <JoinRoomNavigateButton />
