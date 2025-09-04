@@ -8,6 +8,7 @@ export const ErrorPage: FC<IErrorPageProps> = () => {
     useEffect(() => {
         leave();
         navigate("/");
+        window.location.reload();
     }, []);
 
     return null;

@@ -73,6 +73,13 @@ public class PlayerRepository
         return  lyrics!=null;
     }
 
+    public async Task DeleteActivePlayer(string playerId)
+    {
+        Player? player=await GetPlayerAsync(playerId);
+        if(player==null||!player.IsActive)
+            return;
+        await DeletePlayerAsync(player);
+    }
     public async Task DeletePlayerAsync(string playerId)
     {
         Player? player=await GetPlayerAsync(playerId);

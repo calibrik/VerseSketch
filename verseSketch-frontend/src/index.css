@@ -485,6 +485,8 @@ html {
 .container-layout {
     background-color: #C886D9;
     height: calc(100vh - clamp(40px,8vh,64px));
+    display: flex;
+    flex-direction: column;
 }
 
 .room-card {
@@ -634,6 +636,14 @@ html {
     font-size: clamp(1rem, 3.5vmin, 2rem) !important;
     opacity: 1;
     font-weight: bold;
+}
+
+.small-remark {
+    color: #7C009B;
+    font-size: clamp(0.6rem, 2vmin, 1rem);
+    text-align: end;
+    width: 100%;
+    font-weight: 600;
 }
 
 .leave-button {

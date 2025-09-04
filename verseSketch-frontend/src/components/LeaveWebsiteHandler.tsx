@@ -23,7 +23,6 @@ export const LeaveWebsiteHandler: FC<ILeaveWebsiteHandlerProps> = (_) => {
     useEffect(()=>{
         window.addEventListener("beforeunload",onUnload)
         window.addEventListener("pageshow",onPageShow);
-        console.log(location.pathname);
         return ()=> {
             window.removeEventListener("beforeunload",onUnload);
             window.removeEventListener("pageshow",onPageShow);

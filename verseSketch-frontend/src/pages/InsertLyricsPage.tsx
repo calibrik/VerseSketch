@@ -146,7 +146,7 @@ export const InsertLyricsPage: FC<IInsertLyricsPageProps> = (_) => {
                         disabled={isSubmitted} />
                 </div>
                 <SubmitButton onClick={onSubmit} style={{marginTop:"1vh"}} loading={submitLoading} isSubmitted={isSubmitted} />
-                <label style={{ marginTop: "auto", marginBottom:warningMB }} className="input-field-label">Please use a single language for a better voice over.</label>
+                <label style={{ marginTop: "auto", marginBottom:warningMB }} className="small-remark">Please use a single language for a better voice over.</label>
             </div>
         </>
     );

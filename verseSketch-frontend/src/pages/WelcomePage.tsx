@@ -25,6 +25,7 @@ export const WelcomePage: FC<IWelcomePageProps> = () => {
                     </Col>
                 </Row>
             </div>
+            <label style={{margin:"auto 10vh 10vh 0"}} className="small-remark">v1.1.1</label>
         </>
     );
 }

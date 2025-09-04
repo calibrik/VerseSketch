@@ -55,7 +55,6 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         }
         if (!response.ok) {
             let data=await response?.json();
-            console.log(data.message,response.status);
             throw (data.message);
         }
     }

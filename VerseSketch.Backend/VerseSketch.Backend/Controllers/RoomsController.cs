@@ -325,7 +325,7 @@ public class RoomsController:ControllerBase
             return Ok();
         try
         {
-            await _playerRepository.DeletePlayerAsync(User.FindFirst("PlayerId").Value);
+            await _playerRepository.DeleteActivePlayer(User.FindFirst("PlayerId").Value);
         }
         catch (Exception e)
         {

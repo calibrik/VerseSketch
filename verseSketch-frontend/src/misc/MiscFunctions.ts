@@ -8,7 +8,7 @@ export async function leave(signalRModel?:ISignalRProviderModel)
     if (signalRModel) {
         signalRModel.stopConnection();
     }
-    if (token!=null) {
+    else if (token!=null) {
         fetch(`${ConnectionConfig.Api}/rooms/leave`,{
             method:'DELETE',
             headers:{
