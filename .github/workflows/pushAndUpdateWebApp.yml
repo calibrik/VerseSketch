@@ -8,7 +8,6 @@ on:
       - 'verseSketch-frontend/**'
       - 'VerseSketch.Backend/**'
       - 'Dockerfile'
-      - 'webapp-version.txt'
   workflow_dispatch:
 
 env:
@@ -25,15 +24,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get and increment version
+      - name: Get commit summary as version
         id: versioning
         run: |
-          current_version=$(cat webapp-version.txt)
-          echo "Current version is: $current_version"
-          new_version=$(echo $current_version | awk -F. '{$2++; print $1"."$2}')
-          echo $new_version > webapp-version.txt
-          echo "IMAGE_TAG=$current_version" >> $GITHUB_ENV
-
+          commit_summary=$(git log -1 --pretty=format:%s)
+          sanitized_tag=$(echo "$commit_summary" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          echo "IMAGE_TAG=$sanitized_tag" >> $GITHUB_ENV
+          
       - name: Log in to Docker Registry
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
