@@ -41,7 +41,7 @@ jobs:
           tags: ${{ env.ACR_NAME }}/${{ env.IMAGE_NAME }}:piper-${{ env.IMAGE_TAG }}
           file: ./PiperSetup/Dockerfile
           
-      - name: Build and push Docker image with lates
+      - name: Build and push Docker image with latest
         uses: docker/build-push-action@v5
         with:
           context: .

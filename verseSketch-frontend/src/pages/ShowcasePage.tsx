@@ -39,6 +39,8 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         if (!signalRModel.roomModelRef.current?.isPlayerAdmin)
             return;
         try {
+            setLoading(true);
+            setIsWaiting(true);
             await signalRModel.connection.current?.invoke("StartShowcase", signalRModel.roomModelRef.current?.players[currPlayerPlayingRef.current].id);
         }
         catch (e: any) {
@@ -124,11 +126,9 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
         catch (e: any) {
 
         }
-        if (signalRModel.roomModelRef.current.isPlayerAdmin) {
-            timeoutRef.current = setTimeout(() => {
-                setIsWaiting(false);
-            }, 5000);
-        }
+        timeoutRef.current = setTimeout(() => {
+            setIsWaiting(false);
+        }, 5000);
         if (currPlayerPlayingRef.current + 1 >= signalRModel.roomModelRef.current.actualPlayersCount) {
             if (signalRModel.roomModelRef.current.isPlayerAdmin)
                 setIsFinished(true);
@@ -172,10 +172,10 @@ export const ShowcasePage: FC<IShowcasePageProps> = (_) => {
     let playButtonText = "";
     if (isShowcaseStarted)
         playButtonText = "PLAYING";
-    else if (!signalRModel.roomModelRef.current?.isPlayerAdmin)
-        playButtonText = "WAITING FOR ADMIN";
     else if (isWaiting)
         playButtonText = "WAIT";
+    else if (!signalRModel.roomModelRef.current?.isPlayerAdmin)
+        playButtonText = "WAITING FOR ADMIN";
     else
         playButtonText = "PLAY";
 

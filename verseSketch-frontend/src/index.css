@@ -641,8 +641,6 @@ html {
 .small-remark {
     color: #7C009B;
     font-size: clamp(0.6rem, 2vmin, 1rem);
-    text-align: end;
-    width: 100%;
     font-weight: 600;
 }
 
