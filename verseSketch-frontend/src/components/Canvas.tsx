@@ -32,8 +32,8 @@ export type ILine = {
 export const CANVAS_BASE_WIDTH = 1600;
 export const CANVAS_BASE_HEIGHT = 800;
 export const CANVAS_BUFFER_LIMIT = 15;
-export const CANVAS_BASE_BRUSH_SIZE = 2.5;
-export const CANVAS_BASE_ERASER_SIZE = 10;
+export const CANVAS_BASE_BRUSH_SIZE = 3.5;
+export const CANVAS_BASE_ERASER_SIZE = 15;
 
 export const Canvas = forwardRef<CanvasHandle, ICanvasProps>((props, ref) => {
 	const isDrawing = useRef(false);
@@ -210,7 +210,7 @@ export const Canvas = forwardRef<CanvasHandle, ICanvasProps>((props, ref) => {
 			backBuffer.current.push(new Uint8Array(context.getImageData(0, 0, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT).data).buffer);
 			if (backBuffer.current.length > CANVAS_BUFFER_LIMIT)
 				backBuffer.current.shift();
-			drawTo(point);
+			drawTo({ x: point.x, y: point.y+0.01 });
 		}
 	};
 
@@ -287,7 +287,7 @@ export const Canvas = forwardRef<CanvasHandle, ICanvasProps>((props, ref) => {
 			className="canvas-container"
 			style={props.style}>
 			<Stage
-				className={className}
+				className={`${className} ${props.tool}`}
 				width={size.width}
 				height={size.height}
 				scaleX={scale.x}
