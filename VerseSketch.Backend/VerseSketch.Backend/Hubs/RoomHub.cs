@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver;
@@ -123,6 +124,24 @@ public class RoomHub:Hub<IRoomHub>
         if (room == null)
         {
             throw new HubException("Room not found.");
+        }
+        if (room.Stage!=-1)
+            throw new HubException($"Game has already started in this room.");
+        if (room.ActualPlayersCount==0&&player._Id!=room.AdminId)
+            throw new HubException("Only creator of the room is allowed to join.");//check if only admin can join room with 0 players
+        if (room.ActualPlayersCount>=room.MaxPlayersCount)
+            throw new HubException("Room is full.");//check if room is full
+        
+        
+        UpdateDefinition<Player> update = Builders<Player>.Update
+            .Set(p => p.RoomTitle, roomTitle);
+        player.RoomTitle = roomTitle;
+        await _playerRepository.UpdatePlayerAsync(player,update,true);
+        if (player._Id != room.AdminId)
+        {
+            room.CompletedMap.IdToStage.Add(player._Id,-1);
+            UpdateDefinition<Room> roomUpd = Builders<Room>.Update.Set(r=>r.CompletedMap.IdToStage,room.CompletedMap.IdToStage);
+            await _roomsRepository.UpdateRoomAsync(room.Title,roomUpd);
         }
         await Clients.Groups(roomTitle).PlayerJoined(new PlayerViewModel()
         {
@@ -455,7 +474,7 @@ public class RoomHub:Hub<IRoomHub>
             throw new HubException("One or more parameters are invalid.");
         }
 
-        if (model.TimeToDraw != null && (model.TimeToDraw.Value <= 0 || model.TimeToDraw.Value > 60))
+        if (model.TimeToDraw != null && (model.TimeToDraw.Value <= 0 || model.TimeToDraw.Value > 90))
         {
             throw new HubException("Time to draw is invalid.");
         }
@@ -584,7 +603,8 @@ public class RoomHub:Hub<IRoomHub>
             Context.Abort();
             return;
         }
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, player.RoomTitle);
+        if (player.RoomTitle!=null)
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, player.RoomTitle);
         await RemovePlayer(player,LeaveReason.Disconnected);
         Context.Abort();
     }

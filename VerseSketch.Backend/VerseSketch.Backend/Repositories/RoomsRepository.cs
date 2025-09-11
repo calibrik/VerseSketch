@@ -84,11 +84,20 @@ public class RoomsRepository
         return result.ModifiedCount > 0;
     }
 
+    public async Task DeleteTimeoutedRooms(TimeSpan timeout)
+    {
+        List<string> roomTitles=await _rooms.Find(r => r.CreatedTime <= DateTime.UtcNow - timeout && r.ActualPlayersCount==0).Project(r=>r.Title).ToListAsync();
+        await _rooms.DeleteManyAsync(r => roomTitles.Contains(r.Title));
+        await _players.DeleteManyAsync(p=>roomTitles.Contains(p.RoomTitle??""));
+        await _storylines.DeleteManyAsync(s=>roomTitles.Contains(s.RoomTitle));
+        await _instructions.DeleteManyAsync(i=>roomTitles.Contains(i.RoomTitle));
+    }
+
     public async Task DeleteRoomAsync(string roomTitle)
     {
         await _rooms.DeleteOneAsync(r=>r.Title==roomTitle);
         await _players.DeleteManyAsync(p=>p.RoomTitle==roomTitle);
-        await _storylines.DeleteManyAsync(r=>r.RoomTitle==roomTitle);
-        await _instructions.DeleteManyAsync(r=>r.RoomTitle==roomTitle);
+        await _storylines.DeleteManyAsync(s=>s.RoomTitle==roomTitle);
+        await _instructions.DeleteManyAsync(i=>i.RoomTitle==roomTitle);
     }
 }

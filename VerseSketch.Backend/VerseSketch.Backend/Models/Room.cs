@@ -39,6 +39,8 @@ public class Room
     public required int Stage { get; set; }
     [BsonElement("randomOrderSeed")] 
     public int RandomOrderSeed { get; set; }
+    [BsonElement("createdTime")]
+    public required DateTime CreatedTime { get; set; }
     [BsonElement("completedMap")]
     public required CompletedMap CompletedMap { get; set; }
 }

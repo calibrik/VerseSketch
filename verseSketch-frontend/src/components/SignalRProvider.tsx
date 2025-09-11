@@ -97,7 +97,7 @@ export const SignalRProvider: FC<ISignalRProviderProps> = (props) => {
     }
 
     function onPlayerJoined(data: PlayerModel) {
-        if (!roomModelRef.current || roomModelRef.current.playerId == data.id)
+        if (!roomModelRef.current)
             return;
         roomModelRef.current.players.push(data);
         roomModelRef.current.playingPlayersCount++;

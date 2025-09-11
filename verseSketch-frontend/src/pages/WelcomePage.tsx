@@ -26,7 +26,7 @@ export const WelcomePage: FC<IWelcomePageProps> = () => {
                 </Row>
             </div>
             <div style={{margin:"auto 0 10vh 0",width:"100%",display:"flex",justifyContent:"flex-end"}}>
-                <label style={{marginRight:"10vh"}} className="small-remark">v1.1.3</label>
+                <label style={{marginRight:"10vh"}} className="small-remark">v1.1.4</label>
             </div>
         </>
     );

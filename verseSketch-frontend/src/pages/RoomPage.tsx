@@ -4,7 +4,6 @@ import { Color } from "../misc/colors";
 import { StartGameButton } from "../components/buttons/StartGameButton";
 import Title from "antd/es/typography/Title";
 import { useNavigate, useParams } from "react-router";
-import { ConnectionConfig } from "../misc/ConnectionConfig";
 import { InviteButton } from "../components/buttons/InviteButton";
 import { RoomModel, useSignalRConnectionContext } from "../components/SignalRProvider";
 import { useErrorDisplayContext } from "../components/ErrorDisplayProvider";
@@ -34,29 +33,6 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     let selectionItems=[];
     for (let i=2;i<=10;i++){
         selectionItems.push({label:`${i} Players`,value:i});
-    }
-
-    async function initLoad()
-    {
-        let response=null;
-        try{
-            response=await fetch(`${ConnectionConfig.Api}/rooms/isRoomAccessible?${new URLSearchParams({
-                roomTitle: roomTitle??"",
-                })}`,{
-                method:"GET",
-                headers:{
-                    "Content-Type":"application/json",
-                    "Authorization":`Bearer ${sessionStorage.getItem("player")}`
-                }
-            });
-        }
-        catch(_:any){
-            throw("No connection to the server.")
-        }
-        if (!response.ok) {
-            let data=await response?.json();
-            throw (data.message);
-        }
     }
 
     function applyParams(data:ISetParamsModel) {
@@ -165,11 +141,28 @@ export const RoomPage: FC<IRoomPageProps> = () => {
     // },[model]);
 
     function triggerUpdate() {
-        // console.log("trigger update from upstairs");
         if (!signalRModel.roomModelRef.current)
             setModel(null);
         else
             setModel({...signalRModel.roomModelRef.current});
+    }
+
+    async function connectToRoom() {
+        setLoading(true);
+        signalRModel.createConnection(sessionStorage.getItem("player") ?? "",roomTitle ?? "");       
+        if (!signalRModel.connection.current)
+            return;
+        signalRModel.connection.current.keepAliveIntervalInMilliseconds=3000;
+        signalRModel.connection.current.serverTimeoutInMilliseconds=5000;
+        signalRModel.connection.current?.on("ReceiveParams", onReceiveParams);
+        try{
+            await signalRModel.connection.current.start();
+            await signalRModel.connection.current.invoke("Join", roomTitle);
+        }
+        catch(_){
+            await leave(signalRModel);
+        }
+        setLoading(false);
     }
 
     useEffect(() => {
@@ -177,32 +170,7 @@ export const RoomPage: FC<IRoomPageProps> = () => {
         signalRModel.updateTrigger.current.on(triggerUpdate);
         // console.log("remount")
         if (!signalRModel.connection.current|| !signalRModel.roomModelRef.current || signalRModel.roomModelRef.current?.title !== roomTitle) {
-            setLoading(true);
-            signalRModel.stopConnection();
-            initLoad()
-                .then(async () => {
-                    signalRModel.createConnection(sessionStorage.getItem("player") ?? "",roomTitle ?? "");
-                    
-                    if (!signalRModel.connection.current)
-                        return;
-                    signalRModel.connection.current.keepAliveIntervalInMilliseconds=3000;
-                    signalRModel.connection.current.serverTimeoutInMilliseconds=5000;
-                    signalRModel.connection.current?.on("ReceiveParams", onReceiveParams);
-                    try{
-                        await signalRModel.connection.current.start();
-                        await signalRModel.connection.current.invoke("Join", roomTitle);
-                    }
-                    catch(_){
-                        await leave(signalRModel);
-                        errorModals.errorModal.current?.show("An error occurred while trying to connect to the room.");
-                    }
-                    setLoading(false);
-                })
-                .catch(async (error) => {
-                    await leave(signalRModel);
-                    setLoading(false);
-                    errorModals.errorModal.current?.show(error);
-                });
+            connectToRoom();
         }
         else{
             signalRModel.connection.current.on("ReceiveParams", onReceiveParams);

@@ -30,9 +30,9 @@ public class PlayerRepository
         return await _players.Find(p => p._Id == playerId).Project(p => p.SubmittedLyrics).FirstOrDefaultAsync();
     }
 
-    public async Task<Player?> GetPlayerByNicknameInRoomAsync(string nickname,string roomTitle,CancellationToken ct=default)
+    public async Task<bool> IsPlayersNicknameExistInRoomAsync(string nickname,string roomTitle,CancellationToken ct=default)
     {
-        return await _players.Find(p => p.Nickname == nickname&&p.RoomTitle==roomTitle).FirstOrDefaultAsync(ct);
+        return await _players.Find(p => p.Nickname == nickname&&p.RoomTitle==roomTitle).CountDocumentsAsync(ct)>0;
     }
 
     public async Task<Player?> GetPlayerAsync(string playerId)
@@ -90,6 +90,11 @@ public class PlayerRepository
     public async Task<List<Player>> GetPlayersInRoomAsync(string roomTitle)
     {
         return await _players.Find(p=>p.RoomTitle==roomTitle).SortBy(p=>p.CreatedTime).ToListAsync();
+    }
+
+    public async Task DeleteTimeoutedPlayers(TimeSpan timeout)
+    {
+        await _players.DeleteManyAsync(p=>p.ConnectionID==null&& p.IsActive && p.CreatedTime <= DateTime.UtcNow - timeout);
     }
 
     public async Task UpdatePlayerAsync(Player player,UpdateDefinition<Player> update,bool isRoomTitleChanged)

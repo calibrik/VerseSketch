@@ -104,26 +104,6 @@ public class RoomsController:ControllerBase
         return Ok(model);
     }
 
-    [HttpGet("/api/rooms/isRoomAccessible")]
-    [ResponseCache(NoStore = true)]
-    public async Task<IActionResult> IsRoomAccessible([FromQuery] string roomTitle)
-    {
-        if (!User.Identity.IsAuthenticated)
-            return Unauthorized(new {message = $"You are not part of the room {roomTitle}."});
-        string? playerId = User.FindFirst("PlayerId")?.Value;
-        Player? currPlayer = await _playerRepository.GetPlayerAsync(playerId);
-        Room? room = await _roomsRepository.GetRoomAsync(roomTitle);
-        if (room == null)
-            return NotFound(new {message = $"The room {roomTitle} is not found."});
-        if (room.Stage!=-1)
-            return Unauthorized(new  {message = $"Game has already started in this room."});
-        if (currPlayer == null||!currPlayer.IsActive)
-            return StatusCode(500,new {message = "Something went wrong, please try again later."});
-        if (currPlayer.RoomTitle!=room.Title)
-            return Unauthorized(new {message = $"You are not part of the {roomTitle}."});
-        return Ok();
-    }
-
     [HttpGet("/api/rooms/validateJoinLink")]
     [ResponseCache(NoStore = true)]
     public async Task<IActionResult> ValidateJoinLink([FromQuery] string? roomTitle, [FromQuery] string? joinToken)
@@ -195,6 +175,7 @@ public class RoomsController:ControllerBase
             TimeToDraw = 10,
             Stage = -1,
             CompletedMap = new CompletedMap {CurrDone = 0,IdToStage = new Dictionary<string, int>(),Version = 0},
+            CreatedTime = DateTime.UtcNow,
         };
         room.CompletedMap.IdToStage.Add(admin._Id,-1);
         string joinToken = CreateJoinLinkToken(room);
@@ -221,7 +202,7 @@ public class RoomsController:ControllerBase
         if (roomTitle==null)
             return BadRequest(new {message="Sorry, this join link is invalid or expired"});
 
-        return Ok(new { isExist = await _playerRepository.GetPlayerByNicknameInRoomAsync(nickname, roomTitle, ct) });
+        return Ok(new { isExist = await _playerRepository.IsPlayersNicknameExistInRoomAsync(nickname, roomTitle, ct) });
     }
     
     [HttpPost("/api/rooms/join")]
@@ -254,8 +235,8 @@ public class RoomsController:ControllerBase
             if (player == null||!player.IsActive)
                 return StatusCode(500,new {message="Something went wrong, please try again later."});
         }
-        // if (await _playerRepository.GetPlayerByNicknameInRoomAsync(model.Nickname, roomTitle) != null)
-        //     return BadRequest(new {message="Nickname already exists in this room."});//check if username exists
+        if (await _playerRepository.IsPlayersNicknameExistInRoomAsync(model.Nickname, roomTitle))
+            return BadRequest(new {message="Nickname already exists in this room."});//check if username exists
         if (room.ActualPlayersCount==0&&(player==null||player._Id!=room.AdminId))
             return BadRequest(new {message="Only creator of the room is allowed to join."});//check if only admin can join room with 0 players
         if (!ModelState.IsValid)
@@ -274,23 +255,18 @@ public class RoomsController:ControllerBase
         }
 
         player.Nickname = model.Nickname;
-        player.RoomTitle = room.Title;
         try
         {
             if (User.Identity.IsAuthenticated)
             {
                 UpdateDefinition<Player> update = Builders<Player>.Update
-                    .Set(p => p.Nickname, player.Nickname)
-                    .Set(p => p.RoomTitle, roomTitle);
-                await _playerRepository.UpdatePlayerAsync(player, update, true);
+                    .Set(p => p.Nickname, player.Nickname);
+                await _playerRepository.UpdatePlayerAsync(player, update,false);
             }
             else
             {
                 await _playerRepository.CreatePlayerAsync(player);
-                room.CompletedMap.IdToStage.Add(player._Id,-1);
             }
-            UpdateDefinition<Room> roomUpd = Builders<Room>.Update.Set(r=>r.CompletedMap.IdToStage,room.CompletedMap.IdToStage);
-            await _roomsRepository.UpdateRoomAsync(room.Title,roomUpd);
         }
         catch (Exception e)
         {

@@ -21,9 +21,11 @@ export const LeaveWebsiteHandler: FC<ILeaveWebsiteHandlerProps> = (_) => {
     }
 
     useEffect(()=>{
+        window.addEventListener("load",onUnload);
         window.addEventListener("beforeunload",onUnload)
         window.addEventListener("pageshow",onPageShow);
         return ()=> {
+            window.removeEventListener("load",onUnload);
             window.removeEventListener("beforeunload",onUnload);
             window.removeEventListener("pageshow",onPageShow);
         }
