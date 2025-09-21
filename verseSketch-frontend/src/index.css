@@ -11,7 +11,8 @@ html {
 
     color-scheme: light dark;
     color: rgba(255, 255, 255, 0.87);
-    background-color: #C886D9;
+    /* background-color: #C886D9; */
+    background-image: url('./assets/bg.png');
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -483,7 +484,7 @@ html {
 }
 
 .container-layout {
-    background-color: #C886D9;
+    background-image: url('./assets/bg.png');
     height: calc(100vh - clamp(40px,8vh,64px));
     display: flex;
     flex-direction: column;

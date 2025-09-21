@@ -19,7 +19,7 @@ services:
       - app-network
 
   mongo-db:
-    image: mongo:latest
+    image: mongo:8.0
     ports:
       - "27018:27017"
     volumes:
