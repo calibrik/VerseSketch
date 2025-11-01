@@ -200,14 +200,17 @@ html {
     display: flex;
     flex-direction: row;
     align-items: center;
+    overflow-x: auto;
 }
 
 .palette-divider .ant-divider-inner-text {
     color: #7C009B !important;
+    font-size: clamp(0.5rem, 1vw, 1rem);
 }
 
 .palette-divider .ant-divider-with-text {
     color: #7C009B !important;
+    font-size: clamp(0.5rem, 1vw, 1rem);
 }
 
 .palette-divider {
@@ -338,8 +341,7 @@ html {
 }
 
 .brush-size-label {
-    font-size: clamp(0.7rem, 2.8vmin, 1.7rem);
-    width: 7vw;
+    font-size: clamp(0.7rem, 2.5vmin, 1.7rem);
 }
 
 .brush-size-label,
@@ -703,7 +705,12 @@ html {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 2vw
+    gap: 1.5vw;
+    background-color: #F8DCFF;
+    border:2px solid #7C009B !important;
+    border-radius: 6px;
+    padding: 1vmin 2vmin;
+    height: 100%;
 }
 
 .canvas-settings {
@@ -713,6 +720,7 @@ html {
     justify-content: center;
     width: 100%;
     height: 100%;
+    position: relative;
     gap: 1vmin;
 }
 
@@ -835,6 +843,10 @@ html {
         padding: 0 10%;
     }
 
+    .brush-size-label{
+        width: 6vw;
+    }
+
     .canvas-brush-size {
         position: relative;
         width: 50vw;
@@ -844,6 +856,10 @@ html {
 @media (min-width:576px) and (max-width: 767px) {
     .container-small {
         padding: 0 15%;
+    }
+
+    .brush-size-label{
+        width: 6vw;
     }
 
     .canvas-brush-size {
@@ -857,10 +873,14 @@ html {
         padding: 0 15%;
     }
 
+    .brush-size-label{
+        width: 6vw;
+    }
+
     .canvas-brush-size {
         position: absolute;
         left: 5vw;
-        width: 25vw;
+        width: 20vw;
     }
 }
 
@@ -869,16 +889,24 @@ html {
         padding: 0 20%;
     }
 
+    .brush-size-label{
+        width: 6vw;
+    }
+
     .canvas-brush-size {
         position: absolute;
         left: 5vw;
-        width: 25vw;
+        width: 20vw;
     }
 }
 
 @media (min-width:1200px) and (max-width: 1399px) {
     .container-small {
         padding: 0 25%;
+    }
+
+    .brush-size-label{
+        width: 6vw;
     }
 
     .canvas-brush-size {
@@ -891,6 +919,10 @@ html {
 @media (min-width: 1400px) {
     .container-small {
         padding: 0 32%;
+    }
+
+    .brush-size-label{
+        width: fit-content;
     }
 
     .canvas-brush-size {
