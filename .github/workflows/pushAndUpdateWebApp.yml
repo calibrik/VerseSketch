@@ -3,14 +3,7 @@ name: Build and Deploy WebApp
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-    branches:
-      - main
-    # paths:
-    #   - 'verseSketch-frontend/**'
-    #   - 'VerseSketch.Backend/**'
-    #   - 'Dockerfile'
-    #   - '.github/workflows/pushAndUpdateWebApp.yml'
+      - 'v[0-9]+\.[0-9]+(\.[0-9]+)*'
   workflow_dispatch:
 
 env:
@@ -30,7 +23,8 @@ jobs:
       - name: Get tag as version
         id: versioning
         run: |
-          VERSION=$(echo ${{ github.ref }} | sed -n 's|refs/tags/v||p')
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION:1}"
           echo "IMAGE_TAG=$VERSION" >> $GITHUB_ENV
 
       - name: Log in to Docker Registry
